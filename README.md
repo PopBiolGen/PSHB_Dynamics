@@ -1,2 +1,3 @@
 # PSHB_Dynamics
-Dynamic models for PSHB
+
+Models for understanding the population and host dynamics of Polyphagous Shothole Borer
