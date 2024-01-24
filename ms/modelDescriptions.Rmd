@@ -18,55 +18,49 @@ Development of all stages is strongly temperature dependent.  There is some evid
 
 ## Our treatment
 
-### Continuous time model
-
-We construct a continuous time model. We let:
-
-  * $E(t)$ be the number of eggs at time $t$
-  * $L(t)$ be the number of all larval and pupal stages at time $t$
-  * $P(t)$ be the number of pre-reproductive adult females at time $t$
-  * $A(t)$ be the number of reproductive females at time $t$.
-  
-We measure time in degree.days, so can re-scale our results back to the absolute time axis *post hoc*.
-
-### Within gallery dynamics
-
-With the above population partitions, the life-history suggests the following system of ODEs to describe the within gallery dynamics.
-
-\begin{align}
-\frac{\mathrm{d}E}{\mathrm{d}t} &= f(t)A-\alpha_EE, A(0) = 1 \\
-\frac{\mathrm{d}L}{\mathrm{d}t} &= \alpha_EE-\alpha_LL - \delta_LL \\
-\frac{\mathrm{d}P}{\mathrm{d}t} &= \alpha_LL-\alpha_PP \\
-\frac{\mathrm{d}A}{\mathrm{d}t} &= \alpha_PP-\delta_AA \\
-\end{align}
-
-where the $\alpha$ parameters control the rate of transition between partitions.  The $\delta$ parameters control the death rate.  $f(t)$ controls fecundity but is itself a function of time, such that fecundity declines with the cumulative number of Larva produced:
-
-$$f(t) = \frac{f_0}{1+c\int_0^t{L \mathrm{d}L}}$$.
-
-This is consistent with both the notion of maternal care consuming the female's resources, but also consistent with a finite reproductive output per female.  $f_0$ is the female's initial rate of egg laying, and $c$ determines the cost per Larva to future reproduction.
-
 ### Discrete time model
 
-An alternative modelling strategy is to discretise time into small pieces relative to the time scale of the life history.  We could choose something like a time interval being 480 degree hours (24h @ 20 degrees), for example.
+The life history suggests we might more profitably partition the population of females as:
 
-Using the same state variables as above we would have:
+  * $J(t, x)$, the juvenile stages (eggs through pupae): some mortality in the nest, no dispersal
+  * $P(t, x)$, the pre-adult stage (the dispersal phase): dispersal, with some mortality
+  * $A(t, x)$, the adult stage (breeding females): no dispersal, mortality through senescence.
+
+We measure time, $t$, in degree.days, so can re-scale our results back to the absolute time axis *post hoc*.  We discretise time into small pieces relative to the time scale of the life history.  We could choose something like a time interval being 480 degree hours (24h @ 20 degrees), for example.  We also partition our population among host trees, $x$.
+
+#### Within host dynamics
+
+Within a single host, and using the same state variables above we would have:
 
 \begin{align}
-E(t+1) = E(t) + fA(t) - \alpha_EE(t) 
-L(t+1) = L(t) + \alpha_EE(t) - \alpah_LL - \delta_LL
-P(t+1) = P(t) + \alpah_LL - \alpha_PP
-A(t+1) = A(t) + \alpha_PP - \delta_AA
+J(t+1) &= J(t) + fA(t) - \alpha_JJ(t) - \delta_JJ(t) \\
+P(t+1) &= P(t) + \alpha_JJ(t) - \alpha_PP(t) \\
+A(t+1) &= A(t) + \alpha_P(1-\mu)P(t) - \delta_AA(t).
 \end{align}
 
-Which can be written in matrix form as,
+Where:
+
+  * $f$ is the mean fecundity of a female in the population in an interval of time
+  * $\alpha_i$ are transition probabilities, describing transition between states
+  * $\delta_i$ are transition probabilities, describing transition to the dead state
+  * $\mu$ is the probability of dispersing away from the host tree
+
+In matrix form, we first define the vector $\mathbf{N} = \{J, P, A\}$.  Then we have:
+
+$$
+\begin{gather}
+ \mathbf{N}(t+1) = 
+  \begin{bmatrix}
+  (1-\alpha_J-\delta_j) & 0 & f \\
+  \alpha_J & (1-\alpha_P) & 0 \\
+  0 & \alpha_P(1-\mu) & (1-\delta_A)
+  \end{bmatrix}
+ \mathbf{N}(t)
+\end{gather}
+$$
 
 
 
-### Between gallery dynamics
+Note that there is no density dependence at this stage.  The obvious place to put this would be on $\delta_J$.  That is, we could make $\delta_J$ some positive function of total number of adults produced in the host.
 
-Here, we treat each host tree as a patch of habitat.  We look to describe the number of galleries over time, within a host, $A(t)$.  We let the host have a carrying capacity of galleries
-
-
-
-We index patches with $i$.  We now make the number of adult females a function of time and patch, $A(i, t)$.
+### Between host dynamics
