@@ -61,7 +61,7 @@ $$
 
 The matrix shown is the within-population transition matrix, $\mathbf{W}$.
 
-Note also that in the within-host model, we neglect to account for the arrival of pre-adults from other hosts.  This is ok if we assume that they are a very small contribution relative to within host growth.
+Note also that in the within-host model, we currently neglect to account for the arrival of pre-adults from other hosts.  We will come back to this in due course.
 
 Note that there is no density dependence in the model for now.  The obvious place to put this would be on $\phi_J$.  That is, we could make $\phi_J$ some negative function of total number of juveniles produced in the host.  Something like,
 
@@ -108,7 +108,7 @@ By stepping through all sites, $y$, we arrive at a realised dispersal matrix, $\
 
 So, now we need to bring this all together.  First step is to re-define the poopulation vector as $\mathbf{n} = \{\mathbf{n_1}, ..., \mathbf{n_h} \} =  \{J_1, P_1, A_1, J_2, P_2, A_2, ..., J_h, P_h, A_h,\}$, thus now containing all individuals at all stages across all the hosts in the population.
 
-We then define the $h \times h$ block matrix, $\mathbf{T}$:
+We then define the $h \times h$ diagonal block matrix, $\mathbf{T}$:
 
 $$
 \mathbf{T} = 
