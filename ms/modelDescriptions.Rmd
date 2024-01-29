@@ -1,10 +1,12 @@
-
+---
 title: "PSHB Models"
 output: html_document
-date: ''r format(Sys.Date(). "%d/%m/%Y")''
+date: '`r format(Sys.Date(), "%d/%m/%Y")`'
+---
 
-
-'''{r setup, include=FALSE} knitr::opts_chunk\$set(echo=TRUE) '''
+```{r setup, include=FALSE} 
+knitr::opts_chunk$set(echo=TRUE)
+```
 
 ## Basic life history
 
@@ -18,9 +20,11 @@ Development of all stages is strongly temperature dependent. There is some evide
 
 ### Discrete time model
 
-The life history suggests we might more profitably partition the population of females as:
+The life history suggests we might profitably partition the population of females as:
 
--   $J(t,x)$, the juvenile stages (eggs through pupae): some mortality in the nest, no dispersal $P(t,x)$, the pre-adult stage (the dispersal phase): dispersal, with some mortality $A(t,x)$, the adult stage (breeding females): no dispersal, mortality through senescence.
+  * $J(t,x)$, the juvenile stages (eggs through pupae): some mortality in the nest, no dispersal 
+  * $P(t,x)$, the pre-adult stage (the dispersal phase): dispersal, with some mortality 
+  * $A(t,x)$, the adult stage (breeding females): no dispersal, mortality through senescence.
 
 We measure time, $t$, in degree.days, so can re-scale our results back to the absolute time *post hoc*. We discretise time into small pieces relative to the time scale of the life history. We could choose something like a time interval being 44 degree hours (24h \@ 20 degrees), for example. We also partition our population among host trees, $x$.
 
@@ -28,18 +32,21 @@ We measure time, $t$, in degree.days, so can re-scale our results back to the ab
 
 Within a single host (i.e.ignoring $x$), and using the same state variables above we would have:
 
-```{=tex}
+
 \begin{align}
 J(t+1) &= \phi_J(1-\alpha_J)J(t) + fA(t\\
 P(t+1) &= \phi_J\alpha_JJ(t) + \phi_P(1-\alpha_P)(1-\mu)P(t) + 0 \\
 A(t+1) &= 0 + \phi_P\alpha_P(1-\mu)P(t) + \phi_AA(t)
 \end{align}
-```
+
 Where:
 
-$f$ is the mean fecundity of a female in the population in an interval of time $\alpha_i$ are transition probabilities, describing transition between states $\phi_i$ are survival probabilities, describing probability of surviving an interval of time in each state $\mu$ is the probability of dispersing away from the host tree
+  * $f$ is the mean fecundity of a female in the population in an interval of time 
+  * $\alpha_i$ are transition probabilities, describing transition between states
+  * $\phi_i$ are survival probabilities, describing probability of surviving an interval of time in each state 
+  * $\mu$ is the probability of dispersing away from the host tree.
 
-In matrix form, we first define the column vector $\mathbf{n}= \{J, P, A}$. Then we have:
+In matrix form, we first define the column vector $\mathbf{n}= \{J, P, A\}$. Then we have:
 
 $$
 \begin{gather}
@@ -49,7 +56,7 @@ $$
    \phi_J\alpha_J & \phi_P(1-\alpha_P)(1-\mu) & 0 \\
    0 & \phi_P\alpha_P(1-\mu) & \phi_A
   \end{bmatrix}
- \mathbf{n}{t}
+ \mathbf{n}(t)
 \end{gather}
 $$
 
@@ -73,7 +80,9 @@ $$
     0 & \text{if } \sum_t{fA(t, x)} > C(x)
   \end{cases}
 \end{gather}
-$$ Here, each host could have its own threshold, $C(x)$, for production of beetles. Beyond this threshold, the host dies and $\phi_J$ collapses to 0.
+$$ 
+
+Here, each host could have its own threshold, $C(x)$, for production of beetles. Beyond this threshold, the host dies and $\phi_J$ collapses to 0.
 
 #### Between host dynamics
 
@@ -108,7 +117,9 @@ $$
   0 & \ddots & 0 \\
   0 & 0 & \mathbf{W}
  \end{bmatrix}.
-$$ Here each $0$ denotes a $3\times 3$ matrix of zeroes, and $\mathbf{W}$ is the within-host transition matrix.
+$$ 
+
+Here each $0$ denotes a $3\times 3$ matrix of zeroes, and $\mathbf{W}$ is the within-host transition matrix.
 
 Normally, we would place dispersal into the off-diagonal elements of this matrix, but we have made dispersal stochastic, so easier to leave it out. Instead, we then need to get $\mathbf m_+$ into the same length as our redefined $\mathbf{n}$. So we define a new vector,
 
