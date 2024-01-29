@@ -1,15 +1,26 @@
-#Code for within-population model
-step_within_population <- function(n_t, phi_J, alpha_J, phi_P, alpha_P, mu, f, phi_A) {
-  #Transition matrix for within poopulation
-  W <- matrix(c(phi_J * (1 - alpha_J), 0, f,
-                phi_J * alpha_J, phi_P * (1-alpha_P) * (1 - mu), 0,
-                0, phi_P * alpha_P * (1 - mu), phi_A), nrow = 3, byrow = TRUE)
-  
-  #1 time step for within-population
-  n_t_plus_1 <- W %*% n_t
-  
-  return(n_t_plus_1)
-}
+## ---------------------------
+##
+## Script name: basic-within-pop-model.R
+##
+## Purpose of script: Run and display numerical realisations of the within-population PSHB model
+##
+##
+## Date Created: 2023-11-21
+##
+## Email: ben.l.phillips@curtin.edu.au; kanishkwalavalkar@gmail.com
+##
+## ---------------------------
+##
+## Notes:
+##   
+##
+## --------------------------
+## load up the packages we will need 
+## ---------------------------
+
+## load up our functions into memory 
+source("src/modelFunctions.R")
+
 
 # Sample parameters
 phi_J <- 0.9
@@ -37,4 +48,5 @@ for (t in 1:num_steps) {
 print("Population Trajectory:")
 print(population_trajectory)
 
+# make a plot
 matplot(population_trajectory, type = "l", bty = "l")
