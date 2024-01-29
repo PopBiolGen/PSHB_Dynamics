@@ -23,7 +23,7 @@ phi_A <- 0.95
 # Initial population 
 n_initial <- c(100, 50, 20)  # Sample initial population size
 
-num_steps <- 10
+num_steps <- 30
 
 population_trajectory <- matrix(NA, nrow = num_steps + 1, ncol = 3)
 population_trajectory[1, ] <- n_initial
@@ -36,3 +36,5 @@ for (t in 1:num_steps) {
 
 print("Population Trajectory:")
 print(population_trajectory)
+
+matplot(population_trajectory, type = "l", bty = "l")
