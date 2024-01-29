@@ -1,8 +1,4 @@
-
-title: "PSHB Models"
-output: html_document
-date: ''r format(Sys.Date(). "%d/%m/%Y")''
-
+title: "PSHB Models" output: html_document date: ''r format(Sys.Date(). "%d/%m/%Y")''
 
 '''{r setup, include=FALSE} knitr::opts_chunk\$set(echo=TRUE) '''
 
@@ -97,7 +93,7 @@ By stepping through all sites, $y$, we arrive at a realised dispersal matrix, $\
 
 ### Within and between host model
 
-So, now we need to bring this all together. First step is to re-define the poopulation vector as $\mathbf{n} = \{\mathbf{n_1}, ..., \mathbf{n_h} \} = \{J_1, P_1, A_1, J_2, P_2, A_2, ..., J_h, P_h, A_h,\}$, thus now containing all individuals at all stages across all the hosts in the population.
+So, now we need to bring this all together. First step is to re-define the population vector as $\mathbf{n} = \{\mathbf{n_1}, ..., \mathbf{n_h} \} = \{J_1, P_1, A_1, J_2, P_2, A_2, ..., J_h, P_h, A_h,\}$, thus now containing all individuals at all stages across all the hosts in the population.
 
 We then define the $h \times h$ diagonal block matrix, $\mathbf{T}$:
 
