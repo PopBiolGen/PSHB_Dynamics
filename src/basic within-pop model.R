@@ -5,9 +5,9 @@
 ## Purpose of script: Run and display numerical realisations of the within-population PSHB model
 ##
 ##
-## Date Created: 2023-11-21
+## Date Created: 2024-01-29
 ##
-## Email: ben.l.phillips@curtin.edu.au; kanishkwalavalkar@gmail.com
+## Email:kanishkwalavalkar@gmail.com;  ben.l.phillips@curtin.edu.au
 ##
 ## ---------------------------
 ##
