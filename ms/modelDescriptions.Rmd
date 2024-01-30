@@ -2,6 +2,7 @@
 title: "PSHB Models"
 output: html_document
 date: '`r format(Sys.Date(), "%d/%m/%Y")`'
+bibliography: 'PSHBRefs.bib'
 ---
 
 ```{r setup, include=FALSE} 
@@ -134,5 +135,22 @@ $$
 $$
 ## Estimating life-history parameters
 
-Let us now fix our time interval to be 20 degree days.
+```{r parameterSet, echo=FALSE}
+delta_t <- 20
+dodge <- 318
+umeda <- 398
+```
+
+Several sources have estimated the 'thermal constant', $K$ for PSHB and related species.  $K$ is the cumulative number of degree days above some minimum temperature that it takes for development to complete.  So, if the minimum temperature is 15 degrees and we have a day where the mean temperature is 20 degrees, then we have accumulated 5 degree days towards development.  This is what is meant by $K$.
+
+Let us now fix our time interval to be `r delta_t`` degree days.  There are several references we can use here to get estimates of some of our parameters. The results for $K$ are nicely summarised in @dodge2019.
+
+
+| Species | $T_{min}$ | $T_{opt}$ | $T_{max}$ | $K$ | Reference |
+|:--:|:--:|:--:|:--:|:--:|:--:|
+| TSHB | 15 | 30 | 32 | 373 | @walgama2007 |
+| PSHB | 13.34 | 27.51 | 33.08 | 398 | @umeda2019 |
+| KSHB | 12.77 | 28.04 | 31.99 | 318 | @dodge2019 |
+
+
 
