@@ -132,3 +132,7 @@ $$
  \mathbf{n}(t+1) = \mathbf{T}\mathbf{n}(t) + \mathbf{m}(t).
 \end{gather}
 $$
+## Estimating life-history parameters
+
+Let us now fix our time interval to be 20 degree days.
+
