@@ -200,7 +200,27 @@ plot(alpha_J~temps,
      bty = "l")
 ```
 
-Now, how to get $\alpha_P$?
+@umeda2019 do not provide estimates of transition rates through the pre-adult stage.  Instead, here we turn to @walgama2007, who estimate 136 degree days with a minimum of 15 degrees for this stage.  These values can be mapped back to a linear function of development rate against temperature, as follows.
+
+```{r alpha_P_estimate}
+alpha_P_temp <- function(temperature, lower = 15, upper = 31){
+  DD <- 136 #degree days from walgama
+  beta <- 1/DD # implied slope of rate on temperature
+  alpha <- -15*beta # implied intercept
+  rate <- alpha + beta*temperature
+  prob <- 1-exp(-rate)
+  ifelse(temperature>lower & temperature < upper, prob, 0)
+}
+
+alpha_P <- alpha_P_temp(temps)
+plot(alpha_P~temps, 
+     type = "l", 
+     xlab = "Temperature", 
+     ylab = quote(italic(alpha[P])),
+     bty = "l")
+
+```
+
 
 ### Survival probabilities
 
