@@ -144,7 +144,9 @@ wal_juv <- 266
 wal_pre <- 136
 ```
 
-Several sources have estimated the 'thermal constant', $K$ for PSHB and related species.  $K$ is the cumulative number of degree days above some minimum temperature that it takes for development to complete.  So, if the minimum temperature is 15 degrees and we have a day where the mean temperature is 20 degrees, then we have accumulated 5 degree days towards development.  This is what is meant by $K$.
+### Transition probabilities
+
+Several sources have estimated the 'thermal constant', $K$ for PSHB and related species.  $K$ is the cumulative number of degree days above some minimum temperature that it takes for development to complete.  It is a standard approach in entomology. So, if the minimum temperature is 15 degrees and we have a day where the mean temperature is 20 degrees, then we have accumulated 5 degree days towards development.  This is what is meant by $K$.
 
 The results for $K$ in *Euwallacea* are nicely summarised in @dodge2019.
 
@@ -156,22 +158,52 @@ The results for $K$ in *Euwallacea* are nicely summarised in @dodge2019.
 
 Note Dodge's estimate is for (nearly) the full life cycle from egg to emergent adult (*i.e.*, $\alpha_J\alpha_P$). Umeda's estimate is for the transition from juvenile to pre-adult (*i.e.*, $\alpha_J$).  Walgama's estimate is for the full life-cycle.  Dodge and Walgama's studies are best, and Walgama's gives the clearest breakdown of rates.
 
-Following Walgama's table 3, we get juvenile to pre-adult taking 266 degree days with a mean developmental threshold of 14.7 days.  They also estimate the pre-adult period to last 136 degree days, using a 15 degree threshold temperature.  Let us use these values for now.
+This degree.day format is not actually useful to us, because while development can be seen as constant with respect to degree days, survival has only ever been estimated as a function of temperature.  My initial thought was to change the time axis of our model to degree.days and use the resulting constant transition probabilities.  This would have been computationally most efficient. Problem with this is that the degree.day axis obscures absolute temperature, and survival has only ever been estimated with regard to absolute temperature.  So if we want a model with both transition and survival probabilities, we need to stick to the absolute time axis.  
 
-Let us now fix our time interval to be `r delta_t` degree days.  Under this discretisation, the rate of transition from egg to pre-adult would be `r delta_t`/`r wal_juv` = `r juv_rate <- delta_t/wal_juv; juv_rate`.  Switching this to a probability in this interval of temp.time yields,
+Thus, we need to step back from the degree day results, and look for the per day rates that went into the estimation of $K$.  @umeda2019 provide the following data in their paper.
 
-$$
-\alpha_J = `r 1-exp(-juv_rate)`.
-$$
-Following similar logic we get the rate for the pre-adult to adult transition as `r pre_rate <- delta_t/wal_pre; pre_rate`, giving us:
+```{r umedaData, fig.cap="Data on the rate of development from egg to pre-adult, from @umeda2019. Line is fitted ignoring the result for 32 degrees, which is considered above the thermal threshold."}
+temp <- c(18, 20, 25, 30, 32)
+rate <- c(0.013, 0.020, 0.0258, 0.0421, 0.0206)
+plot(rate~temp, xlab = "Temperature", ylab = "Development rate (per day)")
+ss <- 1:4
+mod <- lm(rate[ss]~temp[ss])
+abline(reg=mod)
+```
 
-$$
-\alpha_P = `r 1-exp(-pre_rate)`.
-$$
+We can use this to build a function returning $\alpha_J$. First, the estimated coefficients of the linear model:
+
+
+```{r}
+coef(mod)
+```
+
+Then we can build a function.
+
+```{r alpha_J_temp}
+alpha_J_temp <- function(temperature, lower = 15, upper = 31){
+  rate <- -0.0273 + 0.0023*temperature
+  prob <- 1-exp(-rate)
+  ifelse(temperature>lower & temperature < upper, prob, 0)
+}
+```
+
+Let's see what $\alpha_J$ looks like across a range of temperatures.
+
+```{r alpha_J_plot}
+temps <- seq(10, 35, 0.1)
+alpha_J <- alpha_J_temp(temps)
+plot(alpha_J~temps, 
+     type = "l", 
+     xlab = "Temperature", 
+     ylab = quote(italic(alpha[J])),
+     bty = "l")
+```
+
+Now, how to get $\alpha_P$?
 
 ### Survival probabilities
 
-Survival probability is also clearly temperature dependent.  There is no obvious way to link survival to an axis based on degree.days.  Oops..
-
+Survival probability is also clearly temperature dependent.  
 
 ## References
