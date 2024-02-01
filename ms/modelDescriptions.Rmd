@@ -14,7 +14,7 @@ options(scipen = 10, digits = 2)
 
 Polyphagous shothole borer, *Euwallacea fornicatus*, is a pest of a wide range of plants and has recently expanded its range from south-east Asian to Africa, the Americas, and Australia.
 
-Mated females alight on a host plant and bore a small gallery in the hodt tree tissue. They seed an ambrosia fungus into this gallery and spend some amount of time building the gallery before laying eggs. After hatching juveniles, moult through several larval instars, pupate and eventually eclose as adults. The sex ratio of adults is m:f 1:3-5. Males are wingless and never leave the gallery. Females are winged. They mate with their brothers, and then exit the gallery to found a new gallery (on the same or different host). The rate of egg laying declines steadily over time, with females eventually dying in the gallery rather than forming a new one.
+Mated females alight on a host plant and bore a small gallery in the host tree tissue. They seed an ambrosia fungus into this gallery and spend some amount of time building the gallery before laying eggs. After hatching, juveniles moult through several larval instars, pupate, and eventually eclose as adults. The sex ratio of adults is m:f 1:3-5. Males are wingless and never leave the gallery. Females are winged. They mate with their brothers, and then exit the gallery to found a new gallery (on the same or different host). The rate of egg laying declines steadily over time, with females eventually dying in the gallery rather than forming a new one.
 
 Development of all stages is strongly temperature dependent. There is some evidence of developmental deaths occurring between hatching and pupation. Other sources of mortality are likely at the dispersal phase (predation, misadventure), otherwise the life history is fairly safe from predation.
 
@@ -134,6 +134,7 @@ $$
  \mathbf{n}(t+1) = \mathbf{T}\mathbf{n}(t) + \mathbf{m}(t).
 \end{gather}
 $$
+
 ## Estimating life-history parameters
 
 ### Transition probabilities
@@ -144,7 +145,6 @@ wal_juv <- 266
 wal_pre <- 136
 ```
 
-### Transition probabilities
 
 Several sources have estimated the 'thermal constant', $K$ for PSHB and related species.  $K$ is the cumulative number of degree days above some minimum temperature that it takes for development to complete.  It is a standard approach in entomology. So, if the minimum temperature is 15 degrees and we have a day where the mean temperature is 20 degrees, then we have accumulated 5 degree days towards development.  This is what is meant by $K$.
 
@@ -233,6 +233,7 @@ mortRate <- -log(1-sDat$Mortality)/sDat$Days # convert to a rate
 mortProb <- 1-exp(-mortRate) # convert to a daily probability
 plot(mortProb~sDat$Temperature)
 ```
+
 This is a little awkward.  Let's express it as a survival rate instead, and see if we can fit a thermal performance curve of some kind.  We have plenty of data in this case, so can fit a decent thermal performance curve.  (I also happen to have a bunch of functions handy that fit TPCs.)
 
 ```{r survTPC}
