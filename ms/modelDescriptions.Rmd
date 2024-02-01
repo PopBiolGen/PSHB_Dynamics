@@ -2,10 +2,12 @@
 title: "PSHB Models"
 output: html_document
 date: '`r format(Sys.Date(), "%d/%m/%Y")`'
+bibliography: 'PSHBRefs.bib'
 ---
 
 ```{r setup, include=FALSE} 
 knitr::opts_chunk$set(echo=TRUE)
+options(scipen = 10, digits = 2)
 ```
 
 ## Basic life history
@@ -26,7 +28,7 @@ The life history suggests we might profitably partition the population of female
   * $P(t,x)$, the pre-adult stage (the dispersal phase): dispersal, with some mortality 
   * $A(t,x)$, the adult stage (breeding females): no dispersal, mortality through senescence.
 
-We measure time, $t$, in degree.days, so can re-scale our results back to the absolute time *post hoc*. We discretise time into small pieces relative to the time scale of the life history. We could choose something like a time interval being 44 degree hours (24h \@ 20 degrees), for example. We also partition our population among host trees, $x$.
+We measure time, $t$, in days. We also partition our population among host trees, $x$.
 
 #### Within host dynamics
 
@@ -41,12 +43,12 @@ A(t+1) &= 0 + \phi_P\alpha_P(1-\mu)P(t) + \phi_AA(t)
 
 Where:
 
-  * $f$ is the mean fecundity of a female in the population in an interval of time 
-  * $\alpha_i$ are transition probabilities, describing transition between states
-  * $\phi_i$ are survival probabilities, describing probability of surviving an interval of time in each state 
-  * $\mu$ is the probability of dispersing away from the host tree.
+  * $f(t)$ is the mean fecundity of a female in the population in an interval of time 
+  * $\alpha_i(t)$ are transition probabilities, describing transition between states
+  * $\phi_i(t)$ are survival probabilities, describing probability of surviving an interval of time in each state 
+  * $\mu(t)$ is the probability of dispersing away from the host tree.
 
-In matrix form, we first define the column vector $\mathbf{n}= \{J, P, A\}$. Then we have:
+Although we drop the notation, all these are functions of time, to capture the effect of temperature on the vital rates.  In matrix form, we first define the column vector $\mathbf{n}= \{J, P, A\}$. Then we have:
 
 $$
 \begin{gather}
@@ -82,7 +84,7 @@ $$
 \end{gather}
 $$ 
 
-Here, each host could have its own threshold, $C(x)$, for production of beetles. Beyond this threshold, the host dies and $\phi_J$ collapses to 0.
+Here, each host could have its own threshold, $C(x)$, for production of beetles. Beyond this threshold, the host resource is used up and $\phi_J$ collapses to 0.
 
 #### Between host dynamics
 
@@ -132,3 +134,134 @@ $$
  \mathbf{n}(t+1) = \mathbf{T}\mathbf{n}(t) + \mathbf{m}(t).
 \end{gather}
 $$
+## Estimating life-history parameters
+
+### Transition probabilities
+
+```{r parameterSet, echo=FALSE}
+delta_t <- 20
+wal_juv <- 266
+wal_pre <- 136
+```
+
+### Transition probabilities
+
+Several sources have estimated the 'thermal constant', $K$ for PSHB and related species.  $K$ is the cumulative number of degree days above some minimum temperature that it takes for development to complete.  It is a standard approach in entomology. So, if the minimum temperature is 15 degrees and we have a day where the mean temperature is 20 degrees, then we have accumulated 5 degree days towards development.  This is what is meant by $K$.
+
+The results for $K$ in *Euwallacea* are nicely summarised in @dodge2019.
+
+| Species | $T_{min}$ | $T_{opt}$ | $T_{max}$ | $K$ | Reference |
+|:--:|:--:|:--:|:--:|:--:|:--:|
+| TSHB | 15 | 30 | 32 | 373 | @walgama2007 |
+| PSHB | 13.34 | 27.51 | 33.08 | 398 | @umeda2019 |
+| KSHB | 12.77 | 28.04 | 31.99 | 318 | @dodge2019 |
+
+Note Dodge's estimate is for (nearly) the full life cycle from egg to emergent adult (*i.e.*, $\alpha_J\alpha_P$). Umeda's estimate is for the transition from juvenile to pre-adult (*i.e.*, $\alpha_J$).  Walgama's estimate is for the full life-cycle.  Dodge and Walgama's studies are best, and Walgama's gives the clearest breakdown of rates.
+
+This degree.day format is not actually useful to us, because while development can be seen as constant with respect to degree days, survival has only ever been estimated as a function of temperature.  My initial thought was to change the time axis of our model to degree.days and use the resulting constant transition probabilities.  This would have been computationally most efficient. Problem with this is that the degree.day axis obscures absolute temperature, and survival has only ever been estimated with regard to absolute temperature.  So if we want a model with both transition and survival probabilities, we need to stick to the absolute time axis.  
+
+Thus, we need to step back from the degree day results, and look for the per day rates that went into the estimation of $K$.  @umeda2019 provide the following data in their paper.
+
+```{r umedaData, fig.cap="Data on the rate of development from egg to pre-adult, from @umeda2019. Line is fitted ignoring the result for 32 degrees, which is considered above the thermal threshold."}
+temp <- c(18, 20, 25, 30, 32)
+rate <- c(0.013, 0.020, 0.0258, 0.0421, 0.0206)
+plot(rate~temp, xlab = "Temperature", ylab = "Development rate (per day)")
+ss <- 1:4
+mod <- lm(rate[ss]~temp[ss])
+abline(reg=mod)
+```
+
+We can use this to build a function returning $\alpha_J$. First, the estimated coefficients of the linear model:
+
+
+```{r}
+coef(mod)
+```
+
+Then we can build a function.
+
+```{r alpha_J_temp}
+alpha_J_temp <- function(temperature, lower = 15, upper = 31){
+  rate <- -0.0273 + 0.0023*temperature
+  prob <- 1-exp(-rate)
+  ifelse(temperature>lower & temperature < upper, prob, 0)
+}
+```
+
+Let's see what $\alpha_J$ looks like across a range of temperatures.
+
+```{r alpha_J_plot}
+temps <- seq(10, 35, 0.1)
+alpha_J <- alpha_J_temp(temps)
+plot(alpha_J~temps, 
+     type = "l", 
+     xlab = "Temperature", 
+     ylab = quote(italic(alpha[J])),
+     bty = "l")
+```
+
+@umeda2019 do not provide estimates of transition rates through the pre-adult stage.  Instead, here we turn to @walgama2007, who estimate 136 degree days with a minimum of 15 degrees for this stage.  These values can be mapped back to a linear function of development rate against temperature, as follows.
+
+```{r alpha_P_estimate}
+alpha_P_temp <- function(temperature, lower = 15, upper = 31){
+  DD <- 136 #degree days from walgama
+  beta <- 1/DD # implied slope of rate on temperature
+  alpha <- -15*beta # implied intercept
+  rate <- alpha + beta*temperature
+  prob <- 1-exp(-rate)
+  ifelse(temperature>lower & temperature < upper, prob, 0)
+}
+
+alpha_P <- alpha_P_temp(temps)
+plot(alpha_P~temps, 
+     type = "l", 
+     xlab = "Temperature", 
+     ylab = quote(italic(alpha[P])),
+     bty = "l")
+
+```
+
+
+### Survival probabilities
+
+Survival probability is also clearly temperature dependent.  @umeda2019 do not record survival, so again we are back to @walgama2007, who did.  Moreover, @walgama2007 are the only set of researchers who had nearly 100% survival at optimal temperature, indicating that their husbandry setup worked well.  Their data on survival are reported in their Figure 2.  I used WebPlotDigitizer to extract these data, and added on development time at each temperature.  This allows me to express mortality probability per day and examine how that changes with temperature.
+
+```{r walgamaSurvival}
+sDat <- read.csv(file = "../dat/walgamaFig2DataExtract.csv")
+sDat$Mortality <- sDat$Mortality/100 # convert to probability of mortality over n days 
+mortRate <- -log(1-sDat$Mortality)/sDat$Days # convert to a rate
+mortProb <- 1-exp(-mortRate) # convert to a daily probability
+plot(mortProb~sDat$Temperature)
+```
+This is a little awkward.  Let's express it as a survival rate instead, and see if we can fit a thermal performance curve of some kind.  We have plenty of data in this case, so can fit a decent thermal performance curve.  (I also happen to have a bunch of functions handy that fit TPCs.)
+
+```{r survTPC}
+survProb <- 1-mortProb
+plot(survProb~sDat$Temperature)
+
+source("../src/TPCFunctions.R")
+TPCmatrix <- cbind(sDat$Temperature, survProb)
+TPCmatrix <- na.omit(TPCmatrix)
+pars <- TPC.q.fit(TPCmatrix, in.acc = 0.3)$par
+survProbPred <- TPC.q(temps, rmax = pars[1], Trmax = pars[2], acc = pars[3], dec.prop = pars[4])
+lines(survProbPred~temps)
+```
+
+So we now have a function for juvenile survival rate. This can be applied to the juvenile stage.
+
+```{r}
+phi_J <- function(temperature){
+  TPC.q(temps, rmax = 0.99, Trmax = 29.5, acc = 80, dec.prop = 0.15)
+}
+```
+
+Pre-adult and adult survival appears to be less affected by temperature.  Let us assume that this is constant.  @gadd1941 estimates a maximum laying lifespan for a female as 49 days, with a rough estimate of the mean laying lifespan of 32 days. This would yield a per day mortality rate of 1/32.  This equates to a per day survival probability of $\phi_P = \phi_A=$ `r exp(-1/32)`.
+
+We can assume pre-adult survival is the same as adult survival. This leaves us only with the mortality cost associated with dispersal, $\phi_\mu$, which we have no measure for.
+
+### Fecundity
+
+@gadd1941 estimates the rate of egg laying per female at 0.927 eggs per day per female.  His data also has a sex ratio of m:f = 81:237.  So the fraction of eggs that are female is `r 237/(237+81)`.  Hence, the rate of egg laying of *female* eggs is likely to be around `r 0.927*237/(237+81)`.
+
+
+## References
