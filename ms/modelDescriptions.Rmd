@@ -224,6 +224,44 @@ plot(alpha_P~temps,
 
 ### Survival probabilities
 
-Survival probability is also clearly temperature dependent.  
+Survival probability is also clearly temperature dependent.  @umeda2019 do not record survival, so again we are back to @walgama2007, who did.  Moreover, @walgama2007 are the only set of researchers who had nearly 100% survival at optimal temperature, indicating that their husbandry setup worked well.  Their data on survival are reported in their Figure 2.  I used WebPlotDigitizer to extract these data, and added on development time at each temperature.  This allows me to express mortality probability per day and examine how that changes with temperature.
+
+```{r walgamaSurvival}
+sDat <- read.csv(file = "../dat/walgamaFig2DataExtract.csv")
+sDat$Mortality <- sDat$Mortality/100 # convert to probability of mortality over n days 
+mortRate <- -log(1-sDat$Mortality)/sDat$Days # convert to a rate
+mortProb <- 1-exp(-mortRate) # convert to a daily probability
+plot(mortProb~sDat$Temperature)
+```
+This is a little awkward.  Let's express it as a survival rate instead, and see if we can fit a thermal performance curve of some kind.  We have plenty of data in this case, so can fit a decent thermal performance curve.  (I also happen to have a bunch of functions handy that fit TPCs.)
+
+```{r survTPC}
+survProb <- 1-mortProb
+plot(survProb~sDat$Temperature)
+
+source("../src/TPCFunctions.R")
+TPCmatrix <- cbind(sDat$Temperature, survProb)
+TPCmatrix <- na.omit(TPCmatrix)
+pars <- TPC.q.fit(TPCmatrix, in.acc = 0.3)$par
+survProbPred <- TPC.q(temps, rmax = pars[1], Trmax = pars[2], acc = pars[3], dec.prop = pars[4])
+lines(survProbPred~temps)
+```
+
+So we now have a function for juvenile survival rate. This can be applied to the juvenile stage.
+
+```{r}
+phi_J <- function(temperature){
+  TPC.q(temps, rmax = 0.99, Trmax = 29.5, acc = 80, dec.prop = 0.15)
+}
+```
+
+Pre-adult and adult survival appears to be less affected by temperature.  Let us assume that this is constant.  @gadd1941 estimates a maximum laying lifespan for a female as 49 days, with a rough estimate of the mean laying lifespan of 32 days. This would yield a per day mortality rate of 1/32.  This equates to a per day survival probability of $\phi_P = \phi_A=$ `r exp(-1/32)`.
+
+We can assume pre-adult survival is the same as adult survival. This leaves us only with the mortality cost associated with dispersal, $\phi_\mu$, which we have no measure for.
+
+### Fecundity
+
+@gadd1941 estimates the rate of egg laying per female at 0.927 eggs per day per female.  His data also has a sex ratio of m:f = 81:237.  So the fraction of eggs that are female is `r 237/(237+81)`.  Hence, the rate of egg laying of *female* eggs is likely to be around `r 0.927*237/(237+81)`.
+
 
 ## References
