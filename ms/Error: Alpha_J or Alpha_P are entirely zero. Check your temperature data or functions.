@@ -1,0 +1,158 @@
+# Modified recursion for the within-population model with cumulative offspring affecting survival
+step_within_population <- function(n_t, phi_J, alpha_J, phi_P, alpha_P, mu, f, phi_A, cumulative_offspring, survival_threshold) {
+  # Calculate the survival probability based on cumulative offspring
+  survival_prob <- ifelse(cumulative_offspring < survival_threshold, 1, 0)
+  
+  # Transition matrix for within population with density-dependent survival
+  W <- matrix(c(survival_prob * phi_J * (1 - alpha_J), 0, f,
+                survival_prob * phi_J * alpha_J, phi_P * (1 - alpha_P) * (1 - mu), 0,
+                0, phi_P * alpha_P * (1 - mu), phi_A), nrow = 3, byrow = TRUE)
+  
+  # Calculate the number of offspring produced in this time step
+  offspring_produced <- f * n_t[3]  # Adults contribute to offspring based on fA
+  
+  # Update cumulative offspring
+  cumulative_offspring <- cumulative_offspring + offspring_produced
+  
+  # 1 time step for within-population
+  n_tplus <- W %*% n_t
+  
+  # Return both the updated population vector and cumulative offspring
+  return(list(n_tplus, cumulative_offspring))
+}
+
+# Parameters
+phi_A <- 0.97
+phi_P <- 0.97
+mu <- 0
+f <- 0.69
+
+# Load the soil.csv dataset
+soil <- read.csv("soil.csv")
+
+# Extract the temperature data from the D10 column
+temps <- soil$D10
+
+# Calculate temperature-dependent alpha_J and alpha_P
+alpha_J <- 1 - exp(-(-0.0273 + 0.0023 * temps))
+alpha_J <- ifelse(temps > 15 & temps < 31, alpha_J, 0)
+
+DD <- 136
+beta <- 1/DD
+alpha <- -15 * beta
+rate <- alpha + beta * temps
+alpha_P <- 1 - exp(-rate)
+alpha_P <- ifelse(temps > 15 & temps < 31, alpha_P, 0)
+
+# Print diagnostic information
+cat("Temperature data summary:\n")
+print(summary(temps))
+
+# Print unique values in alpha_J and alpha_P
+cat("Unique values in alpha_J:", unique(alpha_J), "\n")
+cat("Unique values in alpha_P:", unique(alpha_P), "\n")
+
+# Check if alpha_J and alpha_P are entirely zero
+if (all(alpha_J == 0) || all(alpha_P == 0)) {
+  stop("Alpha_J or Alpha_P are entirely zero. Check your temperature data or functions.")
+}
+
+# Plot temperature-dependent alpha_J...
+plot(temps, alpha_J, type = 'b', xlab = 'Temperature', ylab = quote(italic(alpha[J])),
+     main = 'Temperature-dependent Alpha_J')
+
+# Plot temperature-dependent alpha_P...
+plot(temps, alpha_P, type = 'b', xlab = 'Temperature', ylab = quote(italic(alpha[P])),
+     main = 'Temperature-dependent Alpha_P')
+
+# Add legends...
+legend('topright', legend = c('Alpha_J values', 'Alpha_P values'), col = c('blue', 'red'), lty = 1)
+
+# Initial population 
+n_initial <- c(100, 50, 20)  # Sample initial population size
+cumulative_offspring <- 10
+survival_threshold <- 1000  # Adjust as needed
+
+# Run the simulation
+time_steps <- length(temps)
+population_data <- matrix(0, nrow = 3, ncol = time_steps)
+population_data[, 1] <- n_initial
+
+for (t in 2:time_steps) {
+  step_result <- step_within_population(population_data[, t - 1], phi_J(temps[t]), alpha_J[t],
+                                        phi_P, alpha_P[t], mu, f, phi_A, cumulative_offspring, survival_threshold)
+  population_data[, t] <- step_result[[1]]
+  cumulative_offspring <- step_result[[2]]
+}
+
+# Plot population dynamics over time
+plot(1:time_steps, population_data[1,], type = 'l', xlab = 'Time Step', ylab = 'Population Size',
+     main = 'Population Dynamics Over Time')
+lines(1:time_steps, population_data[2,], col = 'blue')
+lines(1:time_steps, population_data[3,], col = 'red')
+legend('topright', legend = c('Total', 'Juveniles', 'Adults'), col = c('black', 'blue', 'red'), lty = 1)
+
+# Extract data for all dates from the D10 column
+temps <- soil$D10
+
+# Calculate temperature-dependent alpha_J and alpha_P
+alpha_J <- alpha_J_temp(temps)
+alpha_P <- alpha_P_temp(temps)
+
+# Print the length of alpha_J and alpha_P
+cat("Length of alpha_J:", length(alpha_J), "\n")
+cat("Length of alpha_P:", length(alpha_P), "\n")
+
+# Print the first few values of alpha_J and alpha_P
+cat("First few values of alpha_J:", head(alpha_J), "\n")
+cat("First few values of alpha_P:", head(alpha_P), "\n")
+
+# Print diagnostic information
+cat("Temperature data summary:\n")
+print(summary(temps))
+
+# Print unique values in alpha_J and alpha_P
+cat("Unique values in alpha_J:", unique(alpha_J), "\n")
+cat("Unique values in alpha_P:", unique(alpha_P), "\n")
+
+# Check if alpha_J and alpha_P are entirely zero
+if (all(alpha_J == 0) || all(alpha_P == 0)) {
+  stop("Alpha_J or Alpha_P are entirely zero. Check your temperature data or functions.")
+}
+
+# Plot temperature-dependent alpha_J...
+plot(temps, alpha_J, type = 'b', xlab = 'Temperature', ylab = quote(italic(alpha[J])),
+     main = 'Temperature-dependent Alpha_J')
+
+# Plot temperature-dependent alpha_P...
+plot(temps, alpha_P, type = 'b', xlab = 'Temperature', ylab = quote(italic(alpha[P])),
+     main = 'Temperature-dependent Alpha_P')
+
+# Add legends...
+legend('topright', legend = c('Alpha_J values', 'Alpha_P values'), col = c('blue', 'red'), lty = 1)
+
+# Initial population 
+n_initial <- c(100, 50, 20)  # Sample initial population size
+cumulative_offspring <- 10
+survival_threshold <- 1000  # Adjust as needed
+
+# Run the simulation
+time_steps <- length(temps)
+population_data <- matrix(0, nrow = 3, ncol = time_steps)
+population_data[, 1] <- n_initial
+
+for (t in 2:time_steps) {
+  step_result <- step_within_population(population_data[, t - 1], phi_J(temps[t]), alpha_J[t],
+                                        phi_P, alpha_P[t], mu, f, phi_A, cumulative_offspring, survival_threshold)
+  population_data[, t] <- step_result[[1]]
+  cumulative_offspring <- step_result[[2]]
+}
+
+# Plot population dynamics over time
+plot(1:time_steps, population_data[1,], type = 'l', xlab = 'Time Step', ylab = 'Population Size',
+     main = 'Population Dynamics Over Time')
+lines(1:time_steps, population_data[2,], col = 'blue')
+lines(1:time_steps, population_data[3,], col = 'red')
+legend('topright', legend = c('Total', 'Juveniles', 'Adults'), col = c('black', 'blue', 'red'), lty = 1)
+
+
