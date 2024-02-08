@@ -63,5 +63,10 @@ for (tt in 2:time_steps) {
 
 # Plot population dynamics over time
 matplot(t(population_data), type = "l", bty = "l")
-legend('topright', legend = c('Juveniles', 'Pre-adults', 'Adults'), col = 1:3, lty = 1:3)
+legend('topleft', legend = c('Juveniles', 'Pre-adults', 'Adults'), col = 1:3, lty = 1:3)
+
+# plot growth rates of adults over time
+ad_vec <- population_data[3,]
+growth_rate <- diff(log(ad_vec))
+plot(growth_rate, type = "l")
 
