@@ -42,6 +42,7 @@ temps <- soil.daily$D10cm
 # Print diagnostic information
 cat("Temperature data summary:\n")
 print(summary(temps))
+plot(temps, type = "l")
 
 # Initial population 
 n_initial <- c(0, 0, 1)  # Sample initial population size
