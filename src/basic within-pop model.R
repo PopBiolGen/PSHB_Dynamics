@@ -47,7 +47,7 @@ plot(temps, type = "l")
 # Initial population 
 n_initial <- c(0, 0, 1)  # Sample initial population size
 cumulative_offspring <- 0
-survival_threshold <- 1000  # Adjust as needed
+survival_threshold <- 100000  # Adjust as needed
 
 # Run the simulation
 time_steps <- length(temps)
