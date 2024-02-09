@@ -44,7 +44,7 @@ alpha_P_temp <- function(temperature, lower = 15, upper = 31){
   ifelse(temperature>lower & temperature < upper, prob, 0)
 }
 
-phi_J <- function(temperature){
+phi_J_temp <- function(temperature){
   TPC.q(temperature, rmax = 0.99, Trmax = 29.5, acc = 80, dec.prop = 0.15)
 }
 
