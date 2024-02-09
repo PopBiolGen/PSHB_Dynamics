@@ -48,3 +48,8 @@ cor(select(merge_temp, -DOY, -year), use="complete.obs")
  # shows that 30cm deep is the best correlation
 
 plot(mean_d~D30cm, data = merge_temp)
+
+# look at combination of 30cm plus temperature close to surface
+mod <- lm(mean_d~D30cm+D5cm, data = merge_temp)
+summary(mod)
+plot(mod)
