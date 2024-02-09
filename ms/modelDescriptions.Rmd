@@ -181,7 +181,7 @@ coef(mod)
 Then we can build a function.
 
 ```{r alpha_J_temp}
-alpha_J_temp <- function(temperature, lower = 15, upper = 31){
+alpha_J_temp <- function(temperature, lower = 13.5, upper = 31){
   rate <- -0.0273 + 0.0023*temperature
   prob <- 1-exp(-rate)
   ifelse(temperature>lower & temperature < upper, prob, 0)

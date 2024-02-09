@@ -16,37 +16,57 @@
 ##
 ## --------------------------
 ## load up the packages we will need 
+library(dplyr)
+library(lubridate)
 ## ---------------------------
 
 ## load up our functions into memory 
+source("src/TPCFunctions.R")
 source("src/modelFunctions.R")
+## ---------------------------
 
+## Load up data we need
 
-# Sample parameters
-phi_J <- 0.9
-alpha_J <- 0.1
-phi_P <- 0.8
-alpha_P <- 0.2
-mu <- 0.05
-f <- 2.0
-phi_A <- 0.95
+# Load the soil.csv dataset
+soil <- read.csv("dat/soil.csv")
+# Summarise to daily mean temperatures
+soil.daily <- soil %>%
+          group_by(DOY) %>%
+          select(-dates, -TIME) %>%
+          summarise(across(everything(), mean))
+
+# Extract the temperature data from the D10 column
+temps <- soil.daily$D10cm
+## ---------------------------
+
+# Print diagnostic information
+cat("Temperature data summary:\n")
+print(summary(temps))
+plot(temps, type = "l")
 
 # Initial population 
-n_initial <- c(100, 50, 20)  # Sample initial population size
+n_initial <- c(0, 0, 1)  # Sample initial population size
+cumulative_offspring <- 0
+survival_threshold <- 100000  # Adjust as needed
 
-num_steps <- 30
+# Run the simulation
+time_steps <- length(temps)
+population_data <- matrix(0, nrow = 3, ncol = time_steps)
+population_data[, 1] <- n_initial
 
-population_trajectory <- matrix(NA, nrow = num_steps + 1, ncol = 3)
-population_trajectory[1, ] <- n_initial
-
-for (t in 1:num_steps) {
-  n_t_plus_1 <- step_within_population(population_trajectory[t, ], phi_J, alpha_J, phi_P, alpha_P, mu, f, phi_A)
-  
-  population_trajectory[t + 1, ] <- n_t_plus_1
+for (tt in 2:time_steps) {
+  print(tt)
+  step_result <- step_within_population(population_data[, tt - 1], cumulative_offspring, temps[tt], f, phi_A, phi_P, mu = 0, survival_threshold)
+  population_data[, tt] <- step_result$n
+  cumulative_offspring <- step_result$cum_n
 }
 
-print("Population Trajectory:")
-print(population_trajectory)
+# Plot population dynamics over time
+matplot(t(population_data), type = "l", bty = "l")
+legend('topleft', legend = c('Juveniles', 'Pre-adults', 'Adults'), col = 1:3, lty = 1:3)
 
-# make a plot
-matplot(population_trajectory, type = "l", bty = "l")
+# plot growth rates of adults over time
+ad_vec <- population_data[3,]
+growth_rate <- diff(log(ad_vec))
+plot(growth_rate, type = "l")
+
