@@ -139,13 +139,15 @@ plot_growth_rates <- function(population_data, window_size = 5) {
   legend("topright", legend = c("Juveniles", "Pre-adults", "Adults"), col = c("red", "green", "blue"), lty = 1, lwd = 2)
 }
 
-## Function to plot all results
-plot_simulation_results <- function(temps, population_data) {
+## Function to plot population dynamics over time
+NvTPlot <- function(temps, population_data) {
   par(mfrow = c(2, 2), mar = c(4, 4, 2, 1), oma = c(0, 0, 2, 0))
   
   plot_temperatures(temps)
   plot_population_dynamics(temps, population_data)
-  plot_growth_rates(population_data)  
+  plot_growth_rates(population_data)  # This function call is now valid
+  print(length(population_data[3,]))
+  print(length(temps))
   
   # Plot N vs. time
   plot(x = 1:length(temps), y = population_data[3, ], type = "l", main = "Population Size Over Time", xlab = "Time Steps", ylab = "Population Size", col = "orange", lwd = 2)
