@@ -86,33 +86,70 @@ plot_temperatures <- function(temps) {
   plot(temps, type = "l", main = "Daily Mean Temperatures", xlab = "Time Steps", ylab = "Temperature (°C)", col = "blue", lwd = 2)
 }
 
-## Function to run simulation and plot population dynamics over time
-plot_population_dynamics <- function(temps) {
-  # Initial population 
-  n_initial <- c(0, 0, 1)  # Sample initial population size
-  cumulative_offspring <- 0
-  survival_threshold <- 100000  # Adjust as needed
-
-  # Run the simulation
-  time_steps <- length(temps)
-  population_data <- matrix(0, nrow = 3, ncol = time_steps)
-  population_data[, 1] <- n_initial
-
-  for (tt in 2:time_steps) {
-    step_result <- step_within_population(population_data[, tt - 1], cumulative_offspring, temps[tt], f, phi_A, phi_P, mu = 0, survival_threshold)
-    population_data[, tt] <- step_result$n
-    cumulative_offspring <- step_result$cum_n
-  }
-
+## Function to plot population dynamics over time
+plot_population_dynamics <- function(temps, population_data) {
   # Plot population dynamics over time
   matplot(t(population_data), type = "l", bty = "l", main = "Population Dynamics Over Time", xlab = "Time Steps", ylab = "Population Size", col = c("red", "green", "blue"), lwd = 2)
   legend('topleft', legend = c('Juveniles', 'Pre-adults', 'Adults'), col = c("red", "green", "blue"), lty = 1:3, lwd = 2)
 }
 
-## Function to plot growth rates of adults over time
-plot_growth_rates <- function(population_data) {
-  ad_vec <- population_data[3,]
-  growth_rate <- diff(log(ad_vec))
-  plot(growth_rate, type = "l", main = "Growth Rates of Adults Over Time", xlab = "Time Steps", ylab = "Growth Rate", col = "purple", lwd = 2)
+## Function to run simulation and return population data
+run_simulation_and_return_data <- function(temps) {
+  # Initial population 
+  n_initial <- c(0, 0, 1)  # Sample initial population size
+  cumulative_offspring <- 0
+  survival_threshold <- 100000  # Adjust as needed
+  
+  # Run the simulation
+  time_steps <- length(temps)
+  population_data <- matrix(0, nrow = 3, ncol = time_steps)
+  population_data[, 1] <- n_initial
+  
+  for (tt in 2:length(temps)) {
+    step_result <- step_within_population(population_data[, tt - 1], cumulative_offspring, temps[tt], f, phi_A, phi_P, mu = 0, survival_threshold)
+    population_data[, tt] <- step_result$n
+    cumulative_offspring <- step_result$cum_n
+  }
+  
+  return(population_data)
 }
 
+## Function to plot growth rates of all life stages over time with smoothing
+plot_growth_rates <- function(population_data, window_size = 5) {
+  # Extract population data for all life stages
+  juv_vec <- population_data[1, ]
+  pre_adult_vec <- population_data[2, ]
+  ad_vec <- population_data[3, ]
+  
+  # Calculate growth rates for all life stages
+  juv_growth_rate <- diff(log(juv_vec))
+  pre_adult_growth_rate <- diff(log(pre_adult_vec))
+  ad_growth_rate <- diff(log(ad_vec))
+  
+  # Smooth the growth rate curves using a moving average
+  juv_growth_rate_smoothed <- stats::filter(juv_growth_rate, rep(1/window_size, window_size), sides = 2)
+  pre_adult_growth_rate_smoothed <- stats::filter(pre_adult_growth_rate, rep(1/window_size, window_size), sides = 2)
+  ad_growth_rate_smoothed <- stats::filter(ad_growth_rate, rep(1/window_size, window_size), sides = 2)
+  
+  # Plot smoothed growth rates for all life stages
+  plot(juv_growth_rate_smoothed, type = "l", main = "Smoothed Growth Rates of All Life Stages Over Time", 
+       xlab = "Time Steps", ylab = "Growth Rate", col = "red", lwd = 2)
+  lines(pre_adult_growth_rate_smoothed, col = "green", lwd = 2)
+  lines(ad_growth_rate_smoothed, col = "blue", lwd = 2)
+  legend("topright", legend = c("Juveniles", "Pre-adults", "Adults"), col = c("red", "green", "blue"), lty = 1, lwd = 2)
+}
+
+## Function to plot all results
+plot_simulation_results <- function(temps, population_data) {
+  par(mfrow = c(2, 2), mar = c(4, 4, 2, 1), oma = c(0, 0, 2, 0))
+  
+  plot_temperatures(temps)
+  plot_population_dynamics(temps, population_data)
+  plot_growth_rates(population_data)  
+  
+  # Plot N vs. time
+  plot(x = 1:length(temps), y = population_data[3, ], type = "l", main = "Population Size Over Time", xlab = "Time Steps", ylab = "Population Size", col = "orange", lwd = 2)
+  
+  # Plot log(N) vs. time
+  plot(x = 1:length(temps), y = log(population_data[3, ]), type = "l", main = "Population Growth Rate Over Time", xlab = "Time Steps", ylab = "Population Size", col = "green", lwd = 2)
+}
