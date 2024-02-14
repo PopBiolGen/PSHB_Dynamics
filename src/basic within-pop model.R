@@ -15,57 +15,30 @@
 ##   
 ##
 ## --------------------------
-## load up the packages we will need 
+## Load up the required packages
 library(dplyr)
 library(lubridate)
-## ---------------------------
 
-## load up our functions into memory 
+## Load up the functions
 source("src/TPCFunctions.R")
 source("src/modelFunctions.R")
-## ---------------------------
 
-## Load up data we need
-
-# Load the soil.csv dataset
+## Load up the data
 soil <- read.csv("dat/soil.csv")
-# Summarise to daily mean temperatures
 soil.daily <- soil %>%
           group_by(DOY) %>%
           select(-dates, -TIME) %>%
           summarise(across(everything(), mean))
-
-# Extract the temperature data from the D10 column
 temps <- soil.daily$D10cm
-## ---------------------------
 
-# Print diagnostic information
-cat("Temperature data summary:\n")
-print(summary(temps))
-plot(temps, type = "l", main = "Daily Mean Temperatures", xlab = "Time Steps", ylab = "Temperature (°C)")
+## Plotting
+par(mfrow = c(2, 2), mar = c(4, 4, 2, 1), oma = c(0, 0, 2, 0))
 
-# Initial population 
-n_initial <- c(0, 0, 1)  # Sample initial population size
-cumulative_offspring <- 0
-survival_threshold <- 100000  # Adjust as needed
+plot_temperatures(temps)
+plot_population_dynamics(temps)
+plot_growth_rates(population_data)
 
-# Run the simulation
-time_steps <- length(temps)
-population_data <- matrix(0, nrow = 3, ncol = time_steps)
-population_data[, 1] <- n_initial
 
-for (tt in 2:time_steps) {
-  print(tt)
-  step_result <- step_within_population(population_data[, tt - 1], cumulative_offspring, temps[tt], f, phi_A, phi_P, mu = 0, survival_threshold)
-  population_data[, tt] <- step_result$n
-  cumulative_offspring <- step_result$cum_n
-}
 
-# Plot population dynamics over time
-matplot(t(population_data), type = "l", bty = "l", main = "Population Dynamics Over Time", xlab = "Time Steps", ylab = "Population Size")
-legend('topleft', legend = c('Juveniles', 'Pre-adults', 'Adults'), col = 1:3, lty = 1:3)
 
-# plot growth rates of adults over time
-ad_vec <- population_data[3,]
-growth_rate <- diff(log(ad_vec))
-plot(growth_rate, type = "l", main = "Growth Rates of Adults Over Time", xlab = "Time Steps", ylab = "Growth Rate")
+
