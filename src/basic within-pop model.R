@@ -2,7 +2,7 @@
 ##
 ## Script name: basic-within-pop-model.R
 ##
-## Purpose of script: Run and display numerical realisations of the within-population PSHB model
+## Purpose of script: Run and display numerical realizations of the within-population PSHB model
 ##
 ##
 ## Date Created: 2024-01-29
@@ -42,7 +42,7 @@ temps <- soil.daily$D10cm
 # Print diagnostic information
 cat("Temperature data summary:\n")
 print(summary(temps))
-plot(temps, type = "l")
+plot(temps, type = "l", main = "Daily Mean Temperatures", xlab = "Time Steps", ylab = "Temperature (°C)")
 
 # Initial population 
 n_initial <- c(0, 0, 1)  # Sample initial population size
@@ -62,11 +62,10 @@ for (tt in 2:time_steps) {
 }
 
 # Plot population dynamics over time
-matplot(t(population_data), type = "l", bty = "l")
+matplot(t(population_data), type = "l", bty = "l", main = "Population Dynamics Over Time", xlab = "Time Steps", ylab = "Population Size")
 legend('topleft', legend = c('Juveniles', 'Pre-adults', 'Adults'), col = 1:3, lty = 1:3)
 
 # plot growth rates of adults over time
 ad_vec <- population_data[3,]
 growth_rate <- diff(log(ad_vec))
-plot(growth_rate, type = "l")
-
+plot(growth_rate, type = "l", main = "Growth Rates of Adults Over Time", xlab = "Time Steps", ylab = "Growth Rate")
