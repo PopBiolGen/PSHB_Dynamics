@@ -31,6 +31,9 @@ soil.daily <- soil %>%
           summarise(across(everything(), mean))
 temps <- soil.daily$D10cm
 
+## Run simulation and plot results
+source("src/modelFunctions.R")
+
 ## Plotting
 par(mfrow = c(2, 2), mar = c(4, 4, 2, 1), oma = c(0, 0, 2, 0))
 
