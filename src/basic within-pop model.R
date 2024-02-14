@@ -33,4 +33,6 @@ temps <- soil.daily$D10cm
 
 ## Run simulation and plot results
 population_data <- run_simulation_and_return_data(temps)
-plot_simulation_results(temps, population_data)
+
+# Plot all figures using the NvTPlot function
+NvTPlot(temps, population_data)
