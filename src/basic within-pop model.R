@@ -26,22 +26,11 @@ source("src/modelFunctions.R")
 ## Load up the data
 soil <- read.csv("dat/soil.csv")
 soil.daily <- soil %>%
-          group_by(DOY) %>%
-          select(-dates, -TIME) %>%
-          summarise(across(everything(), mean))
+  group_by(DOY) %>%
+  select(-dates, -TIME) %>%
+  summarise(across(everything(), mean))
 temps <- soil.daily$D10cm
 
 ## Run simulation and plot results
-source("src/modelFunctions.R")
-
-## Plotting
-par(mfrow = c(2, 2), mar = c(4, 4, 2, 1), oma = c(0, 0, 2, 0))
-
-plot_temperatures(temps)
-plot_population_dynamics(temps)
-plot_growth_rates(population_data)
-
-
-
-
-
+population_data <- run_simulation_and_return_data(temps)
+plot_simulation_results(temps, population_data)
