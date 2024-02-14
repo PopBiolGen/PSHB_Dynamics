@@ -145,9 +145,7 @@ NvTPlot <- function(temps, population_data) {
   
   plot_temperatures(temps)
   plot_population_dynamics(temps, population_data)
-  plot_growth_rates(population_data)  # This function call is now valid
-  print(length(population_data[3,]))
-  print(length(temps))
+  plot_growth_rates(population_data)
   
   # Plot N vs. time
   plot(x = 1:length(temps), y = population_data[3, ], type = "l", main = "Population Size Over Time", xlab = "Time Steps", ylab = "Population Size", col = "orange", lwd = 2)
