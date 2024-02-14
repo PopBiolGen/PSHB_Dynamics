@@ -81,8 +81,38 @@ step_within_population <- function(n_t, cumulative_offspring, temperature, f, ph
   return(list(n = n_tplus, cum_n = cumulative_offspring))
 }
 
+## Function to plot daily mean temperatures
+plot_temperatures <- function(temps) {
+  plot(temps, type = "l", main = "Daily Mean Temperatures", xlab = "Time Steps", ylab = "Temperature (°C)", col = "blue", lwd = 2)
+}
 
+## Function to run simulation and plot population dynamics over time
+plot_population_dynamics <- function(temps) {
+  # Initial population 
+  n_initial <- c(0, 0, 1)  # Sample initial population size
+  cumulative_offspring <- 0
+  survival_threshold <- 100000  # Adjust as needed
 
+  # Run the simulation
+  time_steps <- length(temps)
+  population_data <- matrix(0, nrow = 3, ncol = time_steps)
+  population_data[, 1] <- n_initial
 
+  for (tt in 2:time_steps) {
+    step_result <- step_within_population(population_data[, tt - 1], cumulative_offspring, temps[tt], f, phi_A, phi_P, mu = 0, survival_threshold)
+    population_data[, tt] <- step_result$n
+    cumulative_offspring <- step_result$cum_n
+  }
 
+  # Plot population dynamics over time
+  matplot(t(population_data), type = "l", bty = "l", main = "Population Dynamics Over Time", xlab = "Time Steps", ylab = "Population Size", col = c("red", "green", "blue"), lwd = 2)
+  legend('topleft', legend = c('Juveniles', 'Pre-adults', 'Adults'), col = c("red", "green", "blue"), lty = 1:3, lwd = 2)
+}
+
+## Function to plot growth rates of adults over time
+plot_growth_rates <- function(population_data) {
+  ad_vec <- population_data[3,]
+  growth_rate <- diff(log(ad_vec))
+  plot(growth_rate, type = "l", main = "Growth Rates of Adults Over Time", xlab = "Time Steps", ylab = "Growth Rate", col = "purple", lwd = 2)
+}
 
