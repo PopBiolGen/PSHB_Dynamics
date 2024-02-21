@@ -66,13 +66,7 @@ The matrix shown is the within-population transition matrix, $\mathbf{W}$.
 
 Note also that in the within-host model, we currently neglect to account for the arrival of pre-adults from other hosts. We will come back to this in due course.
 
-Note that there is no density dependence in the model for now. The obvious place to put this would be on $\phi_J$. That is, we could make $\phi_J$ some negative function of total number of juveniles produced in the host. Something like,
-
-$$
-\phi_J(t, x) = e^{-b(x)\sum_t{fA(t)}}.
-$$
-
-Which allows each host to have its own 'carrying capacity'. Perhaps simpler would be a threshold such that,
+Note that there is no density dependence in the model for now. The obvious place to put this would be on $\phi_J$. That is, we could make $\phi_J$ some negative function of total number of juveniles produced in the host. A solution here is a simple threshold such that,
 
 $$
 \begin{gather}
@@ -84,31 +78,67 @@ $$
 \end{gather}
 $$ 
 
-Here, each host could have its own threshold, $C(x)$, for production of beetles. Beyond this threshold, the host resource is used up and $\phi_J$ collapses to 0.
+Here, each host could have its own threshold, $C(x)$, for production of beetles. Beyond this threshold, the host resource is used up and $\phi_J$ collapses to 0. This threshold will also be useful later when we describe dispersal dynamics.
 
 #### Between host dynamics
 
-We now seek to extend the model to space, to capture dynamics across multiple hosts. To do this, we need to describe dispersal dynamics. We assume that $\mu P(t, x)$ leave each host at each time period. We might further assume that there is some survival rate associated with dispersing between hosts and establishing a new gallery. Let's call that $\phi_\mu$. Thus, the number of effective dispersers from a given host at a given time is: $\phi_\mu\mu P(t, x)$.
+We now seek to extend the model to space, to capture dynamics across multiple hosts. To do this, we need to describe dispersal dynamics. We assume that $\mu(t, x) P(t, x)$ leave each host at each time period. We might further assume that there is some survival rate associated with dispersing between hosts and establishing a new gallery. Let's call that $\phi_\mu$. Thus, the number of effective dispersers from a given host at a given time is: $\phi_\mu\mu(t,x) P(t, x)$.
 
-We will make this model spatially explicit. So the probability of arriving at a given host will depend on the distance between source and recipient host, let us call that distance, $d_{xy}$, the distance between host $x$ and host $y$. We can imagine a pairwise distance matrix, $\mathbf{D}$, which is an $h\times h$ matrix, where $h$ is the total number of hosts. The probability of moving to a given host, is given by a 2-dimensional dispersal kernel, $k(d_{ij})$. There are a large number of possible functions we could use for $k()$; let us leave it general for now.
+We will make this model spatially explicit. So the probability of arriving at a given host will depend on the distance between source and recipient host, let us call that distance, $d_{xy}$, the distance between host $x$ and host $y$ (where $y \neq x$). We can imagine a pairwise distance matrix, $\mathbf{D}$, which is an $h\times h$ matrix, where $h$ is the total number of hosts. 
 
-It is tempting at this stage to specify dispersal as a stochastic process. The reason for this is that without stochasticity we can have fractions of individuals arriving at sites and growing; we would need to control this in some way. With stochasticity, we can arrange things to only have integer values of immigrants. For example, we might examine the fate of migrants from host $y$. These will disperse to other locations, $x\neq y$ in proportion to the distances between sites as defined by the kernel, $k(d_y)$ where $d_y$ is the vector of distances between $y$ and all other sites. We can draw the realised number of dispersers arriving to each site, $x$ as,
+We now need to work out the probability of moving to a given host.  We will assume a gravity model for dispersal [@jongejans2015], in which the attractiveness of hosts as a dispersal destination varies over time and space. We first define the 'gravitational mass' of a host as the probability that pre-adults will not disperse away from that host:
 
 $$
-\mathbf{m_y} \sim \text{Multinom}(m_y, k(d_y))
+g(t, x) = 1-\mu(t, x) 
+$$
+We make $g(t, x)$ density dependent in the following way:
+
+$$
+g(t, x) = (1-\delta e^{-\zeta A(t, x)})s(t, x),
+$$
+where $\delta$ is a parameter setting the minimum probability of dispersing away from the host (which we may make host specific later), $\zeta$ is another parameter defining the strength of density dependence on dispersal, and $s(t, x)$ is an indicator variable that collapses to $g(t,x) = 0$ when the host threshold is reached.  That is,
+
+$$
+s(t, x) = 
+  \begin{cases}
+    1 & \text{if } \sum_t{fA(t, x)} < C(x) \\
+    0 & \text{if } \sum_t{fA(t, x)} > C(x)
+  \end{cases}
+$$
+
+This function, $g(t, x)$ adds an additional two parameters.  It varies over time and host and gives us a host gravity that increases with increasing density of adults, and then collapses to zero when the host has been fully exploited.
+
+For each time step, we can calculate the gravitational mass of each host.  For infected hosts, we need to work out where the dispersers go to.  We define the probability of arrival at host $y$ from host $x$ as:
+
+$$
+a(y, x, t) = k(t,x)\frac{g(t, y)}{d_{xy}^2}.
+$$
+
+This is a gravitational model in which each host has a gravitational mass that affects how attractive it is to dispersing beetles.  The influence of this attractional force decays with the square of distance. $k(t,x)$ is a normalisation function for each host at each time step:
+
+$$
+k(t,x) = (1-g(t,x))\sum_y{\frac{d^2_{xy}}{g(t,y)}}
+$$
+
+So, at each time step, we calculate the $h$-length vector, $\mathbf{g}$, we can then calculate the vector $\mathbf{k}$, we then use these to build the $h \times h$ matrix $\mathbf{A}$, which holds all the probabilities of moving from $x$ to $y$.  Note that the diagonal of $\mathbf{A}$ is given by the vector, $1-g(t,x)$.
+
+
+It is tempting at this stage to specify dispersal as a stochastic process. The reason for this is that without stochasticity we can have fractions of individuals arriving at sites and growing; we would need to control this in some way. With stochasticity, we can arrange things to only have integer values of immigrants. We can draw the realised number of dispersers coming from $x$ and arriving to each site, $y$ as,
+
+$$
+\mathbf{m_x} \sim \text{Multinom}(P(t, x), \phi_\mu a(t, x, y))
 $$ where $m_y$ is the realised number of migrants emerging from site $y$:
 
-$$
-m_y \sim \text{Binom}(P(t, y), \phi_\mu\mu).
-$$
 
 We can get away with this without further adjustments to the within-host matrix, because we assume that it is survival during dispersal that introduces the stochastic element here.
 
-By stepping through all sites, $y$, we arrive at a realised dispersal matrix, $\mathbf{M}$. And the realised number of immigrants arriving at site $x$ is then the vector given by the row sums of $\mathbf{M}$: $\mathbf{m_+} = \sum_y \mathbf m_y$.
+By stepping through all sites, $s$, we arrive at a realised dispersal matrix, $\mathbf{M}$. And the realised number of immigrants arriving at site $y$ is then the vector given by the column sums of $\mathbf{M}$: $\mathbf{m_+} = \sum_x \mathbf m_x$.
+
+Note, that Nick points out that using an alternative stochastic process (e.g. Poisson) will likely run a lot faster if this model is to be used for inference.
 
 ### Within and between host model
 
-So, now we need to bring this all together. First step is to re-define the poopulation vector as $\mathbf{n} = \{\mathbf{n_1}, ..., \mathbf{n_h} \} = \{J_1, P_1, A_1, J_2, P_2, A_2, ..., J_h, P_h, A_h,\}$, thus now containing all individuals at all stages across all the hosts in the population.
+So, now we need to bring this all together. First step is to re-define the population vector as $\mathbf{n} = \{\mathbf{n_1}, ..., \mathbf{n_h} \} = \{J_1, P_1, A_1, J_2, P_2, A_2, ..., J_h, P_h, A_h,\}$, thus now containing all individuals at all stages across all the hosts in the population.
 
 We then define the $h \times h$ diagonal block matrix, $\mathbf{T}$:
 
