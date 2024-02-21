@@ -90,7 +90,7 @@ plot_temperatures <- function(temps) {
 plot_population_dynamics <- function(temps, population_data, legend_size = 0.7, log.N = FALSE) {
   # Plot population dynamics over time
   if (log.N) population_data <- log(population_data) 
-  matplot(t(population_data), type = "l", bty = "l", main = "Population Dynamics Over Time", xlab = "Time Steps", ylab = "Population Size", col = c("red", "green", "blue"), lwd = 2)
+  matplot(t(population_data), type = "l", bty = "l", main = "Population Dynamics Over Time", xlab = "Time Steps", ylab = "Population Size", col = c("red", "green", "darkorange"), lwd = 2)
   legend('topleft', legend = c('Juveniles', 'Pre-adults', 'Adults'), col = c("red", "green", "darkorange"), lty = 1:3, lwd = 2, cex = legend_size)
 }
 
