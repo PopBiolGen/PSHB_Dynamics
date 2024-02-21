@@ -91,10 +91,14 @@ plot_temperatures <- function(temps, xlabel = FALSE) {
 ## Function to plot population dynamics over time
 plot_population_dynamics <- function(temps, population_data, legend_size = 0.7, log.N = FALSE, xlabel = FALSE) {
   xl <- ""
+  yl <- "Population size"
   if (xlabel) xl <- "Day of year"
   # Plot population dynamics over time
-  if (log.N) population_data <- log(population_data) 
-  matplot(t(population_data), type = "l", bty = "l", main = "Population dynamics over time", xlab = xl, ylab = "Population size", col = c("red", "green", "darkorange"), lwd = 2)
+  if (log.N) {
+    population_data <- log(population_data) 
+    yl <- "log(Population size)"
+  }
+  matplot(t(population_data), type = "l", bty = "l", main = "Population dynamics over time", xlab = xl, ylab = yl, col = c("red", "green", "darkorange"), lwd = 2)
   legend('topleft', legend = c('Juveniles', 'Pre-adults', 'Adults'), col = c("red", "green", "darkorange"), lty = 1:3, lwd = 2, cex = legend_size)
 }
 
