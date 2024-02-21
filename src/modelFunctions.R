@@ -87,8 +87,9 @@ plot_temperatures <- function(temps) {
 }
 
 ## Function to plot population dynamics over time
-plot_population_dynamics <- function(temps, population_data, legend_size = 0.7) {
+plot_population_dynamics <- function(temps, population_data, legend_size = 0.7, log.N = FALSE) {
   # Plot population dynamics over time
+  if (log.N) population_data <- log(population_data) 
   matplot(t(population_data), type = "l", bty = "l", main = "Population Dynamics Over Time", xlab = "Time Steps", ylab = "Population Size", col = c("red", "green", "blue"), lwd = 2)
   legend('topleft', legend = c('Juveniles', 'Pre-adults', 'Adults'), col = c("red", "green", "darkorange"), lty = 1:3, lwd = 2, cex = legend_size)
 }
@@ -125,7 +126,7 @@ NvTPlot <- function(temps, population_data) {
   plot_temperatures(temps)
   plot_population_dynamics(temps, population_data)
   plot_growth_rates(population_data)
-  
+  plot_population_dynamics(temps, population_data, log.N = TRUE)
   # Plot N vs. time
   plot(x = 1:length(temps), y = population_data[3, ], type = "l", main = "Population Size Over Time", xlab = "Time Steps", ylab = "Population Size", col = "orange", lwd = 2)
   
