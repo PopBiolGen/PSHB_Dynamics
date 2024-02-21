@@ -82,15 +82,19 @@ step_within_population <- function(n_t, cumulative_offspring, temperature, f, ph
 }
 
 ## Function to plot daily mean temperatures
-plot_temperatures <- function(temps) {
-  plot(temps, type = "l", main = "Daily mean temperatures", xlab = "Time steps", ylab = "Temperature (°C)", col = "blue", lwd = 2)
+plot_temperatures <- function(temps, xlabel = FALSE) {
+  xl <- ""
+  if (xlabel) xl <- "Time steps"
+  plot(temps, type = "l", main = "Daily mean temperatures", xlab = xl, ylab = "Temperature (°C)", col = "blue", lwd = 2)
 }
 
 ## Function to plot population dynamics over time
-plot_population_dynamics <- function(temps, population_data, legend_size = 0.7, log.N = FALSE) {
+plot_population_dynamics <- function(temps, population_data, legend_size = 0.7, log.N = FALSE, xlabel = FALSE) {
+  xl <- ""
+  if (xlabel) xl <- "Time steps"
   # Plot population dynamics over time
   if (log.N) population_data <- log(population_data) 
-  matplot(t(population_data), type = "l", bty = "l", main = "Population dynamics over time", xlab = "Time steps", ylab = "Population size", col = c("red", "green", "darkorange"), lwd = 2)
+  matplot(t(population_data), type = "l", bty = "l", main = "Population dynamics over time", xlab = xl, ylab = "Population size", col = c("red", "green", "darkorange"), lwd = 2)
   legend('topleft', legend = c('Juveniles', 'Pre-adults', 'Adults'), col = c("red", "green", "darkorange"), lty = 1:3, lwd = 2, cex = legend_size)
 }
 
@@ -126,5 +130,5 @@ NvTPlot <- function(temps, population_data) {
   plot_temperatures(temps)
   plot_population_dynamics(temps, population_data)
   plot_growth_rates(population_data)
-  plot_population_dynamics(temps, population_data, log.N = TRUE)
+  plot_population_dynamics(temps, population_data, log.N = TRUE, xlabel = TRUE)
 }
