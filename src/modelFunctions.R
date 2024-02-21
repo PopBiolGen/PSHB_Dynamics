@@ -90,7 +90,7 @@ plot_temperatures <- function(temps) {
 plot_population_dynamics <- function(temps, population_data, legend_size = 0.7) {
   # Plot population dynamics over time
   matplot(t(population_data), type = "l", bty = "l", main = "Population Dynamics Over Time", xlab = "Time Steps", ylab = "Population Size", col = c("red", "green", "blue"), lwd = 2)
-  legend('topleft', legend = c('Juveniles', 'Pre-adults', 'Adults'), col = c("red", "green", "blue"), lty = 1:3, lwd = 2, cex = legend_size)
+  legend('topleft', legend = c('Juveniles', 'Pre-adults', 'Adults'), col = c("red", "green", "darkorange"), lty = 1:3, lwd = 2, cex = legend_size)
 }
 
 ## Function to plot growth rates of all life stages over time with smoothing
@@ -114,8 +114,8 @@ plot_growth_rates <- function(population_data, window_size = 5, legend_size = 0.
   plot(juv_growth_rate_smoothed, type = "l", main = "Smoothed Growth Rates of All Life Stages Over Time", 
        xlab = "Time Steps", ylab = "Growth Rate", col = "red", lwd = 2)
   lines(pre_adult_growth_rate_smoothed, col = "green", lwd = 2)
-  lines(ad_growth_rate_smoothed, col = "blue", lwd = 2)
-  legend("topright", legend = c("Juveniles", "Pre-adults", "Adults"), col = c("red", "green", "blue"), lty = 1, lwd = 2, cex = legend_size)
+  lines(ad_growth_rate_smoothed, col = "darkorange", lwd = 2)
+  legend("topright", legend = c("Juveniles", "Pre-adults", "Adults"), col = c("red", "green", "darkorange"), lty = 1, lwd = 2, cex = legend_size)
 }
 
 ## Function to plot population dynamics over time
