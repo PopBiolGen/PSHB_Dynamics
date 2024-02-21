@@ -84,14 +84,14 @@ step_within_population <- function(n_t, cumulative_offspring, temperature, f, ph
 ## Function to plot daily mean temperatures
 plot_temperatures <- function(temps, xlabel = FALSE) {
   xl <- ""
-  if (xlabel) xl <- "Time steps"
+  if (xlabel) xl <- "Day of year"
   plot(temps, type = "l", main = "Daily mean temperatures", xlab = xl, ylab = "Temperature (°C)", col = "blue", lwd = 2, bty = "l")
 }
 
 ## Function to plot population dynamics over time
 plot_population_dynamics <- function(temps, population_data, legend_size = 0.7, log.N = FALSE, xlabel = FALSE) {
   xl <- ""
-  if (xlabel) xl <- "Time steps"
+  if (xlabel) xl <- "Day of year"
   # Plot population dynamics over time
   if (log.N) population_data <- log(population_data) 
   matplot(t(population_data), type = "l", bty = "l", main = "Population dynamics over time", xlab = xl, ylab = "Population size", col = c("red", "green", "darkorange"), lwd = 2)
@@ -117,7 +117,7 @@ plot_growth_rates <- function(population_data, window_size = 5, legend_size = 0.
   
   # Plot smoothed growth rates for all life stages
   plot(juv_growth_rate_smoothed, type = "l", main = "Growth rates over time", 
-       xlab = "Time steps", ylab = "Growth rate", col = "red", lwd = 2, bty = "l")
+       xlab = "Day of year", ylab = "Growth rate", col = "red", lwd = 2, bty = "l")
   lines(pre_adult_growth_rate_smoothed, col = "green", lwd = 2)
   lines(ad_growth_rate_smoothed, col = "darkorange", lwd = 2)
   legend("topright", legend = c("Juveniles", "Pre-adults", "Adults"), col = c("red", "green", "darkorange"), lty = 1, lwd = 2, cex = legend_size)
