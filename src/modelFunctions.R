@@ -83,14 +83,14 @@ step_within_population <- function(n_t, cumulative_offspring, temperature, f, ph
 
 ## Function to plot daily mean temperatures
 plot_temperatures <- function(temps) {
-  plot(temps, type = "l", main = "Daily Mean Temperatures", xlab = "Time Steps", ylab = "Temperature (°C)", col = "blue", lwd = 2)
+  plot(temps, type = "l", main = "Daily mean temperatures", xlab = "Time steps", ylab = "Temperature (°C)", col = "blue", lwd = 2)
 }
 
 ## Function to plot population dynamics over time
 plot_population_dynamics <- function(temps, population_data, legend_size = 0.7, log.N = FALSE) {
   # Plot population dynamics over time
   if (log.N) population_data <- log(population_data) 
-  matplot(t(population_data), type = "l", bty = "l", main = "Population Dynamics Over Time", xlab = "Time Steps", ylab = "Population Size", col = c("red", "green", "darkorange"), lwd = 2)
+  matplot(t(population_data), type = "l", bty = "l", main = "Population dynamics over time", xlab = "Time steps", ylab = "Population size", col = c("red", "green", "darkorange"), lwd = 2)
   legend('topleft', legend = c('Juveniles', 'Pre-adults', 'Adults'), col = c("red", "green", "darkorange"), lty = 1:3, lwd = 2, cex = legend_size)
 }
 
@@ -112,8 +112,8 @@ plot_growth_rates <- function(population_data, window_size = 5, legend_size = 0.
   ad_growth_rate_smoothed <- stats::filter(ad_growth_rate, rep(1/window_size, window_size), sides = 2)
   
   # Plot smoothed growth rates for all life stages
-  plot(juv_growth_rate_smoothed, type = "l", main = "Smoothed Growth Rates of All Life Stages Over Time", 
-       xlab = "Time Steps", ylab = "Growth Rate", col = "red", lwd = 2)
+  plot(juv_growth_rate_smoothed, type = "l", main = "Growth rates over time", 
+       xlab = "Time steps", ylab = "Growth rate", col = "red", lwd = 2)
   lines(pre_adult_growth_rate_smoothed, col = "green", lwd = 2)
   lines(ad_growth_rate_smoothed, col = "darkorange", lwd = 2)
   legend("topright", legend = c("Juveniles", "Pre-adults", "Adults"), col = c("red", "green", "darkorange"), lty = 1, lwd = 2, cex = legend_size)
@@ -127,9 +127,4 @@ NvTPlot <- function(temps, population_data) {
   plot_population_dynamics(temps, population_data)
   plot_growth_rates(population_data)
   plot_population_dynamics(temps, population_data, log.N = TRUE)
-  # Plot N vs. time
-  plot(x = 1:length(temps), y = population_data[3, ], type = "l", main = "Population Size Over Time", xlab = "Time Steps", ylab = "Population Size", col = "orange", lwd = 2)
-  
-  # Plot log(N) vs. time
-  plot(x = 1:length(temps), y = log(population_data[3, ]), type = "l", main = "Population Growth Rate Over Time", xlab = "Time Steps", ylab = "Population Size", col = "green", lwd = 2)
 }
