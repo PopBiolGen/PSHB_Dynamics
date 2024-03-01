@@ -254,4 +254,88 @@ sim_within_host <- function(initial_n, temps, iter, threshold = 1e5, stochastic 
   }
   out_matrix
 }
->>>>>>> b9a0cbc (Add simulation function for generating data for testing inference model.)
+
+# simulate some timeseries data on preadult counts, with random temperature
+# timeseries, random initial condition, and poisson observation noise process
+sim_single_preadult_temp_data <- function(n_times = 28,
+                                          expected_initial_pop = c(0.01, 0.01, 20)) {
+  
+  # load real temperatures
+  temps <- read.csv("dat/soil.csv") %>%
+    group_by(DOY) %>%
+    select(-dates, -TIME) %>%
+    summarise(across(everything(), mean)) %>%
+    pull("D10cm")
+  
+  # simulate a random temperature timeseries by randomly sampling a start times
+  start_time <- sample.int(length(temps) - n_times, 1)
+  times <- start_time + seq_len(n_times) - 1
+  temperature <- temps[times]
+  
+  # simulate a random initial population
+  initial_n <- rexp(n_states, 1 / expected_initial_pop)
+  
+  # simulate some population dynamics; timeseries of preadults at multiple sites
+  true_abundance <- sim_within_host(
+    initial_n = initial_n,
+    temps = temperature,
+    iter = n_times,
+    threshold = 1e5)
+  
+  true_preadult_abundance <- true_abundance[2, ]
+  preadult_count <- rpois(n_times, true_preadult_abundance)
+  
+  data.frame(time = seq_len(n_times),
+             temperature,
+             true_preadult_abundance,
+             preadult_count)
+}
+
+# simulate multiple timeseries of pre-adult abundances with different
+# temperature profiles
+sim_preadult_temp_data <- function(n_sites = 5,
+                                   n_times = 28,
+                                   expected_initial_pop = c(0.01, 0.01, 20)) {
+  
+  # sample multiple site timeseries
+  data_sets <- replicate(n_sites, 
+                         sim_single_preadult_temp_data(n_times,
+                                                       expected_initial_pop = expected_initial_pop),
+                         simplify = FALSE)
+  # add an id number
+  data_sets <- mapply(FUN = bind_cols,
+                      id = seq_along(data_sets),
+                      x = data_sets,
+                      SIMPLIFY = FALSE)
+  
+  # combine them
+  do.call(bind_rows, data_sets)
+  
+}
+
+# create a masking variable, near zero below lower and above upper, and at 0set x to (near) zero below lower and above upper
+bound_mask <- function(x, lower = -Inf, upper = Inf, tol = 0.01, soft = FALSE) {
+  # create a mask
+  if (soft) {
+    lower_mask <- plogis((x - lower) / tol)
+    upper_mask <- plogis((upper - x) / tol)
+  } else {
+    lower_mask <- as.numeric(x > lower)
+    upper_mask <- as.numeric(x < upper)
+  }
+  lower_mask * upper_mask
+}
+
+# implemented bounded linear model for transition rates
+bounded_linear <- function(temperature, intercept, slope, lower, upper, ...) {
+  
+  # create a mask to set values to 0 outside the allowed range
+  mask <- bound_mask(x = temperature,
+                     lower = lower,
+                     upper = upper,
+                     ...)
+  rate <- intercept + slope * temperature
+  prob <- 1 - exp(-rate)
+  prob * mask
+}
+>>>>>>> 1c3f351 (implement for multiple trees)
