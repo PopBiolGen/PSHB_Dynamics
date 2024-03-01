@@ -17,7 +17,7 @@
 ## --------------------------
 ## load up the packages we will need 
 ## ---------------------------
-
+source("src/TPCFunctions.R")
 
 ## Scalar parameters
 
@@ -221,3 +221,36 @@ run_year <- function(lat, long, warmup = 10, survival_threshold = 1e11, make_plo
   list(popDat = population_data, temps = temps, growthRate = growthRate)
 }
 
+## Function to iterate the within host model over n days
+  # Outputs data that can be used for testing inference model
+  # Arguments are:
+    # initial_n: initial population vector
+    # temps: vector of temperature data to iterate over
+    # iter: number of days to iterate over
+    # threshold: host threshold for cumulative population size
+    # note global variables used for phi_A phi_P mu f 
+sim_within_host <- function(initial_n, temps, iter, threshold = 1e5){
+  #browser()
+  if (length(temps) == 1) temps <- rep(temps, iter)
+  if (length(temps) < iter) {
+    stop("Temperature data length is less than number of iterations")
+  }
+  # set up matrix to take results
+  out_matrix <- matrix(c(c(initial_n, 0), rep(0, (length(initial_n)+1)*(iter-1))), nrow = length(initial_n)+1, ncol = iter)
+  
+  # iterate over days
+  for (tt in 2:iter){
+    step_result <- step_within_population(out_matrix[1:3, tt - 1], 
+                                          out_matrix[4, tt - 1], 
+                                          temps[tt], 
+                                          f, 
+                                          phi_A, 
+                                          phi_P, 
+                                          mu = 0, 
+                                          threshold)
+    out_matrix[1:3, tt] <- step_result$n
+    out_matrix[4, tt] <- step_result$cum_n
+  }
+  out_matrix
+}
+>>>>>>> b9a0cbc (Add simulation function for generating data for testing inference model.)
