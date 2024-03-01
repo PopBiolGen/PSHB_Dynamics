@@ -229,7 +229,7 @@ run_year <- function(lat, long, warmup = 10, survival_threshold = 1e11, make_plo
     # iter: number of days to iterate over
     # threshold: host threshold for cumulative population size
     # note global variables used for phi_A phi_P mu f 
-sim_within_host <- function(initial_n, temps, iter, threshold = 1e5){
+sim_within_host <- function(initial_n, temps, iter, threshold = 1e5, stochastic = FALSE){
   #browser()
   if (length(temps) == 1) temps <- rep(temps, iter)
   if (length(temps) < iter) {
@@ -248,6 +248,7 @@ sim_within_host <- function(initial_n, temps, iter, threshold = 1e5){
                                           phi_P, 
                                           mu = 0, 
                                           threshold)
+    if (stochastic) step_result$n <- rpois(length(step_result$n), step_result$n)
     out_matrix[1:3, tt] <- step_result$n
     out_matrix[4, tt] <- step_result$cum_n
   }
