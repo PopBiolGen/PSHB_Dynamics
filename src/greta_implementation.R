@@ -1,8 +1,6 @@
 library(greta.dynamics)
 
-source("src/TPCFunctions.R")
 source("src/modelFunctions.R")
-source("src/basic within-pop model.R")
 
 #\begin{align}
 # J(t+1) &= \phi_J(1-\alpha_J)J(t) + fA(t\\
@@ -118,8 +116,12 @@ states <- iterate_dynamic_function(
   one_minus_mu = one_minus_mu
 )
 
-obs_preadults_truth <- population_data[2, 1:n_times] * 10
-obs_preadults_obs <- rpois(length(obs_preadults_truth), obs_preadults_truth)
+# generate some test data
+sim_pop <- sim_within_host(initial_n = c(0, 0, 10), 
+                           temps = 24, 
+                           iter = n_times, 
+                           stochastic = TRUE)
+obs_preadults_obs <- sim_pop[2, 1:n_times]
 dim(obs_preadults_obs) <- c(1, 1, n_times)
 
 expected_preadults <- states$all_states[1, 2, ]
