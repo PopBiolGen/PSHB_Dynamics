@@ -95,16 +95,8 @@ phi_adult <- normal(phi_A, 0.1, truncation = c(0, 1))
 # no dispersal to other host trees for now
 mu <- exponential(1 / 1e-5)
 
-# FUTURE NICK G - IT'S FAILING BECAUSE YOU PUT CONSTANT 1s IN THE FUNCTION, DUMMY
-# (this is a bug, it can be fixed in a future version)
-
-one_minus_alpha_juvenile <- 1 - alpha_juvenile
-one_minus_alpha_preadult <- 1 - alpha_preadult
-one_minus_mu <- 1 - mu
-
-# latent U(0, 1) deviates for the stochastic transitions
-latent <- uniform(min = 0, max = 1, dim = c(n_times, n_sites, n_states, 1))
-latent2 <- latent * 1
+# latent N(0, 1) deviates for the stochastic transitions
+latent_z_timeseries <- normal(0, 1, dim = c(n_times, n_sites, n_states, 1))
 
 transitions <- function(state, iter,
                         phi_J,
@@ -114,10 +106,7 @@ transitions <- function(state, iter,
                         alpha_P,
                         mu,
                         phi_A,
-                        one_minus_alpha_J,
-                        one_minus_alpha_P,
-                        one_minus_mu,
-                        latent_u) {
+                        latent_z) {
   # J(t+1) &= \phi_J(1-\alpha_J)J(t) + fA(t)\\
   # P(t+1) &= \phi_J \alpha_J J(t) + \phi_P(1-\alpha_P)(1-\mu)P(t) + 0 \\
   # A(t+1) &= 0 + \phi_P\alpha_P(1-\mu)P(t) + \phi_AA(t)
@@ -127,13 +116,13 @@ transitions <- function(state, iter,
   A_old <- state[, 3, ]
   
   # J(t+1) &= \phi_J(1-\alpha_J)J(t) + fA(t)\\
-  J <- phi_J * one_minus_alpha_J * J_old + fecundity * A_old
+  J <- phi_J * (1 - alpha_J) * J_old + fecundity * A_old
   
   # P(t+1) &= \phi_J \alpha_J J(t) + \phi_P(1-\alpha_P)(1-\mu)P(t) + 0 \\
-  P <- phi_J * alpha_J * J_old + phi_P * one_minus_alpha_P * one_minus_mu * P_old
+  P <- phi_J * alpha_J * J_old + phi_P * (1 - alpha_P) * (1 - mu) * P_old
   
   # A(t+1) &= 0 + \phi_P\alpha_P(1-\mu)P(t) + \phi_AA(t)
-  A <- phi_P * alpha_P * one_minus_mu * P_old + phi_A * A_old
+  A <- phi_P * alpha_P * (1 - mu) * P_old + phi_A * A_old
   
   # do dispersal step here, by matrix-multiplying the P vector by a dispersal
   # matrix:
@@ -143,10 +132,9 @@ transitions <- function(state, iter,
   expected_state <- abind(J, P, A, along = 2)
   
   # do stochastic dynamics bit here, by perturbing all states according to (a
-  # continuous relaxation of) Poisson noise with precomputed latent U(0, 1)
+  # continuous relaxation of) Poisson noise with precomputed latent N(0, 1)
   # noise:
-  state <- gamma_continuous_poisson(expected_state, latent_u)
-  # state <- expected_state
+  state <- lognormal_continuous_poisson(expected_state, latent_z)
   
   state
   
@@ -171,15 +159,14 @@ states <- iterate_dynamic_function(
   alpha_P = alpha_preadult,
   mu = mu,
   phi_A = phi_adult,
-  one_minus_alpha_J = one_minus_alpha_juvenile,
-  one_minus_alpha_P = one_minus_alpha_preadult,
-  one_minus_mu = one_minus_mu,
-  latent_u = latent2,
-  parameter_is_time_varying = c("alpha_J", "one_minus_alpha_J",
-                                "alpha_P", "one_minus_alpha_P",
-                                "phi_J", "latent_u")
+  latent_z = latent_z_timeseries,
+  parameter_is_time_varying = c("alpha_J",
+                                "alpha_P",
+                                "phi_J",
+                                "latent_z"),
+  # clamp the simulated state to reasonable values
+  state_limits = c(1e-3, 1e5)
 )
-
 
 # define the likelihood only on the abundance of pre-adults,
 # reshaping to match the observation matrix
@@ -204,14 +191,32 @@ n_chains <- 4
 # # minutes because very few prior sims are valid (have finite gradients)
 # inits <- generate_valid_inits(m, n_chains)
 
+random_clamped_normal <- function(mean, sd, min = -Inf, max = Inf, dim = c(1, 1)) {
+  x <- rnorm(prod(dim), mean, sd)
+  x <- pmin(x, max)
+  x <- pmax(x, min)
+  dim(x) <- dim
+  x
+}
+
 # alternately, we can set the stochastic noise at the median value, to
 # approximately recover the deterministic behaviour
 inits <- replicate(n_chains,
-                   initials(latent = array(0.5, dim(latent))),
+                   initials(
+                     fecundity = random_clamped_normal(f,
+                                                       0.1,
+                                                       min = 1e-3),
+                     phi_preadult = random_clamped_normal(phi_P,
+                                                          0.1,
+                                                          min = 1e-3,
+                                                          max = 1 - 1e-3),
+                     phi_adult = random_clamped_normal(phi_A,
+                                                       0.1,
+                                                       min = 1e-3,
+                                                       max = 1 - 1e-3),
+                     latent_z_timeseries = array(0,
+                                                 dim(latent_z_timeseries))),
                    simplify = FALSE)
-
-# debugonce(greta.dynamics:::tf_iterate_dynamic_function)
-# tmp <- calculate(expected_preadults, values = inits[[1]], nsim = 1)
 
 draws <- mcmc(m,
               chains = n_chains,
@@ -293,22 +298,5 @@ for (i in seq_len(n_sites)) {
 
 # implement dispersal between host trees
 
-# implement stochastic dispersal/population growth with continuous poisson
 
 
-
-
-transitions(
-  state = initial_state,
-  iter = 1,
-  phi_J = phi_juvenile[1, , ],
-  alpha_J = alpha_juvenile[1, , ],
-  fecundity = fecundity,
-  phi_P = phi_preadult,
-  alpha_P = alpha_preadult[1, , ],
-  mu = mu,
-  phi_A = phi_adult,
-  one_minus_alpha_J = one_minus_alpha_juvenile[1, , ],
-  one_minus_alpha_P = one_minus_alpha_preadult[1, ,],
-  one_minus_mu = one_minus_mu
-)
