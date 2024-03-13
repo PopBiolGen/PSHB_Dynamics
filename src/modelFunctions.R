@@ -18,6 +18,7 @@
 ## load up the packages we will need 
 ## ---------------------------
 source("src/TPCFunctions.R")
+source("src/greta_valid_inits.R")
 
 ## Scalar parameters
 
@@ -338,4 +339,107 @@ bounded_linear <- function(temperature, intercept, slope, lower, upper, ...) {
   prob <- 1 - exp(-rate)
   prob * mask
 }
->>>>>>> 1c3f351 (implement for multiple trees)
+
+# given random variables z (with standard normal distribution a priori), and
+# Poisson rate parameter lambda, return a strictly positive continuous random
+# variable with the same mean and variance as a poisson random variable with
+# rate lambda, by approximating the poisson as a lognormal distribution. This
+# has the advantage of decentring the posterior distribution of these random
+# variables in MCMC, as well as enabling inference on them with HMC.
+# Note annoying two = 2 thing is a hack to workaround the current bug in
+# greta.dynamics when defining constants inside a transition function.
+lognormal_continuous_poisson <- function(lambda, z) {
+  sigma <- sqrt(log1p(lambda / exp(2 * log(lambda))))
+  # sigma2 <- log1p(1 / lambda)
+  mu <- log(lambda) - sigma^2 / 2
+  exp(mu + z * sigma)
+}
+
+
+# Continuous approximation of the Poisson distribution. Model the continuous
+# Poisson as a lognormal given lambda, and a standard normal variate z. Do this
+# by calculating the mu and sigma to be combined with z such that when
+# exponentiated, it has the same mean and variance as the intended poisson RV.
+
+# Working: The lognormal mean and variance should both equal lambda. The
+# lognormal mean and variance can both be expressed in terms of the parameters
+# mu and sigma.
+
+# mean = lambda = exp(mu + sigma^2 / 2)
+# variance = lambda = (exp(sigma ^ 2) - 1) * exp(2 * mu + sigma ^ 2)
+
+# solve to get sigma and mu as a function of lambda:
+# mu = log(lambda) - sigma^2 / 2
+# lambda = (exp(sigma ^ 2) - 1) * exp(2 * mu + sigma ^ 2)
+# lambda = (exp(sigma ^ 2) - 1) * exp(2 * (log(lambda) - sigma^2 / 2) + sigma ^ 2)
+# lambda = (exp(sigma ^ 2) - 1) * exp(sigma ^ 2) * exp(2 * (log(lambda) - sigma^2 / 2))
+# lambda = (exp(sigma ^ 2) - 1) * exp(sigma ^ 2) * exp(2 * log(lambda) - sigma^2)
+# lambda = (exp(sigma ^ 2) - 1) * exp(sigma ^ 2) * exp(2 * log(lambda)) / exp(sigma^2)
+# lambda / exp(2 * log(lambda)) = (exp(sigma ^ 2) - 1) * exp(sigma ^ 2) * 1 / exp(sigma^2)
+# lambda / exp(2 * log(lambda)) = (exp(sigma ^ 2) - 1)
+# log(lambda / exp(2 * log(lambda)) + 1) = sigma ^ 2
+# sigma = sqrt(log(lambda / exp(2 * log(lambda)) + 1)) = sigma
+# mu = log(lambda) - sigma^2 / 2
+
+# # check these numerically
+# library(tidyverse)
+# compare <- tibble(
+#   lambda = seq(0.01, 1000, length.out = 100)
+# ) %>%
+#   mutate(
+#     sigma = sqrt(log(lambda / exp(2 * log(lambda)) + 1)),
+#     mu = log(lambda) - sigma^2 / 2
+#   ) %>%
+#   mutate(
+#     mean = exp(mu + sigma^2 / 2),
+#     variance = (exp(sigma ^ 2) - 1) * exp(2 * mu + sigma ^ 2)
+#   ) %>%
+#   mutate(
+#     diff_mean_variance = abs(mean - variance),
+#     diff_mean_lambda = abs(mean - lambda),
+#     diff_variance_lambda = abs(variance - lambda)
+#   ) %>%
+#   summarise(
+#     across(
+#       starts_with("diff"),
+#       ~max(.x)
+#     )
+#   )
+
+# given poisson rate parameter lambda and random uniform deviate u, a continuous
+# relaxation of poisson random variable generation is computed using the inverse
+# of the incomplete gamma function. ie. igammainv(lambda, 1 - u) is
+# approximately equal to qpois(u, lambda) (and exactly equal to qgamma(1 - u,
+# lambda) in the R implementation)
+gamma_continuous_poisson <- function(lambda, u) {
+  # if we want to interpret u as random quantiles of the distribution, it should
+  # be this:
+  #   igammainv(lambda, 1 - u)
+  # but we omit the one minus because it's interacting with a bug in
+  # greta.dynamics, and because it doesn't affect inference
+  igammainv(lambda, u)
+}
+# # check:
+# lambda <- as_data(pi)
+# u <- uniform(0, 1)
+# y <- gamma_continuous_poisson(lambda, 1 - u)
+# sims <- calculate(y, u, nsim = 1e5)
+# max(abs(sims$y - qgamma(1 - sims$u, pi)))
+# quantile(round(sims$y))
+# quantile(rpois(1e5, pi))
+
+# the inverse incomplete gamma function (the major part of the quantile function
+# of a gamma distribution)
+igammainv <- function(a, p) {
+  op <- greta::.internals$nodes$constructors$op
+  op("igammainv", a, p,
+     tf_operation = "tf_igammainv"
+  )
+}
+tf_igammainv <- function(a, p) {
+  tfp <- greta:::tfp
+  tfp$math$igammainv(a, p)
+}
+
+
+>>>>>>> 4a08a4f (merge in Nick's edits)
