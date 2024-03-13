@@ -96,10 +96,15 @@ phi_adult <- normal(phi_A, 0.1, truncation = c(0, 1))
 mu <- exponential(1 / 1e-5)
 
 # FUTURE NICK G - IT'S FAILING BECAUSE YOU PUT CONSTANT 1s IN THE FUNCTION, DUMMY
+# (this is a bug, it can be fixed in a future version)
 
 one_minus_alpha_juvenile <- 1 - alpha_juvenile
 one_minus_alpha_preadult <- 1 - alpha_preadult
 one_minus_mu <- 1 - mu
+
+# latent U(0, 1) deviates for the stochastic transitions
+latent <- uniform(min = 0, max = 1, dim = c(n_times, n_sites, n_states, 1))
+latent2 <- latent * 1
 
 transitions <- function(state, iter,
                         phi_J,
@@ -111,7 +116,8 @@ transitions <- function(state, iter,
                         phi_A,
                         one_minus_alpha_J,
                         one_minus_alpha_P,
-                        one_minus_mu) {
+                        one_minus_mu,
+                        latent_u) {
   # J(t+1) &= \phi_J(1-\alpha_J)J(t) + fA(t)\\
   # P(t+1) &= \phi_J \alpha_J J(t) + \phi_P(1-\alpha_P)(1-\mu)P(t) + 0 \\
   # A(t+1) &= 0 + \phi_P\alpha_P(1-\mu)P(t) + \phi_AA(t)
@@ -134,12 +140,13 @@ transitions <- function(state, iter,
   #   P <- P %*% dispersal_matrix
   
   # recombine state matrix (sites by states)
-  state <- abind(J, P, A, along = 2)
+  expected_state <- abind(J, P, A, along = 2)
   
   # do stochastic dynamics bit here, by perturbing all states according to (a
-  # continuous relaxation of) Poisson noise with precomputed latent N(0, 1)
+  # continuous relaxation of) Poisson noise with precomputed latent U(0, 1)
   # noise:
-  #   state <- continuous_poisson(latent, state)
+  state <- gamma_continuous_poisson(expected_state, latent_u)
+  # state <- expected_state
   
   state
   
@@ -167,21 +174,19 @@ states <- iterate_dynamic_function(
   one_minus_alpha_J = one_minus_alpha_juvenile,
   one_minus_alpha_P = one_minus_alpha_preadult,
   one_minus_mu = one_minus_mu,
+  latent_u = latent2,
   parameter_is_time_varying = c("alpha_J", "one_minus_alpha_J",
                                 "alpha_P", "one_minus_alpha_P",
-                                "phi_J")
+                                "phi_J", "latent_u")
 )
 
-
-# generate some test data
-sim_pop <- sim_within_host(initial_n = c(0, 0, 10), 
-                           temps = 24, 
-                           iter = n_times, 
-                           stochastic = TRUE)
-obs_preadults <- sim_pop[2, 1:n_times]
-dim(obs_preadults) <- c(1, 1, n_times)
-
-
+# # generate some test data
+# sim_pop <- sim_within_host(initial_n = c(0, 0, 10), 
+#                            temps = 24, 
+#                            iter = n_times, 
+#                            stochastic = TRUE)
+# obs_preadults2 <- sim_pop[2, 1:n_times]
+# dim(obs_preadults2) <- c(1, 1, n_times)
 
 # define the likelihood only on the abundance of pre-adults,
 # reshaping to match the observation matrix
@@ -196,7 +201,27 @@ m <- model(fecundity,
 # plot(m)
 
 # do inference
-draws <- mcmc(m)
+
+n_chains <- 4
+
+# # with the added stochasticity, it's hard for greta to automatically find valid
+# # initial values. So we can use some external hacking to define some that should
+# # work (this should be implemented in greta some time). This takes a couple of
+# # minutes because very few prior sims are valid (have finite gradients)
+# inits <- generate_valid_inits(m, n_chains)
+
+# alternately, we can set the stochastic noise at the median value, to
+# approximately recover the deterministic behaviour
+inits <- replicate(n_chains,
+                   initials(latent = array(0.5, dim(latent))),
+                   simplify = FALSE)
+
+# debugonce(greta.dynamics:::tf_iterate_dynamic_function)
+# tmp <- calculate(expected_preadults, values = inits[[1]], nsim = 1)
+
+draws <- mcmc(m,
+              chains = n_chains,
+              initial_values = inits)
 
 # check convergence
 bayesplot::mcmc_trace(draws)
