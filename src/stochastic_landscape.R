@@ -90,7 +90,7 @@ sparse_dispersal <- function(state, network) {
 data_dir <- "../mozambique_example/data/"
 
 # load the local data and tidy up
-moz_pr_data <- read.csv(file.path(data_dir, "moz_pr_data.csv"))
+# moz_pr_data <- read.csv(file.path(data_dir, "moz_pr_data.csv"))
 moz_shp <- st_read(file.path(data_dir, "moz_shp.shp"))
 moz_evi <- rast(file.path(data_dir, "moz_evi.tif"))
 moz_ntl <- rast(file.path(data_dir, "moz_ntl.tif"))
@@ -98,17 +98,17 @@ moz_tsi <- rast(file.path(data_dir, "moz_tsi.tif"))
 
 # combine environmental variables into a single stack
 names(moz_evi) <-"evi"
-names(moz_ntl) <-"ntl"
 names(moz_tsi) <-"tsi"
-moz_env <- c(moz_evi, moz_ntl, moz_tsi)
-
-# get rid of invalid lat-longs
-moz_pr_data <- moz_pr_data %>%
-  filter(longitude != 0)
-
-# get out the coordinates of observations
-moz_coords_obs <- cbind(moz_pr_data$longitude,
-                        moz_pr_data$latitude)
+moz_env <- c(moz_evi, moz_tsi)
+moz_env <- scale(moz_env)
+# 
+# # get rid of invalid lat-longs
+# moz_pr_data <- moz_pr_data %>%
+#   filter(longitude != 0)
+# 
+# # get out the coordinates of observations
+# moz_coords_obs <- cbind(moz_pr_data$longitude,
+#                         moz_pr_data$latitude)
 
 # get population density raster for Mozambique
 pop <- geodata::population("2020", path = tempdir())
@@ -123,9 +123,9 @@ moz_mask <- moz_pop * 0
 names(moz_mask) <- "mask"
 moz_env <- mask(moz_env, moz_mask)
 
-# extract covariate values at these observation coordinates
-env_obs <- terra::extract(moz_env,
-                          moz_coords_obs)
+# # extract covariate values at these observation coordinates
+# env_obs <- terra::extract(moz_env,
+#                           moz_coords_obs)
 
 # create spatial clusters for modelling
 
@@ -183,61 +183,61 @@ library(greta.dynamics)
 
 # define variables:
 
-n_times <- 10
+n_times <- 20
 
 # initial population size (around 10% of population)
 init_cluster <- exponential(1 / (cluster_pop * 0.1))
 init <- init_cluster[cluster_id] * pop_weights
 
-# growth rate - biased to lower population areas
-r_int <- normal(0, 1)
-r_pop_beta <- normal(-1, 1)
-r <- exp(r_int + r_pop_beta * pop)
+# growth rate - function of environment
+env <- terra::extract(moz_env, cell_id)
+X <- as.matrix(cbind(1, env))
+beta <- normal(0, 0.1, dim = ncol(X))
+log_r <- X %*% beta
+r <- exp(log_r)
+# hist(calculate(r, nsim = 1)[[1]])
 
 # latent variable for stochastic transitions
 z_cluster_vec <- normal(0, 1, dim = c(n_times, n_clusters))
 
 # probability of dispersing (per timestep) and within dispersers, the
 # probability that dispersal happens within the same cluster
-prob_disperse <- normal(0.1, 0.1, truncation = c(0, 1))
+# prob_disperse <- normal(0.1, 0.1, truncation = c(0, 1))
+prob_disperse <- 0.1
 
 # note, we need a neat way to pass the greta array variable inside
 # dispersal_network into iterate_dynamic_function if we want to make this a
 # variable. Breaks the nice packaging of dispersal networks
 
-# prob_disperse_same_cluster <- normal(0.9, 0.1, truncation = c(0, 1))
-prob_disperse_same_cluster <- 0.9
-
 # build a between-cluster dispersal network object based adjacency
 dispersal_network <- uniform_dispersal_network(
   edges = adjacency,
-  fraction_dispersing = 1 - prob_disperse_same_cluster)
+  fraction_dispersing = prob_disperse)
 
 # transition function for the population process as a difference equation in
 # integer timestep
-fun <- function(state, iter, r, z_cluster, prob_disperse) {
+fun <- function(state, iter, r, z_cluster) {
   
   # computed expected population growth in each pixel
   state_grown <- state * r
   
-  # compute the number of dispersers from each pixel and in each cluster
-  pixel_dispersers <- state_grown * prob_disperse
-  cluster_dispersers <- tapply(pixel_dispersers,
-                               cluster_id,
-                               FUN = "sum")
-  
-  # disperse across clusters (some remain in the same cluster)
-  cluster_dispersed <- sparse_dispersal(cluster_dispersers,
+  # aggregate at cluster level
+  cluster_grown <- tapply(state_grown,
+                          cluster_id,
+                          FUN = "sum")
+
+  # now apply dispersal
+  cluster_dispersed <- sparse_dispersal(cluster_grown,
                                         dispersal_network)
   
-  # now allocate the dispersers within each cluster to pixels by population weight
-  pixel_arrivals <- cluster_dispersed[cluster_id] * pop_weights
+  # now apply stochasticity
+  cluster_new <- lognormal_continuous_poisson(cluster_dispersed, z_cluster)
   
-  # compute the number in each state after dispersal
-  state_expected <- state_grown - pixel_dispersers + pixel_arrivals
+  # now compute the ratio in the cluster (from the dispersal stage) and apply to
+  # all pixels
+  cluster_ratio <- cluster_new / cluster_grown
   
-  # apply stochasticity, with common innovations in the same cluster
-  state_new <- lognormal_continuous_poisson(state_expected, z_cluster[cluster_id])
+  state_new <- state_grown * cluster_ratio[cluster_id]
   
   state_new
 }
@@ -249,7 +249,6 @@ pop_sim <- iterate_dynamic_function(
   niter = n_times,
   tol = 0,
   r = r,
-  prob_disperse = prob_disperse,
   z_cluster = z_cluster_vec,
   parameter_is_time_varying = "z_cluster",
   # clamp the populations to reasonably values to avoid numerical under/overflow
@@ -257,10 +256,16 @@ pop_sim <- iterate_dynamic_function(
 )
 
 sims <- calculate(pop_sim$all_states,
-                  values = list(r_pop_beta = -0.1),
+                  r,
+                  values = list(beta = c(-0.1, 0.05, 0.05)),
                   nsim = 1)
 
 # put these back in the raster to plot
+r_plot <- moz_mask
+names(r_plot) <- "r"
+r_plot[cell_id] <- sims$r[1, , 1]
+plot(r_plot)
+
 moz_plot <- moz_mask
 names(moz_plot) <- "state"
 moz_plot_many <- replicate(n_times, moz_plot, simplify = FALSE)
@@ -269,10 +274,33 @@ names(moz_plot_many) <- paste0("state", seq_len(n_times))
 for (i in seq_len(n_times)) {
   moz_plot_many[[i]][cell_id] <- sims$`pop_sim$all_states`[1, , i]
 }
-plot(moz_plot_many)
+plot(moz_plot_many[[16+1:4]] > 5)
 
-# the dispersal rule is making all the cases aggregate in the cities
+i <- 2
+ratio <- moz_plot_many[[i]] / moz_plot_many[[i - 1]]
+plot(ratio / r_plot)
+
 par(mfrow = c(1, 1))
-plot(moz_plot_many[[3]])
-plot(sqrt(moz_plot_many[[3]]))
+i <- 20
+plot(moz_plot_many[[i]])
+plot(log1p(moz_plot_many[[i]]))
+
+
+# plot stochastic trajectories for cells with R near 1
+i <- sample(which(abs(sims$r - 1) < 0.1), 1)
+sims$r[1, i, ]
+plot(sims$`pop_sim$all_states`[1, i, ], type = "l")
+
+
+# the dynamics are evolving away from bad initial values to the regions with
+# high r
+
+# probably need to implement some sort of density dependence in there to
+# stabilise the populations more
+
+# do logistic growth-type dynamics? With K as a function of r?
+# or do seomthing with depletion of susceptibles?
+
+# try fitting to data and see how well it does
+
 
