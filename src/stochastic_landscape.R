@@ -17,6 +17,75 @@ lognormal_continuous_poisson <- function(lambda, z) {
   exp(mu + z * sigma)
 }
 
+# given 'edges', a description of a network (a two column matrix with 'from' and
+# 'to' columns indexing the nodes connected by each edge in the network,
+# *excluding self-dispersal*) and 'fraction_dispersing' either a scalar or a
+# vector (with the same length as the *number* of nodes) of the fraction of
+# individuals in each node that will disperse to other nodes at each timestep,
+# compute the object (a named list with three matching vectors: 'from', 'to',
+# and 'weight') needed to efficiently compute dispersal on the network, assuming
+# equal probabilities of dispersing along each of the edges from the 'from'
+# nodes
+uniform_dispersal_network <- function(edges, fraction_dispersing) {
+  
+  n_nodes <- max(edges)
+  
+  # expand out the fraction dispersing to all nodes if it is a scalar
+  if (length(fraction_dispersing) == n_nodes) {
+    fraction_dispersing_vec <- fraction_dispersing
+  } else {
+    fraction_dispersing_vec <- rep(fraction_dispersing, n_nodes)
+  }
+  
+  # compute the numbers of edges from each node
+  n_routes <-  table(edges[, "from"])
+  
+  # check there are no isolated nodes
+  stopifnot(min(n_routes) > 0)
+  
+  # compute the fraction of dispersing individuals that would use each route,
+  # under the uniformity assumption
+  dispersal_fraction_normalised <- (1 / n_routes)[edges[, "from"]]
+  
+  # compute the overall fractions dispersing on each of the true edges
+  other_dispersal <- dispersal_fraction_normalised *
+    fraction_dispersing_vec[edges[, "from"]]
+  
+  # and the overall fraction not leaving
+  self_dispersal <- 1 - fraction_dispersing_vec
+  
+  # add edges for non-dispersal (self-dispersal)
+  edges_self <- cbind(from = seq_len(n_clusters),
+                      to = seq_len(n_clusters))
+  
+  # combine into a single edges matrix, including the self-dispersal
+  edges_all <- rbind(edges, edges_self)
+  
+  list(from = edges_all[, "from"],
+       to = edges_all[, "to"],
+       weight = c(other_dispersal, self_dispersal))
+  
+}
+
+# given a vector 'state' of population state values in each node, and a weighted
+# network structure 'network', disperse individuals across the network.
+# 'network' should be a named list with three vectors of equal length: 'from'
+# and 'to' vectors indexing the nodes connected by each edge in the network
+# (including self-dispersal), and a 'weight' vector giving the fraction of the
+# individuals in the corresponding 'from' node dispersing via that route
+sparse_dispersal <- function(state, network) {
+  
+  # expected number going via each route
+  expected_edges <- state[network$from] * network$weight
+  
+  # sum over all edges by cluster of arrival to get the expected number arriving
+  # at each
+  tapply(expected_edges,
+         network$to,
+         FUN = "sum")
+  
+}
+
 # path to the data
 data_dir <- "../mozambique_example/data/"
 
@@ -74,8 +143,8 @@ values(voronoi) <- data.frame(cluster = seq_along(voronoi))
 clusters <- rasterize(voronoi, moz_mask, field = "cluster")
 clusters <- mask(clusters, moz_mask)
 
-# plot them
-plot(clusters, col = sample(rainbow(n_clusters)))
+# # plot them
+# plot(clusters, col = sample(rainbow(n_clusters)))
 
 # get the cluster populations
 cluster_pops <- zonal(moz_pop, clusters, fun = "sum")
@@ -90,90 +159,11 @@ stopifnot(abs(observed_pop - expected_pop) < 1e-6)
 
 # define an adjacency matrix for dispersal
 adjacency <- adjacent(voronoi)
-head(adjacency)
 
-# set up dispersal information
-n_routes <-  table(adjacency[, "from"])
-dispersal_info <- list(
-  # total fraction dispersing from each cluster on each timestep
-  fraction_dispersing = 0.1,
-  # the routes between clusters
-  routes = adjacency,
-  # the fraction *of those leaving a cluster* that go via each route
-  dispersal_fraction_normalised = (1 / n_routes)[adjacency[, "from"]]
-)
+# build a dispersal network object based on this
+dispersal_network <- uniform_dispersal_network(edges = adjacency, fraction_dispersing = 0.1)
 
-# explicit, but slightly inefficient implementation of sparse dispersal
-dispersal_sparse_slow <- function(cluster_state, dispersal_info) {
-  
-  # expected number leaving each cluster
-  leaving_cluster_expected <- cluster_state *
-    dispersal_info$fraction_dispersing
-  
-  # expected number going via each route
-  leaving_route_expected <- leaving_cluster_expected[dispersal_info$routes[, "from"]] *
-    dispersal_info$dispersal_fraction_normalised
-  
-  # sum over all routes by cluster of arrival to get the expected numebr arriving
-  # at each
-  
-  # number travelling via each adjacency
-  arriving_cluster_expected <- tapply(leaving_route_expected,
-                                      dispersal_info$routes[, "to"],
-                                      FUN = "sum")
-  
-  # sum up dispersals (note this could be made faster by having self-dispersal in
-  # the lookup)
-  cluster_state_expected -
-    leaving_cluster_expected +
-    arriving_cluster_expected
-  
-}
-
-# explicit, but slightly inefficient implementation of sparse dispersal
-dispersal_sparse <- function(cluster_state, dispersal_info) {
-  
-  # combine dispersal info to get a single lookup of dispersal and non-dispersal
-  dispersal_info_new <- dispersal_info
-
-  n_clusters <- length(cluster_state)
-  routes_self <- cbind(from = seq_len(n_clusters),
-                       to = seq_len(n_clusters))
-  
-  other_dispersal_vec <- dispersal_info$dispersal_fraction_normalised *
-    dispersal_info$fraction_dispersing
-  
-  self_dispersal <- 1 - dispersal_info$fraction_dispersing
-  if (length(self_dispersal) == n_clusters) {
-    self_dispersal_vec <- self_dispersal
-  } else {
-    self_dispersal_vec <- rep(self_dispersal, n_clusters)
-  }
-  
-  # combine into a single sparse matrix
-  routes_all <- rbind(dispersal_info$routes, routes_self)
-  dispersal_vec <- c(other_dispersal_vec, self_dispersal_vec)
-  
-  # expected number going via each route
-  route_state_expected <- cluster_state[routes_all[, "from"]] * dispersal_vec
-  
-  # sum over all routes by cluster of arrival to get the expected number arriving
-  # at each
-  tapply(route_state_expected,
-         routes_all[, "to"],
-         FUN = "sum")
-  
-}
-
-# remind myself of sparse dispersal thingo
-
-# proportion dispersing from each cluster at each timestep
-
-# fraction of those dispersing from each cluster that use each route
-
-# get all pixels
-
-# pixel and cluster ids
+# get pixel and cluster ids
 cell_id <- cells(moz_mask)
 cluster_id <- terra::extract(clusters, cell_id)$cluster
 n_cells <- length(cell_id)
@@ -196,16 +186,9 @@ cluster_state_expected <- tapply(state_grown_expected,
                                  FUN = "sum")
 
 # do sparse expected dispersal to new states
-cluster_new_state_expected <- dispersal_sparse(
-  cluster_state = cluster_state_expected,
-  dispersal_info = dispersal_info)
-
-cluster_new_state_expected2 <- dispersal_sparse_slow(
-  cluster_state = cluster_state_expected,
-  dispersal_info = dispersal_info)
-
-# check these are the same
-max(abs(cluster_new_state_expected - cluster_new_state_expected2)) < 1e-6
+cluster_new_state_expected <- sparse_dispersal(
+  state = cluster_state_expected,
+  network = dispersal_network)
 
 # apply stochasticity to the expected new state
 cluster_new_state <- lognormal_continuous_poisson(cluster_new_state_expected, z)
@@ -216,7 +199,6 @@ cluster_ratios <- cluster_new_state / cluster_old_state
 
 # compute the new pixel-level states
 new_state <- state * cluster_ratios[cluster_id]
-
 
 # build greta model
 library(greta)
