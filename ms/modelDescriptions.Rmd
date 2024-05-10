@@ -258,7 +258,8 @@ Survival probability is also clearly temperature dependent.  @umeda2019 do not r
 
 ```{r walgamaSurvival}
 sDat <- read.csv(file = "../dat/walgamaFig2DataExtract.csv")
-sDat$Mortality <- sDat$Mortality/100 # convert to probability of mortality over n days 
+sDat$Mortality <- sDat$Mortality/100 # convert to probability of mortality over n days
+sDat$Mortality[sDat$Mortality>1] <- 1 # catch the 1.002s
 mortRate <- -log(1-sDat$Mortality)/sDat$Days # convert to a rate
 mortProb <- 1-exp(-mortRate) # convert to a daily probability
 plot(mortProb~sDat$Temperature)
@@ -268,6 +269,7 @@ This is a little awkward.  Let's express it as a survival rate instead, and see 
 
 ```{r survTPC}
 survProb <- 1-mortProb
+sDat <- cbind(sDat, mortProb, survProb)
 plot(survProb~sDat$Temperature)
 
 source("../src/TPCFunctions.R")
@@ -294,5 +296,100 @@ We can assume pre-adult survival is the same as adult survival. This leaves us o
 
 @gadd1941 estimates the rate of egg laying per female at 0.927 eggs per day per female.  His data also has a sex ratio of m:f = 81:237.  So the fraction of eggs that are female is `r 237/(237+81)`.  Hence, the rate of egg laying of *female* eggs is likely to be around `r 0.927*237/(237+81)`.
 
+## Estimating priors
+
+All this is useful for point estimates for a deterministic model, but we are also interested in a Bayesian inference model.  To start on that, we will need decent priors for all the above. 
+
+### Temperature dependent vital rates
+
+We propose that an efficient strategy here will be to estimate a family of temperature performance curves (TPCs).  With a curve for each of the temperature-dependent parameters: $\alpha_J(T)$, $\alpha_P(T)$, and $\phi_J(T)$.  Each of these TPCs is a four-parameter model (for example, taking: optimal temperature $T_o$, maximum performance $P_{max}$, breadth up to $a_+$ and beyond $a_-$ optimum temperature.  
+
+A sensible way to reduce this will be to assume some consistency in TPC across life-history stages.  For example, we might assume that the optimal temperature is likely to be the same for all three of these curves.  We might also assume that the breadth of the curves for transition probabilities are the same and that really the only thing that changes across the functions for transition probabilities $\alpha$, is the maximum performance.
+
+Thus, we might look to fit a model with some of the temperature-dependence parameters shared across these temperature dependent vital rates.  
+
+To fit these models, of course, we need data. What can we extract from the literature?
+
+#### $\alpha_J$ data and priors
+
+For $\alpha_J$ we have the data from @umeda2019 (plotted above).
+
+```{r umeda_alpha_j_data}
+alpha_j_temp_umeda <- c(18, 20, 25, 30, 32)
+alpha_j_rate_umeda <- c(0.013, 0.020, 0.0258, 0.0421, 0.0206)
+```
+
+We might also make use of the data from @walgama2007.  These authors measured developmental rates for egg, larva and pupa separately (which together gives $\phi_j$).  Their data (eggs and larvae reported in their tables 1, 2, and larvae rates extracted from Fig 1.) are as follows:
+
+```{r walgama_alpha_j_data}
+alpha_j_temp_walgama <- c(15, 18, 20, 22, 25, 28, 30, 32)
+egg_dev_time_walgama <- c(Inf, 23.5, 18.5, 13, 7.3, 5.5, 5, 10.9)
+larva_dev_time_walgama <- c(NA, 1/0.0288, 1/0.0399, NA, 1/0.0688, 1/0.140, NA, NA) # extracted from figure
+pupae_dev_time_walgama <- c(Inf, 15, 14, 9, 7.5, 6, 4, 7)
+total_juv_dev_time_walgama <- egg_dev_time_walgama + larva_dev_time_walgama + pupae_dev_time_walgama
+alpha_j_rate_walgama <- 1/total_juv_dev_time_walgama
+alpha_j_rate_walgama[1] <- 0
+
+# plot the two datasets against each other
+plot(alpha_j_rate_walgama~alpha_j_temp_walgama)
+points(alpha_j_rate_umeda~alpha_j_temp_umeda, pch=17)
+```
+
+These look to be astonishingly consistent, really.  We will combine these two sets to estimate our TPC for alpha_j.
+
+```{r alpha_J_TPC}
+temp <- c(alpha_j_temp_umeda, alpha_j_temp_walgama)
+rate <- c(alpha_j_rate_umeda, alpha_j_rate_walgama)
+TPCmatrix <- na.omit(cbind(temp, rate))
+alpha_J_fit <- TPC.q.fit(TPCmatrix, in.acc = 8, hessian = TRUE)
+pars <- alpha_J_fit$par
+
+plotTemp <- seq(12, 35, 0.2)
+survProbPred <- TPC.q(plotTemp, rmax = pars[1], Trmax = pars[2], acc = pars[3], dec.prop = pars[4])
+
+plot(rate~temp)
+lines(survProbPred~plotTemp)
+```
+
+Which looks decent.  Now we just need some errors on the parameter estimates, which we should be able to get from the inverse of the Hessian.
+
+```{r alpha_J_TPC_priors}
+par_names_TPC <- c(quote(P[max]), quote(T[0]), quote(a[plus]), quote(a[minus]))
+alpha_J_pars_sd <- sqrt(diag(solve(alpha_J_fit$hessian)))
+alpha_J_priors <- cbind(pars, alpha_J_pars_sd)
+rownames(alpha_J_priors) <- par_names_TPC
+alpha_J_priors
+```
+
+#### $\alpha_P$ data and priors
+
+There is a lack of real data for this prior.  @walgama2007 make their estimate assuming a pre-oviposition period of 8 days at optimal temperature, and a minimum developmental temperature of 15 degrees.  If we take the above curve as a template, we would switch out $P_{max}$ with `r 1/8`.  For the sake of making a prior, let us assume that our uncertainty scales with the mean estimate.  This would yield a prior for the $P_{max, \alpha_P}$ as follows.
+
+```{r alpha_P_TPC_priors}
+alpha_P_priors <- alpha_J_priors
+colnames(alpha_P_priors) <- c("pars", "alpha_P_pars_sd")
+alpha_P_priors["P[max]", 1] <- 1/8
+alpha_P_priors["P[max]", 2] <- sqrt(1/8/alpha_J_priors["P[max]", 1]*(alpha_J_priors["P[max]", 2]^2))
+alpha_P_priors
+```
+
+#### $\phi_J$ data and priors
+
+The only data here come from @walgama2007 and are given above (held in `sDat`).  Let's repeat that analysis, but calculate the Hessian along the way.
+
+```{r phi_j_TPC_priors}
+phi_J_fit <- TPC.q.fit(TPCmatrix, in.acc = 0.3, hessian = TRUE)
+phi_J_pars <- phi_J_fit$par
+phi_J_pars_sd <- sqrt(diag(solve(phi_J_fit$hessian)))
+phi_J_priors <- cbind(phi_J_pars, phi_J_pars_sd)
+rownames(phi_J_priors) <- par_names_TPC
+phi_J_priors
+```
+ 
+#### $\phi_P$, $\phi_A$ data and priors
+ 
+Pre-adult and adult survival appears to be less affected by temperature.  Let us assume that these are equal and constant over time.  @gadd1941 estimates a maximum laying lifespan for a female as 49 days, with a rough estimate of the mean laying lifespan of 32 days. This would yield a per day mortality rate of 1/32.  This equates to a per day survival probability of $\phi_P = \phi_A=$ `r exp(-1/32)`  We have no real way to put bounds on this, so will pick a beta distribution with this mean and 95% bounds approximately $\pm 0.3$.
+
+We can assume pre-adult survival is the same as adult survival. This leaves us only with the survival associated with dispersal, $\phi_\mu$, which we have no measure for, we will make this a minimally informative beta distribution.
 
 ## References
