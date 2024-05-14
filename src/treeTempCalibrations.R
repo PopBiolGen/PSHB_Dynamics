@@ -78,6 +78,7 @@ wd <- wd %>% mutate(DOY = yday(dmy(paste(day, month, year, sep = "-")))) %>%
 
 merge_temp <- left_join(left_join(sflow, wd), soil.daily)
 
+
 # get a few visuals 
 # plot(meanAirTemp~DOY, data = merge_temp, col = "blue")
 # points(air_tmax~DOY, data = merge_temp, col = "lightblue")
