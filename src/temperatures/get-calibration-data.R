@@ -1,9 +1,9 @@
 ## ---------------------------
 ##
-## Script name: treeTempCalibrations.R
+## Script name: get-calibration-data.R
 ##
-## Purpose of script: Compare observed temperatures in trees (from sapflow monitors) with
-##                      temperatures estimated from nicheMapR soil temperature model
+## Purpose of script: Gather data to predict observed temperatures in trees (from sapflow monitors) with
+##                      spatial data from BOM, and from NicheMapper soil data
 ##
 ## Date Created: 2024-02-09
 ##
@@ -13,7 +13,7 @@
 ##
 ## Notes:
 ##   The idea is to use mean weather variables (last decade) at daily time steps to predict 
-##    temperature inside trees.  Temperature data come from sapflow probes in trees at King's park
+##    temperature inside trees.  Temperature data come s from sapflow probes in trees at King's park
 ##    
 ## --------------------------
 ## load up the packages we will need 
