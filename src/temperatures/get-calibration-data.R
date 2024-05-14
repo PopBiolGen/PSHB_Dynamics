@@ -25,7 +25,7 @@ library(weatherOz)
 
 # response variable -- temperature from sapflow probes
 # Load some sapflow data
-#fList <- list.files("dat/sapflow")
+fList <- list.files("dat/sapflow")
 sflow <- read.csv(paste0("dat/sapflow/", fList[1]), skip = 18, header = TRUE) %>%
   select(Date, Time, Max.Td.In...C., Max.Tu.In...C.) %>%
   mutate(Date = dmy(Date), year = year(Date), DOY =yday(Date)) %>%
@@ -33,7 +33,7 @@ sflow <- read.csv(paste0("dat/sapflow/", fList[1]), skip = 18, header = TRUE) %>
   group_by(DOY) %>%
   summarise(mean_d = mean(Max.Td.In...C.), mean_u = mean(Max.Tu.In...C.))
   
-sflow2 <- read.csv(paste0("dat/sapflow/", fList[ff]), skip = 40, header = TRUE) %>%
+sflow2 <- read.csv(paste0("dat/sapflow/", fList[2]), skip = 40, header = TRUE) %>%
   select(Date, Time, Max.Td.In...C., Max.Tu.In...C.) %>%
   mutate(Date = dmy(Date), year = year(Date), DOY =yday(Date)) %>%
   #filter(year == 2022) %>%
@@ -78,7 +78,7 @@ wd <- wd %>% mutate(DOY = yday(dmy(paste(day, month, year, sep = "-")))) %>%
 
 merge_temp <- left_join(left_join(sflow, wd), soil.daily)
 
-
+rm(sflow, sflow2, soil, soil.daily, wd, fList)
 # get a few visuals 
 # plot(meanAirTemp~DOY, data = merge_temp, col = "blue")
 # points(air_tmax~DOY, data = merge_temp, col = "lightblue")
