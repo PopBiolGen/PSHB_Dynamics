@@ -47,5 +47,5 @@ lines(plot_data[,"2.5%"]~plot_data[,"DOY"], col = "lightblue")
 lines(plot_data[,"97.5%"]~plot_data[,"DOY"], col = "lightblue")
 
 # output model parameters
-tree_temp_prediction_pars <- summary(draws)$statistics
-save(tree_temp_prediction_pars, file = "out/tree-temp-model-pars.RData")
+tree_temp_model_pars <- summary(draws)$statistics
+save(tree_temp_model_pars, file = "out/tree-temp-model-pars.RData")
