@@ -81,6 +81,20 @@ step_within_population <- function(n_t, cumulative_offspring, temperature, f, ph
   return(list(n = n_tplus, cum_n = cumulative_offspring))
 }
 
+
+# returns predicted mean tree temperature each day based on inputs of:
+# soil temperature at 1m below
+# mean maximum air temperature for that day
+# mean relative humidity of that day
+# uses model parameters generated in src/temperatures/temperature-prediction-function.R
+tree_temp_prediction <- function(soil, air_max, humidity){
+  load("out/tree-temp-model-pars.Rdata")
+  p_logit <- tree_temp_model_pars["Mean", "int"] + tree_temp_model_pars["Mean", "beta"]*humidity
+  p <- exp(p_logit)/(1+exp(p_logit))
+  tree_temp <- p*air_max + (1-p)*soil
+  return(tree_temp)
+}
+
 ## Function to plot daily mean temperatures
 plot_temperatures <- function(temps, xlabel = FALSE) {
   xl <- ""
