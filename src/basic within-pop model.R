@@ -2,7 +2,7 @@
 ##
 ## Script name: basic-within-pop-model.R
 ##
-## Purpose of script: Run and display numerical realisations of the within-population PSHB model
+## Purpose of script: Run and display numerical realizations of the within-population PSHB model
 ##
 ##
 ## Date Created: 2024-01-29
@@ -15,29 +15,21 @@
 ##   
 ##
 ## --------------------------
-## load up the packages we will need 
+## Load up the required packages
 library(dplyr)
 library(lubridate)
-## ---------------------------
 
-## load up our functions into memory 
+## Load up the functions
 source("src/TPCFunctions.R")
 source("src/modelFunctions.R")
-## ---------------------------
 
-## Load up data we need
-
-# Load the soil.csv dataset
+## Load up the data
 soil <- read.csv("dat/soil.csv")
-# Summarise to daily mean temperatures
 soil.daily <- soil %>%
-          group_by(DOY) %>%
-          select(-dates, -TIME) %>%
-          summarise(across(everything(), mean))
-
-# Extract the temperature data from the D10 column
+  group_by(DOY) %>%
+  select(-dates, -TIME) %>%
+  summarise(across(everything(), mean))
 temps <- soil.daily$D10cm
-## ---------------------------
 
 # Print diagnostic information
 cat("Temperature data summary:\n")
@@ -62,7 +54,10 @@ for (tt in 2:time_steps) {
 }
 
 # Plot population dynamics over time
-matplot(t(population_data), type = "l", bty = "l")
+matplot(t(population_data), type = "l", bty = "l", xlab = "Day of the year", ylab = "N")
+legend('topleft', legend = c('Juveniles', 'Pre-adults', 'Adults'), col = 1:3, lty = 1:3)
+
+matplot(t(log(population_data)), type = "l", bty = "l")
 legend('topleft', legend = c('Juveniles', 'Pre-adults', 'Adults'), col = 1:3, lty = 1:3)
 
 # plot growth rates of adults over time
@@ -70,3 +65,6 @@ ad_vec <- population_data[3,]
 growth_rate <- diff(log(ad_vec))
 plot(growth_rate, type = "l")
 
+
+# Plot all figures using the NvTPlot function
+NvTPlot(temps, population_data)
