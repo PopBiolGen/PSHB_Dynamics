@@ -60,8 +60,8 @@ soil.daily <- soil %>%
 wd <- get_data_drill(
   latitude = -31.961833,
   longitude = 115.833689,
-  start_date = "20220101",
-  end_date = "20221231",
+  start_date = "20130101",
+  end_date = "20231231",
   values = c(
     "max_temp",
     "min_temp",
@@ -72,8 +72,11 @@ wd <- get_data_drill(
 )
 
 wd <- wd %>% mutate(DOY = yday(dmy(paste(day, month, year, sep = "-")))) %>%
-  mutate(meanAirTemp = (air_tmax + air_tmin)/2) %>%
-  select(DOY, air_tmax, air_tmin, meanAirTemp, rainfall, rh_tmax)
+  mutate(meanAirTemp = (air_tmax + air_tmin)/2, meanAnnTemp = mean(meanAirTemp)) %>%
+  select(DOY, air_tmax, air_tmin, meanAirTemp, meanAnnTemp, rainfall, rh_tmax) %>%
+  group_by(DOY) %>%
+  summarise(across(everything(), mean))
+
   
 
 merge_temp <- left_join(left_join(sflow, wd), soil.daily)
