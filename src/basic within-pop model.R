@@ -3,12 +3,6 @@
 ## Script name: basic-within-pop-model.R
 ##
 ## Purpose of script: Run and display numerical realizations of the within-population PSHB model
-##
-##
-## Date Created: 2024-01-29
-##
-## Email:kanishkwalavalkar@gmail.com;  ben.l.phillips@curtin.edu.au
-##
 ## ---------------------------
 ##
 ## Notes:
@@ -28,7 +22,6 @@ locLat <- -32.005892
 locLong <- 115.896019
 
 
-yearSim <- run_year(lat = locLat, long = locLong)
+yearSim <- run_year(lat = locLat, long = locLong, make_plot = TRUE)
 
-# Plot all figures using the NvTPlot function
-NvTPlot(yearSim$temps, yearSim$popDat)
+

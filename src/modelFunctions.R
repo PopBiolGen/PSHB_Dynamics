@@ -181,7 +181,7 @@ NvTPlot <- function(temps, population_data) {
 }
 
 # Runs a year of population growth at a given location
-run_year <- function(lat, long, warmup = 10, survival_threshold = 1e11){
+run_year <- function(lat, long, warmup = 10, survival_threshold = 1e11, make_plot = FALSE){
   # get tree temp
   temps <- tree_temp_prediction(lat = locLat, long = locLong)
   temps <- c(rep(mean(temps), warmup), temps) # add mean temperature for warmup iterations
@@ -212,6 +212,11 @@ run_year <- function(lat, long, warmup = 10, survival_threshold = 1e11){
     diffVec/dt
   } 
   growthRate <- agr(population_data)
+  
+  if (make_plot){
+    # Plot all figures using the NvTPlot function
+    NvTPlot(temps, population_data)
+  }
   
   list(popDat = population_data, temps = temps, growthRate = growthRate)
 }
