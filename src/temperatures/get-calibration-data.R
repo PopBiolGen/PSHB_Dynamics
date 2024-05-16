@@ -72,14 +72,22 @@ wd <- get_data_drill(
 )
 
 wd <- wd %>% mutate(DOY = yday(dmy(paste(day, month, year, sep = "-")))) %>%
-  mutate(meanAirTemp = (air_tmax + air_tmin)/2, meanAnnTemp = mean(meanAirTemp)) %>%
-  select(DOY, air_tmax, air_tmin, meanAirTemp, meanAnnTemp, rainfall, rh_tmax) %>%
+  mutate(meanDaily = (air_tmax + air_tmin)/2, meanAnnTemp = mean(meanDaily),
+         ma30 = zoo::rollmean(meanDaily, k = 30, fill = NA, align = "right"), 
+         ma60 = zoo::rollmean(meanDaily, k = 60, fill = NA, align = "right"), 
+         ma90 = zoo::rollmean(meanDaily, k = 90, fill = NA, align = "right"),
+         ma120 = zoo::rollmean(meanDaily, k = 120, fill = NA, align = "right")
+         ) %>%
+  select(DOY, air_tmax, air_tmin, meanDaily, meanAnnTemp, ma30, ma60, ma90, ma120, rainfall, rh_tmax) %>%
   group_by(DOY) %>%
   summarise(across(everything(), mean))
 
   
 
 merge_temp <- left_join(left_join(sflow, wd), soil.daily)
+
+cor(merge_temp, use = "complete.obs") #note correlation of 0.96 with soil 100cm and 30-day moving average
+
 
 rm(sflow, sflow2, soil, soil.daily, wd, fList)
 # get a few visuals 

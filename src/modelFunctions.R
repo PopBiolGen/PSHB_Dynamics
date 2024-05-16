@@ -44,6 +44,33 @@ alpha_P_temp <- function(temperature, lower = 15, upper = 31){
   ifelse(temperature>lower & temperature < upper, prob, 0)
 }
 
+# Gets environmental data for tree temperature prediction, given a lat and long
+# requires an API key (your email address) for SILO stored in .Renviron
+get_env_data <- function(lat, long){
+  # get mean temperature and humidity between 2013-2023
+  wd <- weatherOz::get_data_drill(
+    latitude = lat,
+    longitude = long,
+    start_date = "20130101",
+    end_date = "20231231",
+    values = c(
+      "max_temp",
+      "min_temp",
+      "rh_tmax"
+    ),
+    api_key = Sys.getenv("SILO_API_KEY")
+  )
+ #calculate 1 month moving average temp in lieu of soil temp at 100cm
+ wd <- wd %>% dplyr::mutate(DOY = yday(dmy(paste(day, month, year, sep = "-")))) %>%
+    mutate(meanDaily = (air_tmax+air_tmin)/2, soil = zoo::rollmean(meanDaily, k = 30, fill = NA, align = "right")) %>%
+    select(DOY, air_tmax, rh_tmax, movAve) %>%
+    group_by(DOY) %>%
+    summarise(across(everything(), \(x) mean(x, na.rm = TRUE)))
+  
+ return(wd)
+}
+
+
 phi_J_temp <- function(temperature){
   TPC.q(temperature, rmax = 0.99, Trmax = 29.5, acc = 80, dec.prop = 0.15)
 }
