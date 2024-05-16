@@ -80,7 +80,7 @@ wd <- wd %>% mutate(DOY = yday(dmy(paste(day, month, year, sep = "-")))) %>%
          ) %>%
   select(DOY, air_tmax, air_tmin, meanDaily, meanAnnTemp, ma30, ma60, ma90, ma120, rainfall, rh_tmax) %>%
   group_by(DOY) %>%
-  summarise(across(everything(), mean))
+  summarise(across(everything(), \(x) mean(x, na.rm = TRUE)))
 
   
 
