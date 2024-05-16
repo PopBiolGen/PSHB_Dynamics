@@ -44,6 +44,33 @@ alpha_P_temp <- function(temperature, lower = 15, upper = 31){
   ifelse(temperature>lower & temperature < upper, prob, 0)
 }
 
+# Gets environmental data for tree temperature prediction, given a lat and long
+# requires an API key (your email address) for SILO stored in .Renviron
+get_env_data <- function(lat, long){
+  # get mean temperature and humidity between 2013-2023
+  wd <- weatherOz::get_data_drill(
+    latitude = lat,
+    longitude = long,
+    start_date = "20130101",
+    end_date = "20231231",
+    values = c(
+      "max_temp",
+      "min_temp",
+      "rh_tmax"
+    ),
+    api_key = Sys.getenv("SILO_API_KEY")
+  )
+ #calculate 1 month moving average temp in lieu of soil temp at 100cm
+ wd <- wd %>% dplyr::mutate(DOY = yday(dmy(paste(day, month, year, sep = "-")))) %>%
+    mutate(meanDaily = (air_tmax+air_tmin)/2, soil = zoo::rollmean(meanDaily, k = 30, fill = NA, align = "right")) %>%
+    select(DOY, air_tmax, rh_tmax, soil) %>%
+    group_by(DOY) %>%
+    summarise(across(everything(), \(x) mean(x, na.rm = TRUE)))
+  
+ return(wd)
+}
+
+
 phi_J_temp <- function(temperature){
   TPC.q(temperature, rmax = 0.99, Trmax = 29.5, acc = 80, dec.prop = 0.15)
 }
@@ -83,16 +110,18 @@ step_within_population <- function(n_t, cumulative_offspring, temperature, f, ph
 
 
 # returns predicted mean tree temperature each day based on inputs of:
-# soil temperature at 1m below
+# soil temperature at 1m below (30-day moving average of mean daily temp)
 # mean maximum air temperature for that day
 # mean relative humidity of that day
 # uses model parameters generated in src/temperatures/temperature-prediction-function.R
-tree_temp_prediction <- function(soil, air_max, humidity){
+# gets environmental data from Australia SILO database
+tree_temp_prediction <- function(lat, long){
   load("out/tree-temp-model-pars.Rdata")
-  p_logit <- tree_temp_model_pars["Mean", "int"] + tree_temp_model_pars["Mean", "beta"]*humidity
-  p <- exp(p_logit)/(1+exp(p_logit))
-  tree_temp <- p*air_max + (1-p)*soil
-  return(tree_temp)
+  locDat <- get_env_data(lat, long)
+  newDat <- list(air_tmax = locDat$air_tmax,
+       rh_tmax = locDat$rh_tmax,
+       ma30 = locDat$soil)
+  predict(mod_fit, newdata = newDat)
 }
 
 ## Function to plot daily mean temperatures
@@ -119,9 +148,9 @@ plot_population_dynamics <- function(temps, population_data, legend_size = 0.7, 
 ## Function to plot growth rates of all life stages over time with smoothing
 plot_growth_rates <- function(population_data, window_size = 5, legend_size = 0.7) {
   # Extract population data for all life stages
-  juv_vec <- population_data[1, ]
-  pre_adult_vec <- population_data[2, ]
-  ad_vec <- population_data[3, ]
+  juv_vec <- population_data[1,]
+  pre_adult_vec <- population_data[2,]
+  ad_vec <- population_data[3,]
   
   # Calculate growth rates for all life stages
   juv_growth_rate <- diff(log(juv_vec))
@@ -150,3 +179,45 @@ NvTPlot <- function(temps, population_data) {
   plot_growth_rates(population_data)
   plot_population_dynamics(temps, population_data, log.N = TRUE, xlabel = TRUE)
 }
+
+# Runs a year of population growth at a given location
+run_year <- function(lat, long, warmup = 10, survival_threshold = 1e11, make_plot = FALSE){
+  # get tree temp
+  temps <- tree_temp_prediction(lat = locLat, long = locLong)
+  temps <- c(rep(mean(temps), warmup), temps) # add mean temperature for warmup iterations
+  
+  # Initial population 
+  n_initial <- c(0, 0, 1)  # Initial population size
+  cumulative_offspring <- 0
+  
+  # run across warmup iterations to approach stable age distribution
+  time_steps <- length(temps)
+  population_data <- matrix(0, nrow = 3, ncol = time_steps)
+  population_data[, 1] <- n_initial
+  
+  for (tt in 2:time_steps) {
+    step_result <- step_within_population(population_data[, tt - 1], cumulative_offspring, temps[tt], f, phi_A, phi_P, mu = 0, survival_threshold)
+    population_data[, tt] <- step_result$n
+    cumulative_offspring <- step_result$cum_n
+  }
+  
+  # remove warmup
+  population_data <- population_data[, -(1:warmup)]
+  temps <- temps[-(1:warmup)]
+  
+  # calculate mean annual growth rate
+  agr <- function(population_data){
+    dt <- ncol(population_data)
+    diffVec <- log(population_data[,dt]) - log(population_data[,1])
+    diffVec/dt
+  } 
+  growthRate <- agr(population_data)
+  
+  if (make_plot){
+    # Plot all figures using the NvTPlot function
+    NvTPlot(temps, population_data)
+  }
+  
+  list(popDat = population_data, temps = temps, growthRate = growthRate)
+}
+
