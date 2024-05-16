@@ -18,10 +18,10 @@ source("src/TPCFunctions.R")
 source("src/modelFunctions.R")
 
 # Get tree temperature data
-locLat <- -32.005892
-locLong <- 115.896019
+locLat <- -17.957387
+locLong <- 122.215386
 
 
 yearSim <- run_year(lat = locLat, long = locLong, make_plot = TRUE)
 
-
+yearSim$growthRate
