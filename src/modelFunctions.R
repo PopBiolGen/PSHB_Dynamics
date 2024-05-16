@@ -181,7 +181,7 @@ NvTPlot <- function(temps, population_data) {
 }
 
 # Runs a year of population growth at a given location
-run_year <- function(lat, long, warmup = 20, survival_threshold = 1e11){
+run_year <- function(lat, long, warmup = 10, survival_threshold = 1e11){
   # get tree temp
   temps <- tree_temp_prediction(lat = locLat, long = locLong)
   temps <- c(rep(mean(temps), warmup), temps) # add mean temperature for warmup iterations
@@ -201,6 +201,18 @@ run_year <- function(lat, long, warmup = 20, survival_threshold = 1e11){
     cumulative_offspring <- step_result$cum_n
   }
   
-  list(popDat = population_data[, -(1:warmup)], temps = temps[-(1:warmup)])
+  # remove warmup
+  population_data <- population_data[, -(1:warmup)]
+  temps <- temps[-(1:warmup)]
+  
+  # calculate mean annual growth rate
+  agr <- function(population_data){
+    dt <- ncol(population_data)
+    diffVec <- log(population_data[,dt]) - log(population_data[,1])
+    diffVec/dt
+  } 
+  growthRate <- agr(population_data)
+  
+  list(popDat = population_data, temps = temps, growthRate = growthRate)
 }
 
