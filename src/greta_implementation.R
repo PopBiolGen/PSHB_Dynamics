@@ -1,5 +1,40 @@
 # fit a continuous version of the model to data, using greta
 
+
+# additional functions:
+
+# create a masking variable, near zero below lower and above upper, and at 0set x to (near) zero below lower and above upper
+bound_mask <- function(x, lower = -Inf, upper = Inf, tol = 0.01, soft = FALSE) {
+  # create a mask
+  if (soft) {
+    lower_mask <- plogis((x - lower) / tol)
+    upper_mask <- plogis((upper - x) / tol)
+  } else {
+    lower_mask <- as.numeric(x > lower)
+    upper_mask <- as.numeric(x < upper)
+  }
+  lower_mask * upper_mask
+}
+
+# par(mfrow = c(1, 1))
+# x <- seq(0, 50, length.out = 1000)
+# plot(bound_mask(x, 13.5, 31) ~ x, type = "l")
+# lines(bound_mask(x, 13.5, 31, soft = TRUE, tol = 0.1) ~ x, col = "red")
+
+# implemented bounded linear model for transition rates
+bounded_linear <- function(temperature, intercept, slope, lower, upper, ...) {
+
+  # create a mask to set values to 0 outside the allowed range
+  mask <- bound_mask(x = temperature,
+                     lower = lower,
+                     upper = upper,
+                     ...)
+  rate <- intercept + slope * temperature
+  prob <- 1 - exp(-rate)
+  prob * mask
+}
+
+
 # note: we need to install the correct experimental branch of greta.dynamics:
 # devtools::install_github("greta-dev/greta.dynamics@greta_2")
 library(greta.dynamics)
@@ -59,7 +94,6 @@ true_preadults <- data %>%
 #   points(obs_preadults[, i],
 #          col = i)
 # }
-
 
 # define the model
 
@@ -145,6 +179,7 @@ initial_state_expected <- matrix(c(0.01, 0.01, 10),
                                  n_sites,
                                  n_states, byrow = TRUE)
 dim(initial_state_expected) <- c(n_sites, n_states, 1)
+
 initial_state <- exponential(1 / initial_state_expected)
 
 states <- iterate_dynamic_function(
@@ -173,7 +208,6 @@ states <- iterate_dynamic_function(
 expected_preadults <- aperm(states$all_states[, 2, ], c(3, 1, 2))
 dim(expected_preadults) <- c(n_times, n_sites)
 distribution(obs_preadults) <- poisson(expected_preadults)
-
 
 m <- model(fecundity,
            phi_preadult,
@@ -297,6 +331,4 @@ for (i in seq_len(n_sites)) {
 # to do:
 
 # implement dispersal between host trees
-
-
 
