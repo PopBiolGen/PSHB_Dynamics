@@ -133,6 +133,10 @@ mu <- exponential(1 / 1e-5)
 # latent N(0, 1) deviates for the stochastic transitions
 latent_z_timeseries <- normal(0, 1, dim = c(n_times, n_sites, n_states, 1))
 
+# latent U(0, 1) deviates for the stochastic transitions
+latent <- uniform(min = 0, max = 1, dim = c(n_times, n_sites, n_states, 1))
+latent2 <- latent * 1
+
 transitions <- function(state, iter,
                         phi_J,
                         alpha_J,
@@ -142,6 +146,7 @@ transitions <- function(state, iter,
                         mu,
                         phi_A,
                         latent_z) {
+
   # J(t+1) &= \phi_J(1-\alpha_J)J(t) + fA(t)\\
   # P(t+1) &= \phi_J \alpha_J J(t) + \phi_P(1-\alpha_P)(1-\mu)P(t) + 0 \\
   # A(t+1) &= 0 + \phi_P\alpha_P(1-\mu)P(t) + \phi_AA(t)
@@ -167,7 +172,7 @@ transitions <- function(state, iter,
   expected_state <- abind(J, P, A, along = 2)
   
   # do stochastic dynamics bit here, by perturbing all states according to (a
-  # continuous relaxation of) Poisson noise with precomputed latent N(0, 1)
+  # continuous relaxation of) Poisson noise with precomputed latent U(0, 1)
   # noise:
   state <- lognormal_continuous_poisson(expected_state, latent_z)
   
