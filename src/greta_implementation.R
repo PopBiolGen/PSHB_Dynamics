@@ -5,8 +5,6 @@
 library(greta.dynamics)
 library(tidyverse)
 
-# define all the prior parameter values
-source("src/priors.R")
 
 # get the model functions
 source("src/modelFunctions.R")
@@ -36,6 +34,7 @@ define_prior_list <- function(prior_definition_list) {
 }
 
 # now convert into priors
+PSHB_priors <- prior_calculator()
 PSHB_priors_list <- lapply(PSHB_priors, define_prior_list)
 
 # simulate data
