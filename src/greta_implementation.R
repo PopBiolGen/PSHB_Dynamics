@@ -9,29 +9,6 @@ library(tidyverse)
 # get the model functions
 source("src/modelFunctions.R")
 
-# additional functions:
-
-
-# loop through each level of this, taking the name, defining the prior, and
-# putting it in the environment
-
-define_single_prior <- function(prior_definition) {
-  
-  # handle NULL case
-  if (is.null(prior_definition)) {
-    return(NULL)
-  }
-  
-  dist <- prior_definition$Distribution
-  args <- prior_definition[names(prior_definition) != "Distribution"]
-  do.call(dist, args)
-}
-
-define_prior_list <- function(prior_definition_list) {
-  priors <- lapply(prior_definition_list,
-                   define_single_prior)
-  priors
-}
 
 # now convert into priors
 PSHB_priors <- prior_calculator()
