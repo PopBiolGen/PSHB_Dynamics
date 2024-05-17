@@ -155,9 +155,11 @@ phi_P_priors <- vector(mode = "list", length = 1)
 mean_phi <- exp(-1/32)
 var_phi <- 0.03^2
 
-phi_P_priors <- c(
-  Distribution = "beta",
-  estBetaParams(mean_phi, var_phi)
+phi_P_priors <- list(
+  phi_P = c(
+    Distribution = "beta",
+    estBetaParams(mean_phi, var_phi)
+  )
 )
 
 # phi_A = phi_P
@@ -166,9 +168,11 @@ phi_P_priors <- c(
 phi_mu_priors <- vector(mode = "list", length = 1)
 
 phi_mu_priors <- list(
-  Distribution = "beta",
-  shape1 = 1,
-  shape2 = 1
+  phi_mu = list(
+    Distribution = "beta",
+    shape1 = 1,
+    shape2 = 1
+  )
 )
 
 ########### Organise and cleanup ############

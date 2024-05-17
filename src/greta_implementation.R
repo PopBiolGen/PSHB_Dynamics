@@ -1,5 +1,12 @@
 # fit a continuous version of the model to data, using greta
 
+# note: we need to install the correct experimental branch of greta.dynamics:
+# devtools::install_github("greta-dev/greta.dynamics@greta_2")
+library(greta.dynamics)
+library(tidyverse)
+
+# define all the prior parameter values
+source("src/priors.R")
 
 # additional functions:
 
@@ -35,12 +42,41 @@ bounded_linear <- function(temperature, intercept, slope, lower, upper, ...) {
 }
 
 
-# note: we need to install the correct experimental branch of greta.dynamics:
-# devtools::install_github("greta-dev/greta.dynamics@greta_2")
-library(greta.dynamics)
-library(tidyverse)
+
 
 source("src/modelFunctions.R")
+
+
+
+# loop through each level of this, taking the name, defining the prior, and
+# putting it in the environment
+
+define_single_prior <- function(prior_definition) {
+  
+  # handle NULL case
+  if (is.null(prior_definition)) {
+    return(NULL)
+  }
+  
+  dist <- prior_definition$Distribution
+  args <- prior_definition[names(prior_definition) != "Distribution"]
+  do.call(dist, args)
+}
+
+define_prior_list <- function(prior_definition_list) {
+  priors <- lapply(prior_definition_list,
+                   define_single_prior)
+  priors
+}
+
+# now convert into priors
+PSHB_priors_list <- lapply(PSHB_priors, define_prior_list)
+
+
+# apply functions to define temperature
+
+
+# convert these to greta arrays
 
 n_times <- 7 * 8
 n_states <- 3
@@ -123,13 +159,13 @@ phi_juvenile <- as_data(phi_J_temp(temps_array))
 
 # survival for pre-adults and adults are temperature-independent, so temporally
 # static. Infer these.
-phi_preadult <- normal(phi_P, 0.1, truncation = c(0, 1))
-phi_adult <- normal(phi_A, 0.1, truncation = c(0, 1))
+phi_preadult <- PSHB_priors_list$phi_P$phi_P
+phi_adult <- phi_preadult
 # hist(calculate(phi_preadult, nsim = 10000)[[1]], breaks = 100)
 # hist(calculate(phi_adult, nsim = 10000)[[1]], breaks = 100)
 
 # no dispersal to other host trees (just leaving the known universe)
-mu <- exponential(1 / 1e-5)
+mu <- PSHB_priors_list$phi_mu$phi_mu
 
 # latent N(0, 1) deviates for the stochastic transitions
 latent_z_timeseries <- normal(0, 1, dim = c(n_times, n_sites, n_states, 1))
@@ -156,7 +192,7 @@ transitions <- function(state, iter,
   
   # P(t+1) &= \phi_J \alpha_J J(t) + \phi_P(1-\alpha_P)(1-\mu)P(t) + 0 \\
   P <- phi_J * alpha_J * J_old + phi_P * (1 - alpha_P) * (1 - mu) * P_old
-  
+  ``
   # A(t+1) &= 0 + \phi_P\alpha_P(1-\mu)P(t) + \phi_AA(t)
   A <- phi_P * alpha_P * (1 - mu) * P_old + phi_A * A_old
   
