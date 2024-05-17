@@ -5,5 +5,4 @@
 *.Rproj
 ms/*.html
 .DS_Store
-dat/*.*
 dat/sapflow/*.*
