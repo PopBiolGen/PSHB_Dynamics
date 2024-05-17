@@ -116,7 +116,7 @@ step_within_population <- function(n_t, cumulative_offspring, temperature, f, ph
 # mean relative humidity of that day
 # uses model parameters generated in src/temperatures/temperature-prediction-function.R
 # gets environmental data from Australia SILO database
-tree_temp_prediction <- function(lat, long){
+tree_temp_prediction <- function(lat = -32.005892, long = 115.896019){
   load("out/tree-temp-model-pars.Rdata")
   locDat <- get_env_data(lat, long)
   newDat <- list(air_tmax = locDat$air_tmax,
@@ -262,11 +262,7 @@ sim_single_preadult_temp_data <- function(n_times = 28,
                                           expected_initial_pop = c(0.01, 0.01, 20)) {
   
   # load real temperatures
-  temps <- read.csv("dat/soil.csv") %>%
-    group_by(DOY) %>%
-    select(-dates, -TIME) %>%
-    summarise(across(everything(), mean)) %>%
-    pull("D10cm")
+  temps <- tree_temp_prediction()
   
   # simulate a random temperature timeseries by randomly sampling a start times
   start_time <- sample.int(length(temps) - n_times, 1)
@@ -440,6 +436,3 @@ tf_igammainv <- function(a, p) {
   tfp <- greta:::tfp
   tfp$math$igammainv(a, p)
 }
-
-
->>>>>>> 4a08a4f (merge in Nick's edits)
