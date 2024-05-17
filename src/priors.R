@@ -10,14 +10,14 @@ source("src/TPCFunctions.R")
 estBetaParams <- function(mu, var) {
   alpha <- ((1 - mu) / var - 1 / mu) * mu ^ 2
   beta <- alpha * (1 / mu - 1)
-  return(params = list(alpha = alpha, beta = beta))
+  return(params = list(shape1 = alpha, shape2 = beta))
 }
 
 # function returning gamma parameters given mean and variance
 estGammaParams <- function(mu, var){
-  h <- mu
-  df <- 2*mu^2/var
-  return(params = list(h = h, df = df))
+  rate <- mu/var
+  shape <- mu^2/var
+  return(params = list(shape = shape, rate = rate))
 }
 
 ########### alpha_J(T) ############
@@ -54,23 +54,23 @@ rownames(alpha_J_prior_ests) <- par_names_TPC
   
   # Pmax within (0,1)
   alpha_J_priors[["Pmax"]] <- c(
-    Distribution = "Beta",
+    Distribution = "beta",
     estBetaParams(alpha_J_prior_ests["Pmax", 1], alpha_J_prior_ests["Pmax", 2]^2)
   )
   # T_0 within (-Inf,Inf)
   alpha_J_priors[["T_0"]] <- list(
-    Distribution = "Normal",
+    Distribution = "normal",
     mean = alpha_J_prior_ests["T_0", 1], 
-    var = alpha_J_prior_ests["T_0", 2]^2
+    sd = alpha_J_prior_ests["T_0", 2]
   )
   # a_plus within (0,Inf)
   alpha_J_priors[["a_plus"]] <- c(
-    Distribution = "Gamma",
+    Distribution = "gamma",
     estGammaParams(alpha_J_prior_ests["a_plus", 1], alpha_J_prior_ests["a_plus", 2]^2)
   )
   # a_minus within (0,1)
   alpha_J_priors[["a_minus"]] <- c(
-    Distribution = "Beta",
+    Distribution = "beta",
     estBetaParams(alpha_J_prior_ests["a_minus", 1], alpha_J_prior_ests["a_minus", 2]^2)
   )
 
@@ -85,10 +85,26 @@ alpha_P_prior_ests["Pmax", 2] <- sqrt(1/8/alpha_J_prior_ests["Pmax", 1]*(alpha_J
 # Supports
   # Pmax within (0,1)
   alpha_P_priors[["Pmax"]] <- c(
-    Distribution = "Beta",
+    Distribution = "beta",
     estBetaParams(alpha_P_prior_ests["Pmax", 1], alpha_P_prior_ests["Pmax", 2]^2)
   )
-  # the rest are NULL, use alpha_J parameters
+  # the rest use alpha_J parameters
+  # T_0 within (-Inf,Inf)
+  alpha_P_priors[["T_0"]] <- list(
+    Distribution = "normal",
+    mean = alpha_J_prior_ests["T_0", 1], 
+    sd = alpha_J_prior_ests["T_0", 2]
+  )
+  # a_plus within (0,Inf)
+  alpha_P_priors[["a_plus"]] <- c(
+    Distribution = "gamma",
+    estGammaParams(alpha_J_prior_ests["a_plus", 1], alpha_J_prior_ests["a_plus", 2]^2)
+  )
+  # a_minus within (0,1)
+  alpha_P_priors[["a_minus"]] <- c(
+    Distribution = "beta",
+    estBetaParams(alpha_J_prior_ests["a_minus", 1], alpha_J_prior_ests["a_minus", 2]^2)
+  )
 
 
 ########### phi_J(T) ############
@@ -113,23 +129,23 @@ rownames(phi_J_prior_ests) <- par_names_TPC
 # Supports
   # Pmax within (0,1)
   phi_J_priors[["Pmax"]] <- c(
-    Distribution = "Beta",
+    Distribution = "beta",
     estBetaParams(phi_J_prior_ests["Pmax", 1], phi_J_prior_ests["Pmax", 2]^2)
   )
   # T_0 within (-Inf,Inf)
   phi_J_priors[["T_0"]] <- list(
-    Distribution = "Normal",
+    Distribution = "normal",
     mean = phi_J_prior_ests["T_0", 1], 
-    var = phi_J_prior_ests["T_0", 2]^2
+    sd = phi_J_prior_ests["T_0", 2]
   )
   # a_plus within (0,Inf)
   phi_J_priors[["a_plus"]] <- c(
-    Distribution = "Gamma",
+    Distribution = "gamma",
     estGammaParams(phi_J_prior_ests["a_plus", 1], phi_J_prior_ests["a_plus", 2]^2)
   )
   # a_minus within (0,1)
   phi_J_priors[["a_minus"]] <- c(
-    Distribution = "Beta",
+    Distribution = "beta",
     estBetaParams(phi_J_prior_ests["a_minus", 1], phi_J_prior_ests["a_minus", 2]^2)
   )
 
@@ -140,7 +156,7 @@ mean_phi <- exp(-1/32)
 var_phi <- 0.03^2
 
 phi_P_priors <- c(
-  Distribution = "Beta",
+  Distribution = "beta",
   estBetaParams(mean_phi, var_phi)
 )
 
@@ -150,9 +166,9 @@ phi_P_priors <- c(
 phi_mu_priors <- vector(mode = "list", length = 1)
 
 phi_mu_priors <- list(
-  Distribution = "Beta",
-  alpha = 1,
-  beta = 1
+  Distribution = "beta",
+  shape1 = 1,
+  shape2 = 1
 )
 
 ########### Organise and cleanup ############
