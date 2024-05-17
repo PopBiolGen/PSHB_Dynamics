@@ -99,6 +99,27 @@ mu <- PSHB_priors_list$phi_mu$phi_mu
 # latent N(0, 1) deviates for the stochastic transitions
 latent_z_timeseries <- normal(0, 1, dim = c(n_times, n_sites, n_states, 1))
 
+#
+# # example of making a dispersal matrix, incorporating mu (dispersal fraction)
+# and extra probability of survival for dispersers (1 - dispersal death
+# probability)
+
+# dispersal_range <- lognormal(-3, 0.1)
+# # hist(calculate(dispersal_range, nsim = 1000)[[1]])
+# dispersal_survival <- 0.5
+#
+# coords <- matrix(runif(n_sites * 2), ncol = 2) distances <-
+# as.matrix(dist(coords)) unnormalised_dispersal <- exp(-distances /
+# dispersal_range) # make the fraction dispersing equal to mu
+# diag(unnormalised_dispersal) <- 0 sums <- colSums(unnormalised_dispersal)
+# unnormalised_dispersal <- sweep(unnormalised_dispersal, 2, sums, FUN = "/")
+# normalised_dispersal <- unnormalised_dispersal * mu * dispersal_survival +
+# diag(n_sites) * (1 - mu)
+#
+# # calculate(colSums(normalised_dispersal), nsim = 1)[[1]][1, , ]
+
+
+
 transitions <- function(state, iter,
                         phi_J,
                         alpha_J,
@@ -119,11 +140,25 @@ transitions <- function(state, iter,
   # J(t+1) &= \phi_J(1-\alpha_J)J(t) + fA(t)\\
   J <- phi_J * (1 - alpha_J) * J_old + fecundity * A_old
   
-  # P(t+1) &= \phi_J \alpha_J J(t) + \phi_P(1-\alpha_P)(1-\mu)P(t) + 0 \\
-  P <- phi_J * alpha_J * J_old + phi_P * (1 - alpha_P) * (1 - mu) * P_old
+  # pre-adults that have either left or stayed (incorporate mu parameter in
+  # calculation of off-diagonals and make columns sum to 1)
+  P_disperse <- P_old %*% dispersal_matrix
+  
+  # newly graduated juveniles from same tree, plus the previous timestep's
+  P <- phi_J * alpha_J * J_old + phi_P * (1 - alpha_P) * P_disperse
   
   # A(t+1) &= 0 + \phi_P\alpha_P(1-\mu)P(t) + \phi_AA(t)
-  A <- phi_P * alpha_P * (1 - mu) * P_old + phi_A * A_old
+  A <- phi_P * alpha_P  * P_disperse + phi_A * A_old
+  
+  
+  
+  
+  # 
+  # # P(t+1) &= \phi_J \alpha_J J(t) + \phi_P(1-\alpha_P)(1-\mu)P(t) + 0 \\
+  # P <- phi_J * alpha_J * J_old + phi_P * (1 - alpha_P) * (1 - mu) * P_old
+  # 
+  # # A(t+1) &= 0 + \phi_P\alpha_P(1-\mu)P(t) + \phi_AA(t)
+  # A <- phi_P * alpha_P * (1 - mu) * P_old + phi_A * A_old
   
   # do dispersal step here, by matrix-multiplying the P vector by a dispersal
   # matrix:
