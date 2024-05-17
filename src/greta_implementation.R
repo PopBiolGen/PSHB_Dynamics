@@ -121,13 +121,14 @@ alpha_preadult <- as_data(alpha_P_temp(temps_array))
 # survival
 phi_juvenile <- as_data(phi_J_temp(temps_array))
 
-# survival for pre-adults and adults are temperature-independent, so temporally static. Infer these.
+# survival for pre-adults and adults are temperature-independent, so temporally
+# static. Infer these.
 phi_preadult <- normal(phi_P, 0.1, truncation = c(0, 1))
 phi_adult <- normal(phi_A, 0.1, truncation = c(0, 1))
 # hist(calculate(phi_preadult, nsim = 10000)[[1]], breaks = 100)
 # hist(calculate(phi_adult, nsim = 10000)[[1]], breaks = 100)
 
-# no dispersal to other host trees for now
+# no dispersal to other host trees (just leaving the known universe)
 mu <- exponential(1 / 1e-5)
 
 # latent N(0, 1) deviates for the stochastic transitions
@@ -226,6 +227,8 @@ n_chains <- 4
 # # minutes because very few prior sims are valid (have finite gradients)
 # inits <- generate_valid_inits(m, n_chains)
 
+
+# alternatively, just manually define some bounds and sample inits within them
 random_clamped_normal <- function(mean, sd, min = -Inf, max = Inf, dim = c(1, 1)) {
   x <- rnorm(prod(dim), mean, sd)
   x <- pmin(x, max)
