@@ -95,6 +95,7 @@ true_preadults <- data %>%
 #          col = i)
 # }
 
+
 # define the model
 
 # J(t+1) &= \phi_J(1-\alpha_J)J(t) + fA(t\\
