@@ -8,44 +8,10 @@ library(tidyverse)
 # define all the prior parameter values
 source("src/priors.R")
 
-# additional functions:
-
-# create a masking variable, near zero below lower and above upper, and at 0set x to (near) zero below lower and above upper
-bound_mask <- function(x, lower = -Inf, upper = Inf, tol = 0.01, soft = FALSE) {
-  # create a mask
-  if (soft) {
-    lower_mask <- plogis((x - lower) / tol)
-    upper_mask <- plogis((upper - x) / tol)
-  } else {
-    lower_mask <- as.numeric(x > lower)
-    upper_mask <- as.numeric(x < upper)
-  }
-  lower_mask * upper_mask
-}
-
-# par(mfrow = c(1, 1))
-# x <- seq(0, 50, length.out = 1000)
-# plot(bound_mask(x, 13.5, 31) ~ x, type = "l")
-# lines(bound_mask(x, 13.5, 31, soft = TRUE, tol = 0.1) ~ x, col = "red")
-
-# implemented bounded linear model for transition rates
-bounded_linear <- function(temperature, intercept, slope, lower, upper, ...) {
-
-  # create a mask to set values to 0 outside the allowed range
-  mask <- bound_mask(x = temperature,
-                     lower = lower,
-                     upper = upper,
-                     ...)
-  rate <- intercept + slope * temperature
-  prob <- 1 - exp(-rate)
-  prob * mask
-}
-
-
-
-
+# get the model functions
 source("src/modelFunctions.R")
 
+# additional functions:
 
 
 # loop through each level of this, taking the name, defining the prior, and
@@ -72,12 +38,7 @@ define_prior_list <- function(prior_definition_list) {
 # now convert into priors
 PSHB_priors_list <- lapply(PSHB_priors, define_prior_list)
 
-
-# apply functions to define temperature
-
-
-# convert these to greta arrays
-
+# simulate data
 n_times <- 7 * 8
 n_states <- 3
 n_sites <- 5
@@ -151,11 +112,13 @@ temps_array <- temperatures
 dim(temps_array) <- c(n_times, n_sites, 1, 1)
 stopifnot(near(temps_array[, , 1, 1], temperatures))
 
-alpha_juvenile <- as_data(alpha_J_temp(temps_array))
-alpha_preadult <- as_data(alpha_P_temp(temps_array))
+# create temperature-dependent effects from priors
+
+alpha_juvenile <- TPC_temp(temps_array, PSHB_priors_list$alpha_J)
+alpha_preadult <- TPC_temp(temps_array, PSHB_priors_list$alpha_P)
 
 # survival
-phi_juvenile <- as_data(phi_J_temp(temps_array))
+phi_juvenile <- TPC_temp(temps_array, PSHB_priors_list$phi_J)
 
 # survival for pre-adults and adults are temperature-independent, so temporally
 # static. Infer these.
@@ -192,7 +155,7 @@ transitions <- function(state, iter,
   
   # P(t+1) &= \phi_J \alpha_J J(t) + \phi_P(1-\alpha_P)(1-\mu)P(t) + 0 \\
   P <- phi_J * alpha_J * J_old + phi_P * (1 - alpha_P) * (1 - mu) * P_old
-  ``
+  
   # A(t+1) &= 0 + \phi_P\alpha_P(1-\mu)P(t) + \phi_AA(t)
   A <- phi_P * alpha_P * (1 - mu) * P_old + phi_A * A_old
   

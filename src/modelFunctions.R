@@ -22,7 +22,7 @@ source("src/greta_valid_inits.R")
 
 ## Scalar parameters
 
-# Parameters
+# Parameters for simulation
 phi_A <- 0.97
 phi_P <- 0.97
 mu <- 0
@@ -30,19 +30,35 @@ f <- 0.69
 
 ## load up our functions into memory
 
-alpha_J_temp <- function(temperature, lower = 13.5, upper = 31){
-  rate <- -0.0273 + 0.0023*temperature
-  prob <- 1-exp(-rate)
-  ifelse(temperature>lower & temperature < upper, prob, 0)
+alpha_J_temp <- function(temperature){
+  TPC_temp(temperature,
+           parameters = list(
+             Pmax = 0.045,
+             T_o = 29.664,
+             a_plus = 6.909,
+             a_minus = 0.269
+           ))
 }
 
-alpha_P_temp <- function(temperature, lower = 15, upper = 31){
-  DD <- 136 #degree days from walgama
-  beta <- 1/DD # implied slope of rate on temperature
-  alpha <- -15*beta # implied intercept
-  rate <- alpha + beta*temperature
-  prob <- 1-exp(-rate)
-  ifelse(temperature>lower & temperature < upper, prob, 0)
+alpha_P_temp <- function(temperature){
+  TPC_temp(temperature,
+           parameters = list(
+             Pmax = 1/8,
+             T_o = 29.664,
+             a_plus = 6.909,
+             a_minus = 0.269
+           ))
+}
+
+
+phi_J_temp <- function(temperature){
+  TPC_temp(temperature,
+           parameters = list(
+             Pmax = 0.994,
+             T_o = 29.499,
+             a_plus = 80,
+             a_minus = 0.1497
+           ))
 }
 
 # Gets environmental data for tree temperature prediction, given a lat and long
@@ -71,9 +87,14 @@ get_env_data <- function(lat, long){
  return(wd)
 }
 
-# function defining phi_J as a function of temperature and four parameters
-phi_J_temp <- function(temperature, Pmax = 0.99, T_o = 29.5, a_plus = 80, a_minus = 0.15){
-  TPC.pshb(temperature, Pmax, T_o, a_plus, a_minus)
+# a version that applies the TPC function for a given list of parameters (will be
+# greta arrays)
+TPC_temp <- function(temperature, parameters) {
+  TPC.pshb(Tb = temperature,
+           Pmax = parameters$Pmax,
+           T_o = parameters$T_o,
+           a_plus = parameters$a_plus,
+           a_minus = parameters$a_minus)
 }
 
 # Recursion for the within-host model with cumulative offspring affecting survival
@@ -311,12 +332,59 @@ sim_preadult_temp_data <- function(n_sites = 5,
 }
 
 
+# create a masking variable, near zero below lower and above upper
+bound_mask <- function(x, lower = -Inf, upper = Inf, tol = 0.01, soft = FALSE) {
+  # create a mask
+  if (soft) {
+    lower_mask <- plogis((x - lower) / tol)
+    upper_mask <- plogis((upper - x) / tol)
+  } else {
+    lower_mask <- as.numeric(x > lower)
+    upper_mask <- as.numeric(x < upper)
+  }
+  lower_mask * upper_mask
+}
+
+# par(mfrow = c(1, 1))
+# x <- seq(0, 50, length.out = 1000)
+# plot(bound_mask(x, 13.5, 31) ~ x, type = "l")
+# lines(bound_mask(x, 13.5, 31, soft = TRUE, tol = 0.1) ~ x, col = "red")
+
+# implemented bounded linear model for transition rates
+bounded_linear <- function(temperature, intercept, slope, lower, upper, ...) {
+  
+  # create a mask to set values to 0 outside the allowed range
+  mask <- bound_mask(x = temperature,
+                     lower = lower,
+                     upper = upper,
+                     ...)
+  rate <- intercept + slope * temperature
+  prob <- 1 - exp(-rate)
+  prob * mask
+}
+
+
+# if the value is less thant he boundary, use lower_value, otherwise use
+# upper_values. Optionally use a 'soft' version, with a small area of
+# interpolation between the two
+ifelse_bound_mask <- function(value, boundary, lower_value, upper_value, soft = FALSE, tol = 0.01) {
+  # create a mask
+  if (soft) {
+    lower_mask <- plogis((boundary - value) / tol)
+    upper_mask <- plogis((value - boundary) / tol)
+  } else {
+    lower_mask <- value < boundary
+    upper_mask <- 1 - lower_mask
+  }
+  lower_value * lower_mask + upper_value * upper_mask
+}
+
 # A simple TPC based on the meeting of two Gaussian functions
 # same as TPC.q in TPCFunctions.R, but parameters re-named to match description in .Rmd
 TPC.pshb<-function(Tb, Pmax=10, T_o=28, a_plus=9, a_minus=0.5){
-  lhs<-Pmax*exp(-(Tb-T_o)^2/(2*a_plus^2))
-  rhs<-Pmax*exp(-(Tb-T_o)^2/(2*(a_plus*a_minus)^2))
-  ifelse(Tb<T_o, lhs, rhs )
+  lhs <- Pmax * exp(-(Tb - T_o)^2 / (2 * a_plus^2))
+  rhs <- Pmax * exp(-(Tb - T_o)^2 / (2 * (a_plus * a_minus)^2))
+  ifelse_bound_mask(Tb, T_o, lhs, rhs)
 }
 
 # create a masking variable, near zero below lower and above upper, and at 0set x to (near) zero below lower and above upper

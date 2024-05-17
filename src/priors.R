@@ -39,7 +39,7 @@ rate <- c(alpha_j_rate_umeda, alpha_j_rate_walgama)
 TPCmatrix <- na.omit(cbind(temp, rate))
 alpha_J_fit <- TPC.q.fit(TPCmatrix, in.acc = 8, hessian = TRUE)
 
-par_names_TPC <- c("Pmax", "T_0", "a_plus", "a_minus")
+par_names_TPC <- c("Pmax", "T_o", "a_plus", "a_minus")
 
 alpha_J_pars <- alpha_J_fit$par
 alpha_J_pars_sd <- sqrt(diag(solve(alpha_J_fit$hessian)))
@@ -57,11 +57,11 @@ rownames(alpha_J_prior_ests) <- par_names_TPC
     Distribution = "beta",
     estBetaParams(alpha_J_prior_ests["Pmax", 1], alpha_J_prior_ests["Pmax", 2]^2)
   )
-  # T_0 within (-Inf,Inf)
-  alpha_J_priors[["T_0"]] <- list(
+  # T_o within (-Inf,Inf)
+  alpha_J_priors[["T_o"]] <- list(
     Distribution = "normal",
-    mean = alpha_J_prior_ests["T_0", 1], 
-    sd = alpha_J_prior_ests["T_0", 2]
+    mean = alpha_J_prior_ests["T_o", 1], 
+    sd = alpha_J_prior_ests["T_o", 2]
   )
   # a_plus within (0,Inf)
   alpha_J_priors[["a_plus"]] <- c(
@@ -89,11 +89,11 @@ alpha_P_prior_ests["Pmax", 2] <- sqrt(1/8/alpha_J_prior_ests["Pmax", 1]*(alpha_J
     estBetaParams(alpha_P_prior_ests["Pmax", 1], alpha_P_prior_ests["Pmax", 2]^2)
   )
   # the rest use alpha_J parameters
-  # T_0 within (-Inf,Inf)
-  alpha_P_priors[["T_0"]] <- list(
+  # T_o within (-Inf,Inf)
+  alpha_P_priors[["T_o"]] <- list(
     Distribution = "normal",
-    mean = alpha_J_prior_ests["T_0", 1], 
-    sd = alpha_J_prior_ests["T_0", 2]
+    mean = alpha_J_prior_ests["T_o", 1], 
+    sd = alpha_J_prior_ests["T_o", 2]
   )
   # a_plus within (0,Inf)
   alpha_P_priors[["a_plus"]] <- c(
@@ -132,11 +132,11 @@ rownames(phi_J_prior_ests) <- par_names_TPC
     Distribution = "beta",
     estBetaParams(phi_J_prior_ests["Pmax", 1], phi_J_prior_ests["Pmax", 2]^2)
   )
-  # T_0 within (-Inf,Inf)
-  phi_J_priors[["T_0"]] <- list(
+  # T_o within (-Inf,Inf)
+  phi_J_priors[["T_o"]] <- list(
     Distribution = "normal",
-    mean = phi_J_prior_ests["T_0", 1], 
-    sd = phi_J_prior_ests["T_0", 2]
+    mean = phi_J_prior_ests["T_o", 1], 
+    sd = phi_J_prior_ests["T_o", 2]
   )
   # a_plus within (0,Inf)
   phi_J_priors[["a_plus"]] <- c(
