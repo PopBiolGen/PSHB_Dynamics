@@ -5,14 +5,8 @@
 library(greta.dynamics)
 library(tidyverse)
 
-
 # get the model functions
 source("src/modelFunctions.R")
-
-
-# now convert into priors
-PSHB_priors <- prior_calculator()
-PSHB_priors_list <- lapply(PSHB_priors, define_prior_list)
 
 # simulate data
 n_times <- 7 * 8
@@ -71,13 +65,12 @@ true_preadults <- data %>%
 
 # define the model
 
-# J(t+1) &= \phi_J(1-\alpha_J)J(t) + fA(t\\
-# P(t+1) &= \phi_J\alpha_JJ(t) + \phi_P(1-\alpha_P)(1-\mu)P(t) + 0 \\
-# A(t+1) &= 0 + \phi_P\alpha_P(1-\mu)P(t) + \phi_AA(t)
+# create greta arrays from prior definitions
+PSHB_priors <- prior_calculator()
+PSHB_priors_list <- lapply(PSHB_priors, define_prior_list)
 
 # use fecundity estimate from modelfunctions.R
 fecundity <-  PSHB_priors_list$fecundity$fecundity
-# hist(calculate(fecundity, nsim = 10000)[[1]], breaks = 100)
 
 # alphas (transition to next life stage) and phi_J (juvenile survival) are
 # temperature dependent, so hard-code these for now (we can re-estimate the
@@ -89,7 +82,6 @@ dim(temps_array) <- c(n_times, n_sites, 1, 1)
 stopifnot(near(temps_array[, , 1, 1], temperatures))
 
 # create temperature-dependent effects from priors
-
 alpha_juvenile <- TPC_temp(temps_array, PSHB_priors_list$alpha_J)
 alpha_preadult <- TPC_temp(temps_array, PSHB_priors_list$alpha_P)
 
@@ -100,8 +92,6 @@ phi_juvenile <- TPC_temp(temps_array, PSHB_priors_list$phi_J)
 # static. Infer these.
 phi_preadult <- PSHB_priors_list$phi_P$phi_P
 phi_adult <- phi_preadult
-# hist(calculate(phi_preadult, nsim = 10000)[[1]], breaks = 100)
-# hist(calculate(phi_adult, nsim = 10000)[[1]], breaks = 100)
 
 # no dispersal to other host trees (just leaving the known universe)
 mu <- PSHB_priors_list$phi_mu$phi_mu
@@ -202,28 +192,18 @@ n_chains <- 4
 # # minutes because very few prior sims are valid (have finite gradients)
 # inits <- generate_valid_inits(m, n_chains)
 
-
-# alternatively, just manually define some bounds and sample inits within them
-random_clamped_normal <- function(mean, sd, min = -Inf, max = Inf, dim = c(1, 1)) {
-  x <- rnorm(prod(dim), mean, sd)
-  x <- pmin(x, max)
-  x <- pmax(x, min)
-  dim(x) <- dim
-  x
-}
-
 # alternately, we can set the stochastic noise at the median value, to
 # approximately recover the deterministic behaviour
 inits <- replicate(n_chains,
                    initials(
-                     fecundity = random_clamped_normal(f,
+                     fecundity = random_clamped_normal(0.69,
                                                        0.1,
                                                        min = 1e-3),
-                     phi_preadult = random_clamped_normal(phi_P,
+                     phi_preadult = random_clamped_normal(0.97,
                                                           0.1,
                                                           min = 1e-3,
                                                           max = 1 - 1e-3),
-                     phi_adult = random_clamped_normal(phi_A,
+                     phi_adult = random_clamped_normal(0.97,
                                                        0.1,
                                                        min = 1e-3,
                                                        max = 1 - 1e-3),

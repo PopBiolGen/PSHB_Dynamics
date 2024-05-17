@@ -22,12 +22,6 @@ source("src/greta_valid_inits.R")
 
 ## Scalar parameters
 
-# Parameters for simulation
-phi_A <- 0.97
-phi_P <- 0.97
-mu <- 0
-f <- 0.69
-
 ## load up our functions into memory
 
 alpha_J_temp <- function(temperature){
@@ -98,7 +92,14 @@ TPC_temp <- function(temperature, parameters) {
 }
 
 # Recursion for the within-host model with cumulative offspring affecting survival
-step_within_population <- function(n_t, cumulative_offspring, temperature, f, phi_A, phi_P, mu = 0, survival_threshold) {
+step_within_population <- function(n_t,
+                                   cumulative_offspring,
+                                   temperature,
+                                   f = 0.69,
+                                   phi_A = 0.97,
+                                   phi_P = 0.97,
+                                   mu = 0,
+                                   survival_threshold) {
   # Calculate the survival probability based on cumulative offspring
   survival_prob <- ifelse(cumulative_offspring < survival_threshold, 1, 0)
   
@@ -424,6 +425,15 @@ prior_calculator <- function() {
   return(PSHB_priors)
 }
 
+# sample random normals within some bounds
+random_clamped_normal <- function(mean, sd, min = -Inf, max = Inf, dim = c(1, 1)) {
+  x <- rnorm(prod(dim), mean, sd)
+  x <- pmin(x, max)
+  x <- pmax(x, min)
+  dim(x) <- dim
+  x
+}
+
 # Runs a year of population growth at a given location
 run_year <- function(lat, long, warmup = 10, survival_threshold = 1e11, make_plot = FALSE){
   # get tree temp
@@ -440,7 +450,11 @@ run_year <- function(lat, long, warmup = 10, survival_threshold = 1e11, make_plo
   population_data[, 1] <- n_initial
   
   for (tt in 2:time_steps) {
-    step_result <- step_within_population(population_data[, tt - 1], cumulative_offspring, temps[tt], f, phi_A, phi_P, mu = 0, survival_threshold)
+    step_result <- step_within_population(n_t = population_data[, tt - 1],
+                                          cumulative_offspring = cumulative_offspring,
+                                          temperature = temps[tt],
+                                          survival_threshold = survival_threshold)
+
     population_data[, tt] <- step_result$n
     cumulative_offspring <- step_result$cum_n
   }
@@ -484,14 +498,10 @@ sim_within_host <- function(initial_n, temps, iter, threshold = 1e5, stochastic 
   
   # iterate over days
   for (tt in 2:iter){
-    step_result <- step_within_population(out_matrix[1:3, tt - 1], 
-                                          out_matrix[4, tt - 1], 
-                                          temps[tt], 
-                                          f, 
-                                          phi_A, 
-                                          phi_P, 
-                                          mu = 0, 
-                                          threshold)
+    step_result <- step_within_population(n_t = out_matrix[1:3, tt - 1], 
+                                          cumulative_offspring = out_matrix[4, tt - 1], 
+                                          temperature = temps[tt],
+                                          survival_threshold = threshold)
     if (stochastic) step_result$n <- rpois(length(step_result$n), step_result$n)
     out_matrix[1:3, tt] <- step_result$n
     out_matrix[4, tt] <- step_result$cum_n
