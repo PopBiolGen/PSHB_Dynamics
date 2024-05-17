@@ -76,7 +76,7 @@ true_preadults <- data %>%
 # A(t+1) &= 0 + \phi_P\alpha_P(1-\mu)P(t) + \phi_AA(t)
 
 # use fecundity estimate from modelfunctions.R
-fecundity <- normal(f, 1, truncation = c(0, Inf))
+fecundity <-  PSHB_priors_list$fecundity$fecundity
 # hist(calculate(fecundity, nsim = 10000)[[1]], breaks = 100)
 
 # alphas (transition to next life stage) and phi_J (juvenile survival) are

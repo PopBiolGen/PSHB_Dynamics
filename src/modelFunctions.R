@@ -401,13 +401,25 @@ prior_calculator <- function() {
     )
   )
   
+  ########### fecundity ############
+  
+  fecundity <- list(
+    fecundity = list(
+      Distribution = "normal",
+      mean = 0.69,
+      sd = 1,
+      truncation = c(0, Inf)
+    )
+  )
+  
   ########### Organise and cleanup ############
   
   PSHB_priors <- list(alpha_J = alpha_J_priors, 
                       alpha_P = alpha_P_priors, 
                       phi_J = phi_J_priors, 
                       phi_P = phi_P_priors,
-                      phi_mu = phi_mu_priors)
+                      phi_mu = phi_mu_priors,
+                      fecundity = fecundity)
   
   return(PSHB_priors)
 }
