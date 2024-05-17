@@ -71,9 +71,9 @@ get_env_data <- function(lat, long){
  return(wd)
 }
 
-
-phi_J_temp <- function(temperature){
-  TPC.q(temperature, rmax = 0.99, Trmax = 29.5, acc = 80, dec.prop = 0.15)
+# function defining phi_J as a function of temperature and four parameters
+phi_J_temp <- function(temperature, Pmax = 0.99, T_o = 29.5, a_plus = 80, a_minus = 0.15){
+  TPC.pshb(temperature, Pmax, T_o, a_plus, a_minus)
 }
 
 # Recursion for the within-host model with cumulative offspring affecting survival
@@ -308,6 +308,15 @@ sim_preadult_temp_data <- function(n_sites = 5,
   # combine them
   do.call(bind_rows, data_sets)
   
+}
+
+
+# A simple TPC based on the meeting of two Gaussian functions
+# same as TPC.q in TPCFunctions.R, but parameters re-named to match description in .Rmd
+TPC.pshb<-function(Tb, Pmax=10, T_o=28, a_plus=9, a_minus=0.5){
+  lhs<-Pmax*exp(-(Tb-T_o)^2/(2*a_plus^2))
+  rhs<-Pmax*exp(-(Tb-T_o)^2/(2*(a_plus*a_minus)^2))
+  ifelse(Tb<T_o, lhs, rhs )
 }
 
 # create a masking variable, near zero below lower and above upper, and at 0set x to (near) zero below lower and above upper
