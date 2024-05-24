@@ -45,14 +45,14 @@ sflow <- rbind(sflow, sflow2)
 
 # Load the soil.csv dataset
 # downloaded from nicheMapR's soil microclimate hindcaster for 2021-2022
-soil <- read.csv("dat/kingsParkSoil.csv")
-# Summarise to daily mean temperatures
-soil.daily <- soil %>%
-  #mutate(year = year(dates)) %>%
-  select(-dates, -TIME) %>%
-  # filter(year == 2022) %>%
-  group_by(DOY) %>%
-  summarise(across(everything(), mean))
+# soil <- read.csv("dat/kingsParkSoil.csv")
+# # Summarise to daily mean temperatures
+# soil.daily <- soil %>%
+#   #mutate(year = year(dates)) %>%
+#   select(-dates, -TIME) %>%
+#   # filter(year == 2022) %>%
+#   group_by(DOY) %>%
+#   summarise(across(everything(), mean))
 
 
 # Load some weather observations for King's Park
@@ -84,12 +84,12 @@ wd <- wd %>% mutate(DOY = yday(dmy(paste(day, month, year, sep = "-")))) %>%
 
   
 
-merge_temp <- left_join(left_join(sflow, wd), soil.daily)
+merge_temp <- left_join(sflow, wd)
 
 cor(merge_temp, use = "complete.obs") #note correlation of 0.96 with soil 100cm and 30-day moving average
 
 
-rm(sflow, sflow2, soil, soil.daily, wd, fList)
+rm(sflow, sflow2, wd, fList)
 # get a few visuals 
 # plot(meanAirTemp~DOY, data = merge_temp, col = "blue")
 # points(air_tmax~DOY, data = merge_temp, col = "lightblue")
