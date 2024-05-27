@@ -27,9 +27,9 @@ source("src/greta_valid_inits.R")
 alpha_J_temp <- function(temperature){
   TPC_temp(temperature,
            parameters = list(
-             Pmax = 0.045,
-             T_o = 29.664,
-             a_plus = 6.909,
+             Pmax = 0.044,
+             T_o = 29.665,
+             a_plus = 6.962,
              a_minus = 0.269
            ))
 }
@@ -37,9 +37,9 @@ alpha_J_temp <- function(temperature){
 alpha_P_temp <- function(temperature){
   TPC_temp(temperature,
            parameters = list(
-             Pmax = 1/8,
-             T_o = 29.664,
-             a_plus = 6.909,
+             Pmax = 0.118,
+             T_o = 29.665,
+             a_plus = 6.962,
              a_minus = 0.269
            ))
 }
@@ -247,7 +247,7 @@ prior_calculator <- function() {
     return(params = list(shape = shape, rate = rate))
   }
   
-  ########### alpha_J(T) ############
+  # alpha_J(T) 
   
   # Data from two relevant papers, umeda and walgama
   alpha_j_temp_umeda <- c(18, 20, 25, 30, 32)
@@ -303,7 +303,7 @@ prior_calculator <- function() {
   )
   
   
-  ########### alpha_P(T) ############
+  # alpha_P(T) 
   
   alpha_P_prior_ests <- alpha_J_prior_ests
   colnames(alpha_P_prior_ests) <- c("pars", "alpha_P_pars_sd")
@@ -335,7 +335,7 @@ prior_calculator <- function() {
   )
   
   
-  ########### phi_J(T) ############
+  # phi_J(T) 
   
   sDat <- read.csv(file = "dat/walgamaFig2DataExtract.csv")
   sDat$Mortality <- sDat$Mortality/100 # convert to probability of mortality over n days
@@ -377,7 +377,7 @@ prior_calculator <- function() {
     estBetaParams(phi_J_prior_ests["a_minus", 1], phi_J_prior_ests["a_minus", 2]^2)
   )
   
-  ########### phi_P, phi_A ############
+  # phi_P, phi_A 
   phi_P_priors <- vector(mode = "list", length = 1)
   
   mean_phi <- exp(-1/32)
@@ -392,7 +392,7 @@ prior_calculator <- function() {
   
   # phi_A = phi_P
   
-  ########### phi_mu ############
+  # phi_mu 
   phi_mu_priors <- vector(mode = "list", length = 1)
   
   phi_mu_priors <- list(
@@ -403,7 +403,7 @@ prior_calculator <- function() {
     )
   )
   
-  ########### fecundity ############
+  # fecundity 
   
   fecundity <- list(
     fecundity = list(
@@ -414,7 +414,7 @@ prior_calculator <- function() {
     )
   )
   
-  ########### Organise and cleanup ############
+  #Organise and cleanup 
   
   PSHB_priors <- list(alpha_J = alpha_J_priors, 
                       alpha_P = alpha_P_priors, 
