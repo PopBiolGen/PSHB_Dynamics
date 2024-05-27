@@ -3,12 +3,6 @@
 ## Script name: modelFunctions.R
 ##
 ## Purpose of script: Functions for running and plotting numerical solutions to PSHB models
-##
-##
-## Date Created: 2024-01-29
-##
-## Email:kanishkwalavalkar@gmail.com;  ben.l.phillips@curtin.edu.au
-##
 ## ---------------------------
 ##
 ## Notes:

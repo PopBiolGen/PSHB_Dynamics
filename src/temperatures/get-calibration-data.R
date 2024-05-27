@@ -41,18 +41,6 @@ sflow2 <- read.csv(paste0("dat/sapflow/", fList[2]), skip = 40, header = TRUE) %
   summarise(mean_d = mean(Max.Td.In...C.), mean_u = mean(Max.Tu.In...C.))
 
 sflow <- rbind(sflow, sflow2)
-  
-
-# Load the soil.csv dataset
-# downloaded from nicheMapR's soil microclimate hindcaster for 2021-2022
-# soil <- read.csv("dat/kingsParkSoil.csv")
-# # Summarise to daily mean temperatures
-# soil.daily <- soil %>%
-#   #mutate(year = year(dates)) %>%
-#   select(-dates, -TIME) %>%
-#   # filter(year == 2022) %>%
-#   group_by(DOY) %>%
-#   summarise(across(everything(), mean))
 
 
 # Load some weather observations for King's Park
