@@ -263,7 +263,8 @@ prior_calculator <- function() {
   # Estimate TPC
   temp <- c(alpha_j_temp_umeda, alpha_j_temp_walgama)
   rate <- c(alpha_j_rate_umeda, alpha_j_rate_walgama)
-  TPCmatrix <- na.omit(cbind(temp, rate))
+  prob <- 1-exp(-rate) # switch from rate to probability
+  TPCmatrix <- na.omit(cbind(temp, prob))
   alpha_J_fit <- TPC.q.fit(TPCmatrix, in.acc = 8, hessian = TRUE)
   
   par_names_TPC <- c("Pmax", "T_o", "a_plus", "a_minus")
@@ -306,8 +307,8 @@ prior_calculator <- function() {
   
   alpha_P_prior_ests <- alpha_J_prior_ests
   colnames(alpha_P_prior_ests) <- c("pars", "alpha_P_pars_sd")
-  alpha_P_prior_ests["Pmax", 1] <- 1/8
-  alpha_P_prior_ests["Pmax", 2] <- sqrt(1/8/alpha_J_prior_ests["Pmax", 1]*(alpha_J_prior_ests["Pmax", 2]^2))
+  alpha_P_prior_ests["Pmax", 1] <- 1-exp(-1/8) # rate of 1/8 to per day probability
+  alpha_P_prior_ests["Pmax", 2] <- sqrt(alpha_P_prior_ests["Pmax", 1]/alpha_J_prior_ests["Pmax", 1]*(alpha_J_prior_ests["Pmax", 2]^2))
   
   # Supports
   # Pmax within (0,1)
