@@ -17,11 +17,12 @@ library(lubridate)
 source("src/TPCFunctions.R")
 source("src/modelFunctions.R")
 
-# Get tree temperature data
-locLat <- -17.957387
-locLong <- 122.215386
+# Pick a location
+locLat <- -32.005892
+locLong <- 115.896019
 
-
+# Run numerical sims
 yearSim <- run_year(lat = locLat, long = locLong, make_plot = TRUE)
 
+# report mean daily growth rate for each life-history stage
 yearSim$growthRate

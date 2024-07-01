@@ -3,12 +3,6 @@
 ## Script name: modelFunctions.R
 ##
 ## Purpose of script: Functions for running and plotting numerical solutions to PSHB models
-##
-##
-## Date Created: 2024-01-29
-##
-## Email:kanishkwalavalkar@gmail.com;  ben.l.phillips@curtin.edu.au
-##
 ## ---------------------------
 ##
 ## Notes:
@@ -22,27 +16,37 @@ source("src/greta_valid_inits.R")
 
 ## Scalar parameters
 
-# Parameters
-phi_A <- 0.97
-phi_P <- 0.97
-mu <- 0
-f <- 0.69
-
 ## load up our functions into memory
 
-alpha_J_temp <- function(temperature, lower = 13.5, upper = 31){
-  rate <- -0.0273 + 0.0023*temperature
-  prob <- 1-exp(-rate)
-  ifelse(temperature>lower & temperature < upper, prob, 0)
+alpha_J_temp <- function(temperature){
+  TPC_temp(temperature,
+           parameters = list(
+             Pmax = 0.044,
+             T_o = 29.665,
+             a_plus = 6.962,
+             a_minus = 0.269
+           ))
 }
 
-alpha_P_temp <- function(temperature, lower = 15, upper = 31){
-  DD <- 136 #degree days from walgama
-  beta <- 1/DD # implied slope of rate on temperature
-  alpha <- -15*beta # implied intercept
-  rate <- alpha + beta*temperature
-  prob <- 1-exp(-rate)
-  ifelse(temperature>lower & temperature < upper, prob, 0)
+alpha_P_temp <- function(temperature){
+  TPC_temp(temperature,
+           parameters = list(
+             Pmax = 0.118,
+             T_o = 29.665,
+             a_plus = 6.962,
+             a_minus = 0.269
+           ))
+}
+
+
+phi_J_temp <- function(temperature){
+  TPC_temp(temperature,
+           parameters = list(
+             Pmax = 0.994,
+             T_o = 29.499,
+             a_plus = 80,
+             a_minus = 0.1497
+           ))
 }
 
 # Gets environmental data for tree temperature prediction, given a lat and long
@@ -71,13 +75,25 @@ get_env_data <- function(lat, long){
  return(wd)
 }
 
-
-phi_J_temp <- function(temperature){
-  TPC.q(temperature, rmax = 0.99, Trmax = 29.5, acc = 80, dec.prop = 0.15)
+# a version that applies the TPC function for a given list of parameters (will be
+# greta arrays)
+TPC_temp <- function(temperature, parameters) {
+  TPC.pshb(Tb = temperature,
+           Pmax = parameters$Pmax,
+           T_o = parameters$T_o,
+           a_plus = parameters$a_plus,
+           a_minus = parameters$a_minus)
 }
 
 # Recursion for the within-host model with cumulative offspring affecting survival
-step_within_population <- function(n_t, cumulative_offspring, temperature, f, phi_A, phi_P, mu = 0, survival_threshold) {
+step_within_population <- function(n_t,
+                                   cumulative_offspring,
+                                   temperature,
+                                   f = 0.69,
+                                   phi_A = 0.97,
+                                   phi_P = 0.97,
+                                   mu = 0,
+                                   survival_threshold) {
   # Calculate the survival probability based on cumulative offspring
   survival_prob <- ifelse(cumulative_offspring < survival_threshold, 1, 0)
   
@@ -181,6 +197,238 @@ NvTPlot <- function(temps, population_data) {
   plot_population_dynamics(temps, population_data, log.N = TRUE, xlabel = TRUE)
 }
 
+# take the list of prior parameters and making them into gret arrays
+define_single_prior <- function(prior_definition) {
+  
+  # handle NULL case
+  if (is.null(prior_definition)) {
+    return(NULL)
+  }
+  
+  dist <- prior_definition$Distribution
+  args <- prior_definition[names(prior_definition) != "Distribution"]
+  do.call(dist, args)
+}
+
+define_prior_list <- function(prior_definition_list) {
+  priors <- lapply(prior_definition_list,
+                   define_single_prior)
+  priors
+}
+
+
+# A script for building priors for the PSHB model
+# Details are provided in modelDescriptions.Rmd "## Estimating priors"
+# This script follows those details but then places the priors on nice supports
+# Outputs a list specifying full priors for each parameter
+
+prior_calculator <- function() {
+  
+  source("src/TPCFunctions.R")
+  
+  # function returning beta parameters given mean and variance
+  # from https://stats.stackexchange.com/questions/12232/calculating-the-parameters-of-a-beta-distribution-using-the-mean-and-variance
+  estBetaParams <- function(mu, var) {
+    alpha <- ((1 - mu) / var - 1 / mu) * mu ^ 2
+    beta <- alpha * (1 / mu - 1)
+    return(params = list(shape1 = alpha, shape2 = beta))
+  }
+  
+  # function returning gamma parameters given mean and variance
+  estGammaParams <- function(mu, var){
+    rate <- mu/var
+    shape <- mu^2/var
+    return(params = list(shape = shape, rate = rate))
+  }
+  
+  # alpha_J(T) 
+  
+  # Data from two relevant papers, umeda and walgama
+  alpha_j_temp_umeda <- c(18, 20, 25, 30, 32)
+  alpha_j_rate_umeda <- c(0.013, 0.020, 0.0258, 0.0421, 0.0206)
+  alpha_j_temp_walgama <- c(15, 18, 20, 22, 25, 28, 30, 32)
+  egg_dev_time_walgama <- c(Inf, 23.5, 18.5, 13, 7.3, 5.5, 5, 10.9)
+  larva_dev_time_walgama <- c(NA, 1/0.0288, 1/0.0399, NA, 1/0.0688, 1/0.140, NA, NA) # extracted from figure
+  pupae_dev_time_walgama <- c(Inf, 15, 14, 9, 7.5, 6, 4, 7)
+  total_juv_dev_time_walgama <- egg_dev_time_walgama + larva_dev_time_walgama + pupae_dev_time_walgama
+  alpha_j_rate_walgama <- 1/total_juv_dev_time_walgama
+  alpha_j_rate_walgama[1] <- 0
+  
+  # Estimate TPC
+  temp <- c(alpha_j_temp_umeda, alpha_j_temp_walgama)
+  rate <- c(alpha_j_rate_umeda, alpha_j_rate_walgama)
+  prob <- 1-exp(-rate) # switch from rate to probability
+  TPCmatrix <- na.omit(cbind(temp, prob))
+  alpha_J_fit <- TPC.q.fit(TPCmatrix, in.acc = 8, hessian = TRUE)
+  
+  par_names_TPC <- c("Pmax", "T_o", "a_plus", "a_minus")
+  
+  alpha_J_pars <- alpha_J_fit$par
+  alpha_J_pars_sd <- sqrt(diag(solve(alpha_J_fit$hessian)))
+  alpha_J_prior_ests <- cbind(alpha_J_pars, alpha_J_pars_sd)
+  rownames(alpha_J_prior_ests) <- par_names_TPC
+  
+  # Supports
+  # lists to take priors
+  alpha_J_priors <- vector(mode = "list", length = 4)
+  names(alpha_J_priors) <- par_names_TPC
+  phi_J_priors <- alpha_P_priors <- alpha_J_priors
+  
+  # Pmax within (0,1)
+  alpha_J_priors[["Pmax"]] <- c(
+    Distribution = "beta",
+    estBetaParams(alpha_J_prior_ests["Pmax", 1], alpha_J_prior_ests["Pmax", 2]^2)
+  )
+  # T_o within (-Inf,Inf)
+  alpha_J_priors[["T_o"]] <- list(
+    Distribution = "normal",
+    mean = alpha_J_prior_ests["T_o", 1], 
+    sd = alpha_J_prior_ests["T_o", 2]
+  )
+  # a_plus within (0,Inf)
+  alpha_J_priors[["a_plus"]] <- c(
+    Distribution = "gamma",
+    estGammaParams(alpha_J_prior_ests["a_plus", 1], alpha_J_prior_ests["a_plus", 2]^2)
+  )
+  # a_minus within (0,1)
+  alpha_J_priors[["a_minus"]] <- c(
+    Distribution = "beta",
+    estBetaParams(alpha_J_prior_ests["a_minus", 1], alpha_J_prior_ests["a_minus", 2]^2)
+  )
+  
+  
+  # alpha_P(T) 
+  
+  alpha_P_prior_ests <- alpha_J_prior_ests
+  colnames(alpha_P_prior_ests) <- c("pars", "alpha_P_pars_sd")
+  alpha_P_prior_ests["Pmax", 1] <- 1-exp(-1/8) # rate of 1/8 to per day probability
+  alpha_P_prior_ests["Pmax", 2] <- sqrt(alpha_P_prior_ests["Pmax", 1]/alpha_J_prior_ests["Pmax", 1]*(alpha_J_prior_ests["Pmax", 2]^2))
+  
+  # Supports
+  # Pmax within (0,1)
+  alpha_P_priors[["Pmax"]] <- c(
+    Distribution = "beta",
+    estBetaParams(alpha_P_prior_ests["Pmax", 1], alpha_P_prior_ests["Pmax", 2]^2)
+  )
+  # the rest use alpha_J parameters
+  # T_o within (-Inf,Inf)
+  alpha_P_priors[["T_o"]] <- list(
+    Distribution = "normal",
+    mean = alpha_J_prior_ests["T_o", 1], 
+    sd = alpha_J_prior_ests["T_o", 2]
+  )
+  # a_plus within (0,Inf)
+  alpha_P_priors[["a_plus"]] <- c(
+    Distribution = "gamma",
+    estGammaParams(alpha_J_prior_ests["a_plus", 1], alpha_J_prior_ests["a_plus", 2]^2)
+  )
+  # a_minus within (0,1)
+  alpha_P_priors[["a_minus"]] <- c(
+    Distribution = "beta",
+    estBetaParams(alpha_J_prior_ests["a_minus", 1], alpha_J_prior_ests["a_minus", 2]^2)
+  )
+  
+  
+  # phi_J(T) 
+  
+  sDat <- read.csv(file = "dat/walgamaFig2DataExtract.csv")
+  sDat$Mortality <- sDat$Mortality/100 # convert to probability of mortality over n days
+  sDat$Mortality[sDat$Mortality>1] <- 1 # catch the 1.002s
+  mortRate <- -log(1-sDat$Mortality)/sDat$Days # convert to a rate
+  mortProb <- 1-exp(-mortRate) # convert to a daily probability
+  survProb <- 1-mortProb
+  sDat <- cbind(sDat, mortProb, survProb)
+  
+  # Estimate TPC
+  TPCmatrix <- cbind(sDat$Temperature, survProb)
+  TPCmatrix <- na.omit(TPCmatrix)
+  phi_J_fit <- TPC.q.fit(TPCmatrix, in.acc = 0.3, hessian = TRUE)
+  phi_J_pars <- phi_J_fit$par
+  phi_J_pars_sd <- sqrt(diag(solve(phi_J_fit$hessian)))
+  phi_J_prior_ests <- cbind(phi_J_pars, phi_J_pars_sd)
+  rownames(phi_J_prior_ests) <- par_names_TPC
+  
+  # Supports
+  # Pmax within (0,1)
+  phi_J_priors[["Pmax"]] <- c(
+    Distribution = "beta",
+    estBetaParams(phi_J_prior_ests["Pmax", 1], phi_J_prior_ests["Pmax", 2]^2)
+  )
+  # T_o within (-Inf,Inf)
+  phi_J_priors[["T_o"]] <- list(
+    Distribution = "normal",
+    mean = phi_J_prior_ests["T_o", 1], 
+    sd = phi_J_prior_ests["T_o", 2]
+  )
+  # a_plus within (0,Inf)
+  phi_J_priors[["a_plus"]] <- c(
+    Distribution = "gamma",
+    estGammaParams(phi_J_prior_ests["a_plus", 1], phi_J_prior_ests["a_plus", 2]^2)
+  )
+  # a_minus within (0,1)
+  phi_J_priors[["a_minus"]] <- c(
+    Distribution = "beta",
+    estBetaParams(phi_J_prior_ests["a_minus", 1], phi_J_prior_ests["a_minus", 2]^2)
+  )
+  
+  # phi_P, phi_A 
+  phi_P_priors <- vector(mode = "list", length = 1)
+  
+  mean_phi <- exp(-1/32)
+  var_phi <- 0.03^2
+  
+  phi_P_priors <- list(
+    phi_P = c(
+      Distribution = "beta",
+      estBetaParams(mean_phi, var_phi)
+    )
+  )
+  
+  # phi_A = phi_P
+  
+  # phi_mu 
+  phi_mu_priors <- vector(mode = "list", length = 1)
+  
+  phi_mu_priors <- list(
+    phi_mu = list(
+      Distribution = "beta",
+      shape1 = 1,
+      shape2 = 1
+    )
+  )
+  
+  # fecundity 
+  
+  fecundity <- list(
+    fecundity = list(
+      Distribution = "normal",
+      mean = 0.69,
+      sd = 1,
+      truncation = c(0, Inf)
+    )
+  )
+  
+  #Organise and cleanup 
+  
+  PSHB_priors <- list(alpha_J = alpha_J_priors, 
+                      alpha_P = alpha_P_priors, 
+                      phi_J = phi_J_priors, 
+                      phi_P = phi_P_priors,
+                      phi_mu = phi_mu_priors,
+                      fecundity = fecundity)
+  
+  return(PSHB_priors)
+}
+
+# sample random normals within some bounds
+random_clamped_normal <- function(mean, sd, min = -Inf, max = Inf, dim = c(1, 1)) {
+  x <- rnorm(prod(dim), mean, sd)
+  x <- pmin(x, max)
+  x <- pmax(x, min)
+  dim(x) <- dim
+  x
+}
+
 # Runs a year of population growth at a given location
 run_year <- function(lat, long, warmup = 10, survival_threshold = 1e11, make_plot = FALSE){
   # get tree temp
@@ -197,7 +445,11 @@ run_year <- function(lat, long, warmup = 10, survival_threshold = 1e11, make_plo
   population_data[, 1] <- n_initial
   
   for (tt in 2:time_steps) {
-    step_result <- step_within_population(population_data[, tt - 1], cumulative_offspring, temps[tt], f, phi_A, phi_P, mu = 0, survival_threshold)
+    step_result <- step_within_population(n_t = population_data[, tt - 1],
+                                          cumulative_offspring = cumulative_offspring,
+                                          temperature = temps[tt],
+                                          survival_threshold = survival_threshold)
+
     population_data[, tt] <- step_result$n
     cumulative_offspring <- step_result$cum_n
   }
@@ -241,14 +493,10 @@ sim_within_host <- function(initial_n, temps, iter, threshold = 1e5, stochastic 
   
   # iterate over days
   for (tt in 2:iter){
-    step_result <- step_within_population(out_matrix[1:3, tt - 1], 
-                                          out_matrix[4, tt - 1], 
-                                          temps[tt], 
-                                          f, 
-                                          phi_A, 
-                                          phi_P, 
-                                          mu = 0, 
-                                          threshold)
+    step_result <- step_within_population(n_t = out_matrix[1:3, tt - 1], 
+                                          cumulative_offspring = out_matrix[4, tt - 1], 
+                                          temperature = temps[tt],
+                                          survival_threshold = threshold)
     if (stochastic) step_result$n <- rpois(length(step_result$n), step_result$n)
     out_matrix[1:3, tt] <- step_result$n
     out_matrix[4, tt] <- step_result$cum_n
@@ -308,6 +556,62 @@ sim_preadult_temp_data <- function(n_sites = 5,
   # combine them
   do.call(bind_rows, data_sets)
   
+}
+
+
+# create a masking variable, near zero below lower and above upper
+bound_mask <- function(x, lower = -Inf, upper = Inf, tol = 0.01, soft = FALSE) {
+  # create a mask
+  if (soft) {
+    lower_mask <- plogis((x - lower) / tol)
+    upper_mask <- plogis((upper - x) / tol)
+  } else {
+    lower_mask <- as.numeric(x > lower)
+    upper_mask <- as.numeric(x < upper)
+  }
+  lower_mask * upper_mask
+}
+
+# par(mfrow = c(1, 1))
+# x <- seq(0, 50, length.out = 1000)
+# plot(bound_mask(x, 13.5, 31) ~ x, type = "l")
+# lines(bound_mask(x, 13.5, 31, soft = TRUE, tol = 0.1) ~ x, col = "red")
+
+# implemented bounded linear model for transition rates
+bounded_linear <- function(temperature, intercept, slope, lower, upper, ...) {
+  
+  # create a mask to set values to 0 outside the allowed range
+  mask <- bound_mask(x = temperature,
+                     lower = lower,
+                     upper = upper,
+                     ...)
+  rate <- intercept + slope * temperature
+  prob <- 1 - exp(-rate)
+  prob * mask
+}
+
+
+# if the value is less thant he boundary, use lower_value, otherwise use
+# upper_values. Optionally use a 'soft' version, with a small area of
+# interpolation between the two
+ifelse_bound_mask <- function(value, boundary, lower_value, upper_value, soft = FALSE, tol = 0.01) {
+  # create a mask
+  if (soft) {
+    lower_mask <- plogis((boundary - value) / tol)
+    upper_mask <- plogis((value - boundary) / tol)
+  } else {
+    lower_mask <- value < boundary
+    upper_mask <- 1 - lower_mask
+  }
+  lower_value * lower_mask + upper_value * upper_mask
+}
+
+# A simple TPC based on the meeting of two Gaussian functions
+# same as TPC.q in TPCFunctions.R, but parameters re-named to match description in .Rmd
+TPC.pshb<-function(Tb, Pmax=10, T_o=28, a_plus=9, a_minus=0.5){
+  lhs <- Pmax * exp(-(Tb - T_o)^2 / (2 * a_plus^2))
+  rhs <- Pmax * exp(-(Tb - T_o)^2 / (2 * (a_plus * a_minus)^2))
+  ifelse_bound_mask(Tb, T_o, lhs, rhs)
 }
 
 # create a masking variable, near zero below lower and above upper, and at 0set x to (near) zero below lower and above upper

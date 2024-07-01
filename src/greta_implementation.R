@@ -1,47 +1,14 @@
 # fit a continuous version of the model to data, using greta
 
-
-# additional functions:
-
-# create a masking variable, near zero below lower and above upper, and at 0set x to (near) zero below lower and above upper
-bound_mask <- function(x, lower = -Inf, upper = Inf, tol = 0.01, soft = FALSE) {
-  # create a mask
-  if (soft) {
-    lower_mask <- plogis((x - lower) / tol)
-    upper_mask <- plogis((upper - x) / tol)
-  } else {
-    lower_mask <- as.numeric(x > lower)
-    upper_mask <- as.numeric(x < upper)
-  }
-  lower_mask * upper_mask
-}
-
-# par(mfrow = c(1, 1))
-# x <- seq(0, 50, length.out = 1000)
-# plot(bound_mask(x, 13.5, 31) ~ x, type = "l")
-# lines(bound_mask(x, 13.5, 31, soft = TRUE, tol = 0.1) ~ x, col = "red")
-
-# implemented bounded linear model for transition rates
-bounded_linear <- function(temperature, intercept, slope, lower, upper, ...) {
-
-  # create a mask to set values to 0 outside the allowed range
-  mask <- bound_mask(x = temperature,
-                     lower = lower,
-                     upper = upper,
-                     ...)
-  rate <- intercept + slope * temperature
-  prob <- 1 - exp(-rate)
-  prob * mask
-}
-
-
 # note: we need to install the correct experimental branch of greta.dynamics:
 # devtools::install_github("greta-dev/greta.dynamics@greta_2")
 library(greta.dynamics)
 library(tidyverse)
 
+# get the model functions
 source("src/modelFunctions.R")
 
+# simulate data
 n_times <- 7 * 8
 n_states <- 3
 n_sites <- 5
@@ -98,13 +65,12 @@ true_preadults <- data %>%
 
 # define the model
 
-# J(t+1) &= \phi_J(1-\alpha_J)J(t) + fA(t\\
-# P(t+1) &= \phi_J\alpha_JJ(t) + \phi_P(1-\alpha_P)(1-\mu)P(t) + 0 \\
-# A(t+1) &= 0 + \phi_P\alpha_P(1-\mu)P(t) + \phi_AA(t)
+# create greta arrays from prior definitions
+PSHB_priors <- prior_calculator()
+PSHB_priors_list <- lapply(PSHB_priors, define_prior_list)
 
 # use fecundity estimate from modelfunctions.R
-fecundity <- normal(f, 1, truncation = c(0, Inf))
-# hist(calculate(fecundity, nsim = 10000)[[1]], breaks = 100)
+fecundity <-  PSHB_priors_list$fecundity$fecundity
 
 # alphas (transition to next life stage) and phi_J (juvenile survival) are
 # temperature dependent, so hard-code these for now (we can re-estimate the
@@ -115,24 +81,44 @@ temps_array <- temperatures
 dim(temps_array) <- c(n_times, n_sites, 1, 1)
 stopifnot(near(temps_array[, , 1, 1], temperatures))
 
-alpha_juvenile <- as_data(alpha_J_temp(temps_array))
-alpha_preadult <- as_data(alpha_P_temp(temps_array))
+# create temperature-dependent effects from priors
+alpha_juvenile <- TPC_temp(temps_array, PSHB_priors_list$alpha_J)
+alpha_preadult <- TPC_temp(temps_array, PSHB_priors_list$alpha_P)
 
 # survival
-phi_juvenile <- as_data(phi_J_temp(temps_array))
+phi_juvenile <- TPC_temp(temps_array, PSHB_priors_list$phi_J)
 
 # survival for pre-adults and adults are temperature-independent, so temporally
 # static. Infer these.
-phi_preadult <- normal(phi_P, 0.1, truncation = c(0, 1))
-phi_adult <- normal(phi_A, 0.1, truncation = c(0, 1))
-# hist(calculate(phi_preadult, nsim = 10000)[[1]], breaks = 100)
-# hist(calculate(phi_adult, nsim = 10000)[[1]], breaks = 100)
+phi_preadult <- PSHB_priors_list$phi_P$phi_P
+phi_adult <- phi_preadult
 
 # no dispersal to other host trees (just leaving the known universe)
-mu <- exponential(1 / 1e-5)
+mu <- PSHB_priors_list$phi_mu$phi_mu
 
 # latent N(0, 1) deviates for the stochastic transitions
 latent_z_timeseries <- normal(0, 1, dim = c(n_times, n_sites, n_states, 1))
+
+#
+# # example of making a dispersal matrix, incorporating mu (dispersal fraction)
+# and extra probability of survival for dispersers (1 - dispersal death
+# probability)
+
+# dispersal_range <- lognormal(-3, 0.1)
+# # hist(calculate(dispersal_range, nsim = 1000)[[1]])
+# dispersal_survival <- 0.5
+#
+# coords <- matrix(runif(n_sites * 2), ncol = 2) distances <-
+# as.matrix(dist(coords)) unnormalised_dispersal <- exp(-distances /
+# dispersal_range) # make the fraction dispersing equal to mu
+# diag(unnormalised_dispersal) <- 0 sums <- colSums(unnormalised_dispersal)
+# unnormalised_dispersal <- sweep(unnormalised_dispersal, 2, sums, FUN = "/")
+# normalised_dispersal <- unnormalised_dispersal * mu * dispersal_survival +
+# diag(n_sites) * (1 - mu)
+#
+# # calculate(colSums(normalised_dispersal), nsim = 1)[[1]][1, , ]
+
+
 
 transitions <- function(state, iter,
                         phi_J,
@@ -154,11 +140,25 @@ transitions <- function(state, iter,
   # J(t+1) &= \phi_J(1-\alpha_J)J(t) + fA(t)\\
   J <- phi_J * (1 - alpha_J) * J_old + fecundity * A_old
   
-  # P(t+1) &= \phi_J \alpha_J J(t) + \phi_P(1-\alpha_P)(1-\mu)P(t) + 0 \\
-  P <- phi_J * alpha_J * J_old + phi_P * (1 - alpha_P) * (1 - mu) * P_old
+  # pre-adults that have either left or stayed (incorporate mu parameter in
+  # calculation of off-diagonals and make columns sum to 1)
+  P_disperse <- P_old %*% dispersal_matrix
+  
+  # newly graduated juveniles from same tree, plus the previous timestep's
+  P <- phi_J * alpha_J * J_old + phi_P * (1 - alpha_P) * P_disperse
   
   # A(t+1) &= 0 + \phi_P\alpha_P(1-\mu)P(t) + \phi_AA(t)
-  A <- phi_P * alpha_P * (1 - mu) * P_old + phi_A * A_old
+  A <- phi_P * alpha_P  * P_disperse + phi_A * A_old
+  
+  
+  
+  
+  # 
+  # # P(t+1) &= \phi_J \alpha_J J(t) + \phi_P(1-\alpha_P)(1-\mu)P(t) + 0 \\
+  # P <- phi_J * alpha_J * J_old + phi_P * (1 - alpha_P) * (1 - mu) * P_old
+  # 
+  # # A(t+1) &= 0 + \phi_P\alpha_P(1-\mu)P(t) + \phi_AA(t)
+  # A <- phi_P * alpha_P * (1 - mu) * P_old + phi_A * A_old
   
   # do dispersal step here, by matrix-multiplying the P vector by a dispersal
   # matrix:
@@ -227,28 +227,18 @@ n_chains <- 4
 # # minutes because very few prior sims are valid (have finite gradients)
 # inits <- generate_valid_inits(m, n_chains)
 
-
-# alternatively, just manually define some bounds and sample inits within them
-random_clamped_normal <- function(mean, sd, min = -Inf, max = Inf, dim = c(1, 1)) {
-  x <- rnorm(prod(dim), mean, sd)
-  x <- pmin(x, max)
-  x <- pmax(x, min)
-  dim(x) <- dim
-  x
-}
-
 # alternately, we can set the stochastic noise at the median value, to
 # approximately recover the deterministic behaviour
 inits <- replicate(n_chains,
                    initials(
-                     fecundity = random_clamped_normal(f,
+                     fecundity = random_clamped_normal(0.69,
                                                        0.1,
                                                        min = 1e-3),
-                     phi_preadult = random_clamped_normal(phi_P,
+                     phi_preadult = random_clamped_normal(0.97,
                                                           0.1,
                                                           min = 1e-3,
                                                           max = 1 - 1e-3),
-                     phi_adult = random_clamped_normal(phi_A,
+                     phi_adult = random_clamped_normal(0.97,
                                                        0.1,
                                                        min = 1e-3,
                                                        max = 1 - 1e-3),
