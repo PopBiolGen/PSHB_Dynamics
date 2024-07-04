@@ -5,6 +5,7 @@ library(urltools)
 library(ggplot2)
 library(ozmaps)
 library(sf)
+library(viridis)
 # WA map
 sf_oz <- subset(ozmap("states"), NAME=="Western Australia")
 
@@ -64,6 +65,7 @@ ggplot(data = sf_oz) +
   geom_sf(fill=NA)+ # WA map
   scale_x_continuous(limits=c(min(lon)-.05,max(lon)+.05))+ # Fit plot to lat & lon range
   scale_y_continuous(limits=c(min(lat)-.05,max(lat)+.05))+
+  scale_fill_viridis()+
   theme(panel.background = element_blank())
 
 write.csv(outputs_grid, # Save output
