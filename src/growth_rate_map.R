@@ -12,6 +12,8 @@ library(lubridate)
 ## Load up the functions
 source("src/TPCFunctions.R")
 source("src/modelFunctions.R")
+# Run parallel over multiple cores
+library(foreach)
 
 # WA map
 sf_oz <- subset(ozmap("states"), NAME=="Western Australia")
@@ -55,14 +57,16 @@ outputs_grid[c(1:nrow(outputs_grid)),c(1:2)] <- grid2 # Insert lat & lon for eac
 colnames(outputs_grid)<- c("lon","lat","J","P","A") # Leave remaining columns to insert J, P & A growth rates
 
 ## Run model for each coordinate:
-
-for(i in 1:nrow(outputs_grid)){
+outputs_grid[,c(3:5)] <- # Fill J, P, A columns of matrix
+  foreach(i=1:nrow(outputs_grid), .combine = 'cbind') %dopar% {  # Use 'foreach' to run for each coord across multiple cores   
+  # For each row, i:
   locLong <- outputs_grid[i, "lon"]
   locLat <- outputs_grid[i, "lat"]
   yearSim <- run_year(lat = locLat, long = locLong, make_plot = FALSE) # FROM 'basic within-pop model.R'
   rate_grid <- yearSim$growthRate # Calc mean growth rates
-  outputs_grid[i,c(3:5)] <- rate_grid # Insert growth rates into output matrix (with corresponding coords)
+  rate_grid # Insert growth rates into output matrix (with corresponding coords)
 }
+
 
 # Plot output
 ggplot(data = sf_oz) + 
@@ -77,3 +81,12 @@ ggplot(data = sf_oz) +
 write.csv(outputs_grid, # Save output
           file = "out/perth_grid.csv", col.names = T )
 
+#### OLD VERSION (for loop) ####
+for(i in 1:nrow(outputs_grid)){
+  locLong <- outputs_grid[i, "lon"]
+  locLat <- outputs_grid[i, "lat"]
+  yearSim <- run_year(lat = locLat, long = locLong, make_plot = FALSE) # FROM 'basic within-pop model.R'
+  rate_grid <- yearSim$growthRate # Calc mean growth rates
+  outputs_grid[i,c(3:5)] <- rate_grid # Insert growth rates into output matrix (with corresponding coords)
+}
+# Should produce same output...
