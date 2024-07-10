@@ -17,7 +17,7 @@ foreach::getDoParRegistered()
 foreach::getDoParWorkers()
 
 
-#### Try vector of just ADULT growth rates
+#### Create vector of just ADULT growth rates
 out_v <- foreach(i = 1:nrow(outputs_grid), .combine='c',
                  .packages = c("httpcode", # Need to install packages in Workers
                    "urltools",
@@ -28,10 +28,12 @@ out_v <- foreach(i = 1:nrow(outputs_grid), .combine='c',
                    "dplyr",
                    "lubridate",
                    "foreach")) %dopar% {
-  locLong <- lon[i]
-  locLat <- lat[i]
+  locLong <- outputs_grid[i,"lon"]
+  locLat <- outputs_grid[i,"lat"]
   yearSim <- run_year(lat = locLat, long = locLong, make_plot = FALSE) # FROM 'basic within-pop model.R'
   rate_grid <- yearSim$growthRate # Calc mean growth rates
-  rate_grid[3] # Insert growth rates into output matrix (with corresponding coords)
+  return(rate_grid[3]) # For now, just use ADULT GROWTH RATE values (similar rates across all stages)
 }
+out_v
 
+outputs_grid[,4]<-out_v
