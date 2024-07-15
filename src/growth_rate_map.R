@@ -105,7 +105,7 @@ ggplot(data = sf_oz) +
   theme(panel.background = element_blank())
 
 write.csv(outputs_grid, # Save output
-          file = "out/mu_0.5.csv", col.names = T )
+          file = "out/mu_0.5.csv", col.names = T, row.names = F )
 
 
 
