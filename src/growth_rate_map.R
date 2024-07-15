@@ -21,7 +21,7 @@ library(doParallel)
 sf_oz <- subset(ozmap("states"), NAME=="Western Australia")
 
 # Play around with different estimates of mu (probability of dispersal)
-mu_est <- 0
+mu_est <- 0.5
 
 # For now, manually select coordinate ranges to construct a retangular grid covering whole area
 # SILO data resolution = 0.05 x 0.05 degrees
@@ -92,6 +92,8 @@ out_v <- foreach(i = 1:nrow(outputs_grid),
 
 outputs_grid[,"A"] <- out_v # Add growth rate vector into output matrix
 
+#stopCluster(my.cluster)
+
 # Plot output
 ggplot(data = sf_oz) + 
   geom_tile(data=outputs_grid, 
@@ -103,7 +105,7 @@ ggplot(data = sf_oz) +
   theme(panel.background = element_blank())
 
 write.csv(outputs_grid, # Save output
-          file = "out/mu_0.csv", col.names = T )
+          file = "out/mu_0.5.csv", col.names = T )
 
 
 
