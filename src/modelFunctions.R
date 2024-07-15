@@ -92,7 +92,7 @@ step_within_population <- function(n_t,
                                    f = 0.69,
                                    phi_A = 0.97,
                                    phi_P = 0.97,
-                                   mu = 0,
+                                   mu = mu_est,
                                    survival_threshold) {
   # Calculate the survival probability based on cumulative offspring
   survival_prob <- ifelse(cumulative_offspring < survival_threshold, 1, 0)
