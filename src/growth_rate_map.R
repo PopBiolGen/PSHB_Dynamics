@@ -20,10 +20,13 @@ library(doParallel)
 # WA map
 sf_oz <- subset(ozmap("states"), NAME=="Western Australia")
 
+# Play around with different estimates of mu (probability of dispersal)
+mu_est <- 0
+
 # For now, manually select coordinate ranges to construct a retangular grid covering whole area
 # SILO data resolution = 0.05 x 0.05 degrees
-lat <- c(seq(-33.3, -33.1, by=0.05)) # Latitude range
-lon <- c(seq(116.2, 116.4, by=0.05)) # Longitude range
+lat <- c(seq(-33.4, -30.8, by=0.05)) # Latitude range
+lon <- c(seq(115.1, 116.8, by=0.05)) # Longitude range
 grid <- (expand.grid(lon, lat)) # Grid containing each lat & lon combination
 colnames(grid) <- c("lon", "lat")
 # Check on map
@@ -59,7 +62,7 @@ outputs_grid[c(1:nrow(outputs_grid)),c(1:2)] <- grid2 # Insert lat & lon for eac
 colnames(outputs_grid)<- c("lon","lat","A") # Leave remaining column empty to A growth rates
 
 ### FOREACH method (run parallel over multiple cores)
-n.cores <- 5 # Assign number cores (my PC has 8)
+n.cores <- 6 # Assign number cores (my PC has 8)
 my.cluster <- parallel::makeCluster(
   n.cores, 
   type = "PSOCK"
@@ -100,7 +103,7 @@ ggplot(data = sf_oz) +
   theme(panel.background = element_blank())
 
 write.csv(outputs_grid, # Save output
-          file = "out/perth_grid.csv", col.names = T )
+          file = "out/mu_0.csv", col.names = T )
 
 
 
