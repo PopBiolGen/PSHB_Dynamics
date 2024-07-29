@@ -55,17 +55,8 @@ ggplot(data = sf_oz) +
   scale_x_continuous(limits=c(min(lon),max(lon)))+
   scale_y_continuous(limits=c(min(lat),max(lat)))
 
-# Create output matrix
 grid_coords <- as.matrix(grid[,-c(3,4)]) # Subset just lat & lon, convert to matrix
 colnames(grid_coords)<- c("lon","lat")
-# Assign number of columns in output matrix
-#outputs_grid <- matrix(0, nrow=nrow(grid), 
-#                       ncol=5)
-#outputs_grid[c(1:nrow(outputs_grid)),c(1:2)] <- grid2 # Insert lat & lon for each coord
-#colnames(outputs_grid)<- c("lon","lat", # Add lat & lon, leave remaining columns empty 
- #                          "A_growth", # Mean daily Adult growth rate
-  #                         "n_A_end", # Adult population at end of sim
-   #                        "mean_Temp") # Mean temperature at site
 
 ### FOREACH method (run parallel over multiple cores)
 n.cores <- 6 # Assign number cores (my PC has 8)
@@ -76,7 +67,7 @@ my.cluster <- parallel::makeCluster(
 print(my.cluster) #check cluster definition
 doParallel::registerDoParallel(cl = my.cluster) #register it to be used by %dopar%
 
-#### Create vector of ADULT growth rates
+#### Create vector of outputs
 # Similar to for loop, but runs over multiple cores then combines outputs
 out_v <- foreach(i = 1:nrow(grid_coords), 
                  .combine='c', # Combine outputs into vector (can also use 'cbind' or 'rbind' to create matrix)
@@ -92,11 +83,11 @@ out_v <- foreach(i = 1:nrow(grid_coords),
                                  locLong <- grid_coords[i,"lon"]
                                  locLat <- grid_coords[i,"lat"]
                                  yearSim <- run_year(lat = locLat, long = locLong, make_plot = FALSE) # FROM 'basic within-pop model.R'
-                                 A_growth <- yearSim$growthRate[3] # Calc mean growth rates
-                                 n_A_end <- yearSim$popDat[3,366]
-                                 mean_Temp <- mean(yearSim$temps)
+                                 A_growth <- yearSim$growthRate[3] # Mean adult growth rates
+                                 n_A_end <- yearSim$popDat[3,366] # Number of adults at end of sim
+                                 mean_Temp <- mean(yearSim$temps) # Mean temperature at location
                                  return(c(locLong, locLat, 
-                                          A_growth, n_A_end, mean_Temp)) # For now, just use ADULT GROWTH RATE values (similar rates across all stages)
+                                          A_growth, n_A_end, mean_Temp)) #
                                }
 outputs_grid <- matrix(out_v, 
                     nrow=nrow(grid), 
@@ -107,19 +98,21 @@ colnames(outputs_grid)<- c("lon","lat", # Add lat & lon, leave remaining columns
                            "n_A_end", # Adult population at end of sim
                            "mean_Temp") # Mean temperature at site
 
-#outputs_grid[,c("A_growth","n_A_end")] <- out_v # Add growth rate vector into output matrix
-
-#stopCluster(my.cluster)
+stopCluster(my.cluster)
 
 # Plot output
 ggplot(data = sf_oz) + 
   geom_tile(data=outputs_grid, 
-            aes(x=lon, y=lat, fill=A)) + # E.g. Adult growth rate
+            aes(x=lon, y=lat, fill=A_growth)) + # E.g. Adult growth rate
   geom_sf(fill=NA)+ # WA map
   scale_x_continuous(limits=c(min(lon)-.05,max(lon)+.05))+ # Fit plot to lat & lon range
   scale_y_continuous(limits=c(min(lat)-.05,max(lat)+.05))+
-  scale_fill_viridis()+
-  theme(panel.background = element_blank())
+  scale_fill_viridis(name = "Mean daily adult growth rate")+
+  theme(panel.background = element_blank(),
+        axis.line = element_blank(), 
+        axis.text = element_blank(), 
+        axis.ticks = element_blank(), 
+        axis.title = element_blank())
 
 write.csv(outputs_grid, # Save output
           file = "out/mu_0.5.csv", col.names = T, row.names = F )
