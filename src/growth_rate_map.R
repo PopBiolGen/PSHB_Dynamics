@@ -21,7 +21,7 @@ library(doParallel)
 sf_oz <- subset(ozmap("states"), NAME=="Western Australia")
 
 # Play around with different estimates of mu (probability of dispersal)
-mu_est <- 0
+mu_est <- 0.35
 
 # For now, manually select coordinate ranges to construct a retangular grid covering whole area
 # SILO data resolution = 0.05 x 0.05 degrees
@@ -86,17 +86,20 @@ out_v <- foreach(i = 1:nrow(grid_coords),
                                  A_growth <- yearSim$growthRate[3] # Mean adult growth rates
                                  n_A_end <- yearSim$popDat[3,366] # Number of adults at end of sim
                                  mean_Temp <- mean(yearSim$temps) # Mean temperature at location
+                                 tot_mu <- sum(yearSim$P_mu)
                                  return(c(locLong, locLat, 
-                                          A_growth, n_A_end, mean_Temp)) #
+                                          A_growth, n_A_end, 
+                                          mean_Temp, tot_mu)) #
                                }
 outputs_grid <- matrix(out_v, 
-                    nrow=nrow(grid), 
-                       ncol=5,
+                    nrow=nrow(grid_coords), 
+                       ncol=6, # Ensure same number of cols as number of outputs
                     byrow = T)
 colnames(outputs_grid)<- c("lon","lat", # Add lat & lon, leave remaining columns empty 
                            "A_growth", # Mean daily Adult growth rate
                            "n_A_end", # Adult population at end of sim
-                           "mean_Temp") # Mean temperature at site
+                           "mean_Temp", # Mean temperature at site
+                           "tot_mu") # Total n dispersing P
 
 stopCluster(my.cluster)
 
