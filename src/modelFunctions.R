@@ -121,8 +121,12 @@ step_within_population <- function(n_t,
   # 1 time step for within-population
   n_tplus <- W %*% n_t
   
+  # Number of Pre-adults dispersing away from host
+  n_mu_t <- n_t[2]  * phi_P * (1 - alpha_P) * # Number of surviving and non-transitioning P
+    mu # mu = Proportion that DO disperse
+  
   # Return both the updated population vector and cumulative offspring
-  return(list(n = n_tplus, cum_n = cumulative_offspring))
+  return(list(n = n_tplus, cum_n = cumulative_offspring, n_mu = n_mu_t))
 }
 
 
@@ -444,6 +448,8 @@ run_year <- function(lat, long, warmup = 10, survival_threshold = 1e11, make_plo
   population_data <- matrix(0, nrow = 3, ncol = time_steps)
   population_data[, 1] <- n_initial
   
+  P_mu <- matrix(0, nrow = 1, ncol = time_steps) # Matrix for number of dispersing P
+  
   for (tt in 2:time_steps) {
     step_result <- step_within_population(n_t = population_data[, tt - 1],
                                           cumulative_offspring = cumulative_offspring,
@@ -452,11 +458,13 @@ run_year <- function(lat, long, warmup = 10, survival_threshold = 1e11, make_plo
 
     population_data[, tt] <- step_result$n
     cumulative_offspring <- step_result$cum_n
+    P_mu[, tt] <- step_result$n_mu
   }
   
   # remove warmup
   population_data <- population_data[, -(1:warmup)]
   temps <- temps[-(1:warmup)]
+  P_mu <- P_mu[, -(1:warmup)]
   
   # calculate mean annual growth rate
   agr <- function(population_data){
@@ -471,7 +479,7 @@ run_year <- function(lat, long, warmup = 10, survival_threshold = 1e11, make_plo
     NvTPlot(temps, population_data)
   }
   
-  list(popDat = population_data, temps = temps, growthRate = growthRate)
+  list(popDat = population_data, temps = temps, growthRate = growthRate, P_mu = P_mu)
 }
 
 ## Function to iterate the within host model over n days
