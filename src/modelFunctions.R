@@ -433,6 +433,8 @@ random_clamped_normal <- function(mean, sd, min = -Inf, max = Inf, dim = c(1, 1)
   x
 }
 
+# HERE add dispersing P output
+
 # Runs a year of population growth at a given location
 run_year <- function(lat, long, warmup = 10, survival_threshold = 1e11, make_plot = FALSE){
   # get tree temp
@@ -490,6 +492,7 @@ run_year <- function(lat, long, warmup = 10, survival_threshold = 1e11, make_plo
     # iter: number of days to iterate over
     # threshold: host threshold for cumulative population size
     # note global variables used for phi_A phi_P mu f 
+
 sim_within_host <- function(initial_n, temps, iter, threshold = 1e5, stochastic = FALSE){
   #browser()
   if (length(temps) == 1) temps <- rep(temps, iter)
