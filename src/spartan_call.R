@@ -30,7 +30,7 @@ inst = lapply(pkgs, library, character.only = TRUE)
 
 
 # Assign number of Spartan cores to use
-n.core.spartan <- 8
+n.cores.spartan <- 20
 
 # Assign mu values to run sims with (over different iterations)
 mu_est_iter <- c(0.35, 0, 0.5)
