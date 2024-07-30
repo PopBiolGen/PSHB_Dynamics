@@ -9,19 +9,20 @@ library(viridis)
 # From 'basic within-pop models.R'
 library(dplyr)
 library(lubridate)
-## Load up the functions
-source("src/TPCFunctions.R")
-source("src/modelFunctions.R")
 # Run parallel over multiple cores
 library(foreach)
 library(parallel)
 library(doParallel)
 
+## Load up the functions
+source("src/TPCFunctions.R")
+source("src/modelFunctions.R")
+
 # WA map
-sf_oz <- subset(ozmap("states"), NAME=="Western Australia")
+sf_oz <- subset(ozmap("country"))
 
 # Play around with different estimates of mu (probability of dispersal)
-mu_est <- 0.35
+mu_est <- mu_est_iter[iter]
 
 # For now, manually select coordinate ranges to construct a retangular grid covering whole area
 # SILO data resolution = 0.05 x 0.05 degrees
@@ -51,12 +52,12 @@ grid_coords <- as.matrix(grid[,-c(3,4)]) # Subset just lat & lon, convert to mat
 colnames(grid_coords)<- c("lon","lat")
 
 ### FOREACH method (run parallel over multiple cores)
-n.cores <- 6 # Assign number cores (my PC has 8)
+n.cores <- n.cores.spartan # Assign number cores (my PC has 8)
 my.cluster <- parallel::makeCluster(
   n.cores, 
   type = "PSOCK"
 )
-print(my.cluster) #check cluster definition
+# print(my.cluster) #check cluster definition
 doParallel::registerDoParallel(cl = my.cluster) #register it to be used by %dopar%
 
 #### Create vector of outputs
@@ -96,7 +97,10 @@ colnames(outputs_grid)<- c("lon","lat", # Add lat & lon, leave remaining columns
 stopCluster(my.cluster)
 
 # Plot output
-ggplot(data = sf_oz) + 
+
+options(bitmapType='cairo') # To save png correctly
+
+map.plot <- ggplot(data = sf_oz) + 
   geom_tile(data=outputs_grid, 
             aes(x=lon, y=lat, fill=A_growth)) + # E.g. Adult growth rate
   geom_sf(fill=NA)+ # WA map
@@ -109,8 +113,16 @@ ggplot(data = sf_oz) +
         axis.ticks = element_blank(), 
         axis.title = element_blank())
 
+# Need to Save this plot
+ggsave(map.plot,
+       file = sprintf("out/map_mu_%s.png", mu_est), 
+    #   width = 10, height = 20, dpi = 1000, units = "in", 
+       device='png')
+
+
 write.csv(outputs_grid, # Save output
-          file = "out/mu_0.5.csv", col.names = T, row.names = F )
+          file = sprintf("out/PSHB_map_mu_%s.csv", mu_est), 
+          col.names = T, row.names = F )
 
 
 
