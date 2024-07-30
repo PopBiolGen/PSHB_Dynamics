@@ -29,14 +29,6 @@ lat <- c(seq(-33.4, -33.3, by=0.05)) # Latitude range
 lon <- c(seq(116.7, 116.8, by=0.05)) # Longitude range
 grid <- (expand.grid(lon, lat)) # Grid containing each lat & lon combination
 colnames(grid) <- c("lon", "lat")
-# Check on map
-ggplot(data = sf_oz) +
-  geom_sf()+
-  geom_point(data=grid,
-             aes(x=lon, y=lat))+
-  scale_x_continuous(limits=c(min(lon),max(lon)))+
-  scale_y_continuous(limits=c(min(lat),max(lat)))+
-  theme(panel.background = element_blank())
 
 ## Need to subset only the coordinates that fall on land (ignore ocean)
 
@@ -48,12 +40,12 @@ grid$land <- !is.na(as.numeric(st_intersects(grid$points, sf_oz))) # Land (TRUE)
 grid <- grid[!(grid$land %in% "FALSE"),] # Remove ocean coords
 
 # Check on map
-ggplot(data = sf_oz) +
-  geom_sf()+
-  geom_point(data=grid,
-             aes(x=lon, y=lat, col=land))+
-  scale_x_continuous(limits=c(min(lon),max(lon)))+
-  scale_y_continuous(limits=c(min(lat),max(lat)))
+#ggplot(data = sf_oz) +
+#  geom_sf()+
+#  geom_point(data=grid,
+#             aes(x=lon, y=lat, col=land))+
+#  scale_x_continuous(limits=c(min(lon),max(lon)))+
+#  scale_y_continuous(limits=c(min(lat),max(lat)))
 
 grid_coords <- as.matrix(grid[,-c(3,4)]) # Subset just lat & lon, convert to matrix
 colnames(grid_coords)<- c("lon","lat")
@@ -123,15 +115,15 @@ write.csv(outputs_grid, # Save output
 
 
 #### FOR LOOP Version ####
-outputs_grid <- matrix(0, nrow=nrow(grid), ncol=5)
-outputs_grid[c(1:nrow(outputs_grid)),c(1:2)] <- grid2 # Insert lat & lon for each coord
-colnames(outputs_grid)<- c("lon","lat","J","P","A") # Leave remaining columns to insert J, P & A growth rates
+#outputs_grid <- matrix(0, nrow=nrow(grid), ncol=5)
+#outputs_grid[c(1:nrow(outputs_grid)),c(1:2)] <- grid2 # Insert lat & lon for each coord
+#colnames(outputs_grid)<- c("lon","lat","J","P","A") # Leave remaining columns to insert J, P & A growth rates
 
-for(i in 1:nrow(outputs_grid)){
-  locLong <- outputs_grid[i, "lon"]
-  locLat <- outputs_grid[i, "lat"]
-  yearSim <- run_year(lat = locLat, long = locLong, make_plot = FALSE) # FROM 'basic within-pop model.R'
-  rate_grid <- yearSim$growthRate # Calc mean growth rates
-  outputs_grid[i,c(3:5)] <- rate_grid # Insert growth rates into output matrix (with corresponding coords)
-}
+#for(i in 1:nrow(outputs_grid)){
+#  locLong <- outputs_grid[i, "lon"]
+#  locLat <- outputs_grid[i, "lat"]
+#  yearSim <- run_year(lat = locLat, long = locLong, make_plot = FALSE) # FROM 'basic within-pop model.R'
+#  rate_grid <- yearSim$growthRate # Calc mean growth rates
+#  outputs_grid[i,c(3:5)] <- rate_grid # Insert growth rates into output matrix (with corresponding coords)
+#}
 # 
