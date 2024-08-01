@@ -18,15 +18,18 @@ library(parallel)
 library(doParallel)
 
 # WA map
-sf_oz <- subset(ozmap("states"), NAME=="Western Australia")
+# sf_oz <- subset(ozmap("states"), NAME=="Western Australia")
+sf_oz <- subset(ozmap("country")) # All Australia
+
+map.res <- 0.2 # resolution of map (degrees) - 0.05 deg = 5 km
 
 # Play around with different estimates of mu (probability of dispersal)
-mu_est <- 0.35
+mu_est <- 0
 
 # For now, manually select coordinate ranges to construct a retangular grid covering whole area
 # SILO data resolution = 0.05 x 0.05 degrees
-lat <- c(seq(-33.4, -33.3, by=0.05)) # Latitude range
-lon <- c(seq(116.7, 116.8, by=0.05)) # Longitude range
+lat <- c(seq(-43.4, -10.4, by = map.res)) # Latitude range
+lon <- c(seq(113, 153.4, by = map.res)) # Longitude range
 grid <- (expand.grid(lon, lat)) # Grid containing each lat & lon combination
 colnames(grid) <- c("lon", "lat")
 
@@ -40,18 +43,18 @@ grid$land <- !is.na(as.numeric(st_intersects(grid$points, sf_oz))) # Land (TRUE)
 grid <- grid[!(grid$land %in% "FALSE"),] # Remove ocean coords
 
 # Check on map
-#ggplot(data = sf_oz) +
-#  geom_sf()+
-#  geom_point(data=grid,
-#             aes(x=lon, y=lat, col=land))+
-#  scale_x_continuous(limits=c(min(lon),max(lon)))+
-#  scale_y_continuous(limits=c(min(lat),max(lat)))
+ggplot(data = sf_oz) +
+  geom_sf()+
+  geom_point(data=grid,
+             aes(x=lon, y=lat, col=land))+
+  scale_x_continuous(limits=c(min(lon),max(lon)))+
+  scale_y_continuous(limits=c(min(lat),max(lat)))
 
 grid_coords <- as.matrix(grid[,-c(3,4)]) # Subset just lat & lon, convert to matrix
 colnames(grid_coords)<- c("lon","lat")
 
 ### FOREACH method (run parallel over multiple cores)
-n.cores <- 6 # Assign number cores (my PC has 8)
+n.cores <- 10 # Assign number cores (my PC has 8)
 my.cluster <- parallel::makeCluster(
   n.cores, 
   type = "PSOCK"
@@ -96,7 +99,7 @@ colnames(outputs_grid)<- c("lon","lat", # Add lat & lon, leave remaining columns
 stopCluster(my.cluster)
 
 # Plot output
-ggplot(data = sf_oz) + 
+map.plot <- ggplot(data = sf_oz) + 
   geom_tile(data=outputs_grid, 
             aes(x=lon, y=lat, fill=A_growth)) + # E.g. Adult growth rate
   geom_sf(fill=NA)+ # WA map
@@ -109,8 +112,14 @@ ggplot(data = sf_oz) +
         axis.ticks = element_blank(), 
         axis.title = element_blank())
 
+library(ggsave)
+ggsave(map.plot,
+       file = "out/mapAus_mu0.png", 
+       #   width = 10, height = 20, dpi = 1000, units = "in", 
+       device='png')
+
 write.csv(outputs_grid, # Save output
-          file = "out/mu_0.5.csv", col.names = T, row.names = F )
+          file = "out/WA_map_mu.35.csv", col.names = T, row.names = F )
 
 
 
