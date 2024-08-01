@@ -26,8 +26,8 @@ mu_est <- mu_est_iter[iter]
 
 # For now, manually select coordinate ranges to construct a retangular grid covering whole area
 # SILO data resolution = 0.05 x 0.05 degrees
-lat <- c(seq(-33.4, -33.3, by=0.05)) # Latitude range
-lon <- c(seq(116.7, 116.8, by=0.05)) # Longitude range
+lat <- c(seq(-43.4, -10.4, by=map.res)) # Latitude range
+lon <- c(seq(113, 153.4, by=map.res)) # Longitude range
 grid <- (expand.grid(lon, lat)) # Grid containing each lat & lon combination
 colnames(grid) <- c("lon", "lat")
 
@@ -60,6 +60,12 @@ my.cluster <- parallel::makeCluster(
 # print(my.cluster) #check cluster definition
 doParallel::registerDoParallel(cl = my.cluster) #register it to be used by %dopar%
 
+yearSim <- run_year(lat = min(lat), long = min(lon), make_plot = FALSE)
+m1 <- matrix(yearSim$growthRate, nrow=3)
+write.csv(m1, # Save output
+          file = sprintf("out/test_%s.csv", mu_est), 
+          col.names = T, row.names = F )
+
 #### Create vector of outputs
 # Similar to for loop, but runs over multiple cores then combines outputs
 out_v <- foreach(i = 1:nrow(grid_coords), 
@@ -67,12 +73,11 @@ out_v <- foreach(i = 1:nrow(grid_coords),
                  .packages = c("httpcode", # Need to install packages on all Worker cores
                                "urltools",
                                "ggplot2",
-                               "ozmaps",
+                              # "ozmaps",
                                "sf",
                                "viridis",
                                "dplyr",
-                               "lubridate",
-                               "foreach")) %dopar% {
+                               "lubridate")) %dopar% {
                                  locLong <- grid_coords[i,"lon"]
                                  locLat <- grid_coords[i,"lat"]
                                  yearSim <- run_year(lat = locLat, long = locLong, make_plot = FALSE) # FROM 'basic within-pop model.R'
@@ -84,6 +89,8 @@ out_v <- foreach(i = 1:nrow(grid_coords),
                                           A_growth, n_A_end, 
                                           mean_Temp, tot_mu)) #
                                }
+stopCluster(my.cluster)
+
 outputs_grid <- matrix(out_v, 
                     nrow=nrow(grid_coords), 
                        ncol=6, # Ensure same number of cols as number of outputs
@@ -93,8 +100,6 @@ colnames(outputs_grid)<- c("lon","lat", # Add lat & lon, leave remaining columns
                            "n_A_end", # Adult population at end of sim
                            "mean_Temp", # Mean temperature at site
                            "tot_mu") # Total n dispersing P
-
-stopCluster(my.cluster)
 
 # Plot output
 
