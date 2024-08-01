@@ -35,6 +35,8 @@ n.cores.spartan <- 20
 # Assign mu values to run sims with (over different iterations)
 mu_est_iter <- c(0.35, 0, 0.5)
 
+map.res <- 0.2 # resolution of map (degrees) - 0.05 deg = 5 km
+
 # Save files (sprint) according to mu values (?)
 
 # Source script
