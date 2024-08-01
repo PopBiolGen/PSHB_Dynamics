@@ -60,12 +60,6 @@ my.cluster <- parallel::makeCluster(
 # print(my.cluster) #check cluster definition
 doParallel::registerDoParallel(cl = my.cluster) #register it to be used by %dopar%
 
-yearSim <- run_year(lat = min(lat), long = min(lon), make_plot = FALSE)
-m1 <- matrix(yearSim$growthRate, nrow=3)
-write.csv(m1, # Save output
-          file = sprintf("out/test_%s.csv", mu_est), 
-          col.names = T, row.names = F )
-
 #### Create vector of outputs
 # Similar to for loop, but runs over multiple cores then combines outputs
 out_v <- foreach(i = 1:nrow(grid_coords), 
