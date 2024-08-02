@@ -21,15 +21,15 @@ library(doParallel)
 # sf_oz <- subset(ozmap("states"), NAME=="Western Australia")
 sf_oz <- subset(ozmap("country")) # All Australia
 
-map.res <- 0.2 # resolution of map (degrees) - 0.05 deg = 5 km
+map.res <- 0.1 # resolution of map (degrees) - 0.05 deg = 5 km
 
 # Play around with different estimates of mu (probability of dispersal)
-mu_est <- 0
+mu_est <- 0.35
 
 # For now, manually select coordinate ranges to construct a retangular grid covering whole area
 # SILO data resolution = 0.05 x 0.05 degrees
-lat <- c(seq(-43.4, -10.4, by = map.res)) # Latitude range
-lon <- c(seq(113, 153.4, by = map.res)) # Longitude range
+lat <- c(seq(-33.3, -31, by = map.res)) # Latitude range
+lon <- c(seq(115.35, 116.8, by = map.res)) # Longitude range
 grid <- (expand.grid(lon, lat)) # Grid containing each lat & lon combination
 colnames(grid) <- c("lon", "lat")
 
@@ -54,7 +54,7 @@ grid_coords <- as.matrix(grid[,-c(3,4)]) # Subset just lat & lon, convert to mat
 colnames(grid_coords)<- c("lon","lat")
 
 ### FOREACH method (run parallel over multiple cores)
-n.cores <- 10 # Assign number cores (my PC has 8)
+n.cores <- 7 # Assign number cores 
 my.cluster <- parallel::makeCluster(
   n.cores, 
   type = "PSOCK"
@@ -82,19 +82,26 @@ out_v <- foreach(i = 1:nrow(grid_coords),
                                  n_A_end <- yearSim$popDat[3,366] # Number of adults at end of sim
                                  mean_Temp <- mean(yearSim$temps) # Mean temperature at location
                                  tot_mu <- sum(yearSim$P_mu)
+                                 # Mean daily adult pop growth rate by season
+                                 summer <- mean(diff(log(yearSim$popDat[3,c(1:60,336:366)])))
+                                 autumn <- mean(diff(log(yearSim$popDat[3,61:152])))
+                                 winter <- mean(diff(log(yearSim$popDat[3,153:244])))
+                                 spring <- mean(diff(log(yearSim$popDat[3,245:335])))
                                  return(c(locLong, locLat, 
                                           A_growth, n_A_end, 
-                                          mean_Temp, tot_mu)) #
+                                          mean_Temp, tot_mu,
+                                          summer, autumn, winter, spring)) #
                                }
 outputs_grid <- matrix(out_v, 
                     nrow=nrow(grid_coords), 
-                       ncol=6, # Ensure same number of cols as number of outputs
+                       ncol=10, # Ensure same number of cols as number of outputs
                     byrow = T)
 colnames(outputs_grid)<- c("lon","lat", # Add lat & lon, leave remaining columns empty 
                            "A_growth", # Mean daily Adult growth rate
                            "n_A_end", # Adult population at end of sim
                            "mean_Temp", # Mean temperature at site
-                           "tot_mu") # Total n dispersing P
+                           "tot_mu",# Total n dispersing  
+                           "summer","autumn","winter","spring") # Mean daily adult pop growth per season
 
 stopCluster(my.cluster)
 
