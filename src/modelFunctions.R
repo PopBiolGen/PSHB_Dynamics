@@ -137,7 +137,7 @@ step_within_population <- function(n_t,
 # uses model parameters generated in src/temperatures/temperature-prediction-function.R
 # gets environmental data from Australia SILO database
 tree_temp_prediction <- function(lat = -32.005892, long = 115.896019){
-  load("out/tree-temp-model-pars.Rdata")
+ # load("out/tree-temp-model-pars.Rdata")
   locDat <- get_env_data(lat, long)
   newDat <- list(air_tmax = locDat$air_tmax,
        rh_tmax = locDat$rh_tmax,
