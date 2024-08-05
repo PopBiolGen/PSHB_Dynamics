@@ -74,7 +74,7 @@ wd <- wd %>% mutate(DOY = yday(dmy(paste(day, month, year, sep = "-")))) %>%
 
 merge_temp <- left_join(sflow, wd)
 
-cor(merge_temp, use = "complete.obs") #note correlation of 0.96 with soil 100cm and 30-day moving average
+# cor(merge_temp, use = "complete.obs") #note correlation of 0.96 with soil 100cm and 30-day moving average
 
 
 rm(sflow, sflow2, wd, fList)

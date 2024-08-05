@@ -17,6 +17,7 @@ library(doParallel)
 ## Load up the functions
 source("src/TPCFunctions.R")
 source("src/modelFunctions.R")
+source("src/temperatures/temperature-prediction-function.R")
 
 # WA map
 sf_oz <- subset(ozmap("country"))
