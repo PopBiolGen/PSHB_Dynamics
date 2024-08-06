@@ -126,7 +126,7 @@ ggsave(map.plot,
        device='png')
 
 write.csv(outputs_grid, # Save output
-          file = "out/WA_map_mu.35.csv", col.names = T, row.names = F )
+          file = "out/test.csv", col.names = T, row.names = F )
 
 
 
