@@ -19,6 +19,10 @@ pkgs = c("readr", "dplyr", "gdata", "ggplot2", "gganimate", "gifski",
          "ozmaps",
          "sf",
          "viridis",
+         'data.table',
+         'terra',
+         'apsimx',
+         'zoo',
          "dplyr",
          "lubridate",
          "foreach",
@@ -28,6 +32,9 @@ new.pkgs <- pkgs[!(pkgs %in% installed.packages(lib=lib)[,"Package"])]
 if(length(new.pkgs)) install.packages(new.pkgs, lib=lib, repos=repo)
 inst = lapply(pkgs, library, character.only = TRUE)
 
+install.packages("weatherOz", lib=lib,
+                 repos = "https://ropensci.r-universe.dev")
+library(weatherOz)
 
 # Assign number of Spartan cores to use
 n.cores.spartan <- 20
