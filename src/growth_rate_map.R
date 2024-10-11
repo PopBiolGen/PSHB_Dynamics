@@ -28,8 +28,8 @@ mu_est <- 0.35
 
 # For now, manually select coordinate ranges to construct a retangular grid covering whole area
 # SILO data resolution = 0.05 x 0.05 degrees
-lat <- c(seq(-33.3, -31, by = map.res)) # Latitude range
-lon <- c(seq(115.35, 116.8, by = map.res)) # Longitude range
+lat <- c(seq(-43.4, -10.4, by=map.res)) # Latitude range
+lon <- c(seq(113, 153.4, by=map.res)) # Longitude range
 grid <- (expand.grid(lon, lat)) # Grid containing each lat & lon combination
 colnames(grid) <- c("lon", "lat")
 
@@ -104,6 +104,9 @@ colnames(outputs_grid)<- c("lon","lat", # Add lat & lon, leave remaining columns
                            "summer","autumn","winter","spring") # Mean daily adult pop growth per season
 
 stopCluster(my.cluster)
+
+write.csv(outputs_grid, # Save output
+          file = "out/test14.08.csv", col.names = T, row.names = F )
 
 # Plot output
 map.plot <- ggplot(data = sf_oz) + 

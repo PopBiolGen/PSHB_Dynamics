@@ -17,18 +17,31 @@ library(doParallel)
 ## Load up the functions
 source("src/TPCFunctions.R")
 source("src/modelFunctions.R")
-source("src/temperatures/temperature-prediction-function.R")
+
+# Load data for temperature function (from temperature-prediction-function.R -- spartan can't load Rdata file)
+merge_temp <- read.csv('src/temperatures/merge_temp.csv')
+mod_fit <- lm(mean_d ~ air_tmax*rh_tmax + ma30*rh_tmax, data = merge_temp)
+tree_temp_model_pars <- coef(mod_fit)
 
 # WA map
 sf_oz <- subset(ozmap("country"))
 
 # Play around with different estimates of mu (probability of dispersal)
-mu_est <- mu_est_iter[iter]
+# mu_est <- mu_est_iter[iter]
+mu_est <- 0.5 # Let's focus on just 1 mu for now...
 
 # For now, manually select coordinate ranges to construct a retangular grid covering whole area
 # SILO data resolution = 0.05 x 0.05 degrees
-lat <- c(seq(-43.4, -10.4, by=map.res)) # Latitude range
-lon <- c(seq(113, 153.4, by=map.res)) # Longitude range
+# Aus
+#lat <- c(seq(-45, -10, by=map.res)) # Latitude range
+#lon <- c(seq(110, 160, by=map.res)) # Longitude range
+
+# Coords now listed in spartan_call
+
+# Each spartan job (iter) corresponds to 1 lat & lon combo
+lat <- unlist(lat_list[iter])
+lon <- unlist(lon_list[iter])
+
 grid <- (expand.grid(lon, lat)) # Grid containing each lat & lon combination
 colnames(grid) <- c("lon", "lat")
 
@@ -52,56 +65,59 @@ grid <- grid[!(grid$land %in% "FALSE"),] # Remove ocean coords
 grid_coords <- as.matrix(grid[,-c(3,4)]) # Subset just lat & lon, convert to matrix
 colnames(grid_coords)<- c("lon","lat")
 
-### FOREACH method (run parallel over multiple cores)
-n.cores <- n.cores.spartan # Assign number cores (my PC has 8)
-my.cluster <- parallel::makeCluster(
-  n.cores, 
-  type = "PSOCK"
-)
-# print(my.cluster) #check cluster definition
-doParallel::registerDoParallel(cl = my.cluster) #register it to be used by %dopar%
+outputs_grid <- matrix(0, 
+                       nrow=nrow(grid_coords), 
+                       ncol=6)
+
+# Function for sim:
+sim_fun <- function(locLat, locLong){
+  yearSim <- run_year(lat = locLat, long = locLong, make_plot = FALSE) # Run same model as 'basic within-pop model.R'
+  A_growth <- yearSim$growthRate[3] # Mean adult growth rates
+  n_A_end <- yearSim$popDat[3,366] # Number of adults at end of sim
+  mean_Temp <- mean(yearSim$temps) # Mean temperature at location
+  tot_mu <- sum(yearSim$P_mu) # Total out-dispersing Pre-adults
+  return(c(locLong, locLat, 
+           A_growth, n_A_end, 
+           mean_Temp, tot_mu)) # Save as vector
+}
 
 #### Create vector of outputs
-# Similar to for loop, but runs over multiple cores then combines outputs
-out_v <- foreach(i = 1:nrow(grid_coords), 
-                 .combine='c', # Combine outputs into vector (can also use 'cbind' or 'rbind' to create matrix)
-                 .packages = c("httpcode", # Need to install packages on all Worker cores
-                               "urltools",
-                               "ggplot2",
-                              # "ozmaps",
-                               "sf",
-                               "viridis",
-                               "dplyr",
-                               "lubridate")) %dopar% {
+# For loop (foreach not running on spartan...)
+for(i in 1:nrow(grid_coords)){ 
+  source("src/modelFunctions.R")
                                  locLong <- grid_coords[i,"lon"]
                                  locLat <- grid_coords[i,"lat"]
-                                 yearSim <- run_year(lat = locLat, long = locLong, make_plot = FALSE) # FROM 'basic within-pop model.R'
-                                 A_growth <- yearSim$growthRate[3] # Mean adult growth rates
-                                 n_A_end <- yearSim$popDat[3,366] # Number of adults at end of sim
-                                 mean_Temp <- mean(yearSim$temps) # Mean temperature at location
-                                 tot_mu <- sum(yearSim$P_mu)
-                                 return(c(locLong, locLat, 
-                                          A_growth, n_A_end, 
-                                          mean_Temp, tot_mu)) #
+                                 
+                                 tryCatch({ # Skip step if there is an error (i.e. no SILO data at location)
+                                   
+                                     loc_i <- sim_fun(locLat, locLong) # Run sim function for location
+                                 
+                                 outputs_grid[i, ] <- loc_i # Fill row with output data
+                                 
+                                 }, 
+                                 error=function(e){
+                                   #  cat("ERROR :",conditionMessage(e), "\n") # Can print error message
+                                 })
+                                 
                                }
-stopCluster(my.cluster)
 
-outputs_grid <- matrix(out_v, 
-                    nrow=nrow(grid_coords), 
-                       ncol=6, # Ensure same number of cols as number of outputs
-                    byrow = T)
 colnames(outputs_grid)<- c("lon","lat", # Add lat & lon, leave remaining columns empty 
                            "A_growth", # Mean daily Adult growth rate
                            "n_A_end", # Adult population at end of sim
                            "mean_Temp", # Mean temperature at site
                            "tot_mu") # Total n dispersing P
 
+
+write.csv(outputs_grid, # Save output
+          file = sprintf("out/PSHB_mu_%s_sim_%s.csv", mu_est, iter), 
+          col.names = T, row.names = F )
+
 # Plot output
 
 options(bitmapType='cairo') # To save png correctly
 
 map.plot <- ggplot(data = sf_oz) + 
-  geom_tile(data=outputs_grid, 
+  geom_tile(data=as.data.frame(outputs_grid), # Save from matrix to dataframe
             aes(x=lon, y=lat, fill=A_growth)) + # E.g. Adult growth rate
   geom_sf(fill=NA)+ # WA map
   scale_x_continuous(limits=c(min(lon)-.05,max(lon)+.05))+ # Fit plot to lat & lon range
@@ -115,14 +131,10 @@ map.plot <- ggplot(data = sf_oz) +
 
 # Need to Save this plot
 ggsave(map.plot,
-       file = sprintf("out/map_mu_%s.png", mu_est), 
+       file = sprintf("out/Ausmap_mu_%s_sim_%s.png", mu_est, iter), 
     #   width = 10, height = 20, dpi = 1000, units = "in", 
        device='png')
 
-
-write.csv(outputs_grid, # Save output
-          file = sprintf("out/PSHB_map_mu_%s.csv", mu_est), 
-          col.names = T, row.names = F )
 
 
 
