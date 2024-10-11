@@ -21,6 +21,14 @@ source("src/modelFunctions.R")
 locLat <- -32.005892
 locLong <- 115.896019
 
+# Load data for temperature function (from temperature-prediction-function.R -- spartan can't load Rdata file)
+merge_temp <- read.csv('src/temperatures/merge_temp.csv')
+mod_fit <- lm(mean_d ~ air_tmax*rh_tmax + ma30*rh_tmax, data = merge_temp)
+tree_temp_model_pars <- coef(mod_fit)
+
+# Assign mu parameter
+mu_est <- 0.35
+
 # Run numerical sims
 yearSim <- run_year(lat = locLat, long = locLong, make_plot = TRUE)
 
