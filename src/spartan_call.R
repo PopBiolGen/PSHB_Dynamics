@@ -36,15 +36,31 @@ install.packages("weatherOz", lib=lib,
                  repos = "https://ropensci.r-universe.dev")
 library(weatherOz)
 
+Sys.setenv(SILO_API_KEY="andrew.coates@curtin.edu.au")
+
 # Assign number of Spartan cores to use
 n.cores.spartan <- 20
 
 # Assign mu values to run sims with (over different iterations)
 mu_est_iter <- c(0.35, 0, 0.5)
 
-map.res <- 0.2 # resolution of map (degrees) - 0.05 deg = 5 km
+map.res <- 0.1 # resolution of map (degrees) - 0.05 deg = 5 km
 
-# Save files (sprint) according to mu values (?)
+# Run different, smaller jobs with different segments of Aus:
+# Run 2x separate lat bands:
+lat1 <- c(seq(-45, -25.1, by=map.res)) # South
+lat2 <- c(seq(-25, -10, by=map.res)) # North
+# Run 4x separate long bands:
+lon1 <- c(seq(110, 130, by=map.res)) # WA
+lon2 <- c(seq(130.1, 140, by=map.res)) # NT SA
+lon3 <- c(seq(140.1, 145, by=map.res)) # Qld Vic NSW
+lon4 <- c(seq(145.1, 160, by=map.res)) # east coast
+
+# Create lists of lat and lon to match up:
+lat_list <- list(lat1, lat1, lat1, lat1,
+                 lat2, lat2, lat2, lat2)
+lon_list <- list(lon1, lon2, lon3, lon4,
+                 lon1, lon2, lon3, lon4)
 
 # Source script
 source("src/growth_rate_map_spartan.R")
