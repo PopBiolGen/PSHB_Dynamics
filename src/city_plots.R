@@ -1,30 +1,4 @@
 
-locLat <- -27.454336
-locLong <- 153.018555
-https://www.longpaddock.qld.gov.au/cgi-bin/silo/DataDrillDataset.php?start=20130101&finish=20231231&lat=-27.47551&lon=153.0300&format=alldata&username=andrew.coates@curtin.edu.au&password=apirequest  
-
-wd_test <- weatherOz::get_data_drill(
-    latitude = locLat,
-    longitude = locLong,
-    start_date = "20130101",
-    end_date = "20231231",
-    values = c(
-      "max_temp",
-      "min_temp",
-      "rh_tmax"
-    ),
-    api_key = Sys.getenv("SILO_API_KEY")
-  )
-
-wd_test <- wd_test %>% dplyr::mutate(DOY = yday(dmy(paste(day, month, year, sep = "-")))) 
-
-ggplot(wd_test, aes(x=DOY, y=air_tmax, col=year, group=year))+
-  geom_line()+
-  geom_line(data=wd_test, 
-            aes(x=DOY, y=air_tmin, col=year, group=year))+
-  geom_hline(yintercept = 30)+
-  #facet_wrap(.~year)+
-  geom_line(data=wd, aes(x=DOY, y=air_tmax), col="red")
 
 ################################
 
@@ -48,15 +22,14 @@ mu_est <- 0
 city_coords <- read_csv("src/city_coords.csv")
 
 # Looking at plots without manual-scaled axes:
-mingrow <- -0.1
+mingrow <- -0.02
 maxgrow <- 0.1
 
 # Pick a location
-
+dev.off()
 par(mfrow = c(3, 4))
-par(mfrow = c(1, 2))
               
-for(i in 7:8){
+for(i in 1:nrow(city_coords)){
 
   locLat <- city_coords$lat[i]
   locLong <- city_coords$lon[i]
@@ -85,15 +58,25 @@ for(i in 7:8){
        main = city_name, 
        xlab = "Day of year", 
        ylab = "Growth rate", 
-       col = "grey75", lwd = 2, 
-#       ylim = c(mingrow, maxgrow),
+       col = "grey75", 
+       lwd = 1.8, 
+       ylim = c(mingrow, maxgrow),
        bty = "l")
-  lines(pre_adult_growth_rate_smoothed, col = "grey50", lwd = 2)
-  lines(ad_growth_rate_smoothed, col = "grey25", lwd = 2)
+  lines(pre_adult_growth_rate_smoothed, col = "grey50", lwd = 1.8)
+  lines(ad_growth_rate_smoothed, col = "grey25", lwd = 1.8)
 #  legend("bottomright", legend = c("Juveniles", "Pre-adults", "Adults"), 
  #        col = c("grey75", "grey50", "grey25"), 
   #       lty = 1, lwd = 2, cex = 0.75)
+  abline(h=0, lty=2)
+  axis(side = 1, at = c(seq(0, 300, by=100))) 
+  axis(side = 2, at = c(15, 50, 75, 100))
 }
+
+# Plot just legend:
+plot(NULL ,xaxt='n',yaxt='n',bty='n',ylab='',xlab='', xlim=0:1, ylim=0:1)
+  legend("center", legend = c("Juveniles", "Pre-adults", "Adults"), 
+        col = c("grey75", "grey50", "grey25"), 
+       lty = 1, lwd = 2, cex = 1.1, bty='n')
 
 dev.off()
 
