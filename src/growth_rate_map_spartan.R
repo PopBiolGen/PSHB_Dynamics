@@ -28,7 +28,7 @@ sf_oz <- subset(ozmap("country"))
 
 # Play around with different estimates of mu (probability of dispersal)
 # mu_est <- mu_est_iter[iter]
-mu_est <- 0.5 # Let's focus on just 1 mu for now...
+mu_est <- 0 # Let's focus on just 1 mu for now...
 
 # For now, manually select coordinate ranges to construct a retangular grid covering whole area
 # SILO data resolution = 0.05 x 0.05 degrees
@@ -109,7 +109,7 @@ colnames(outputs_grid)<- c("lon","lat", # Add lat & lon, leave remaining columns
 
 
 write.csv(outputs_grid, # Save output
-          file = sprintf("out/PSHB_mu_%s_sim_%s.csv", mu_est, iter), 
+          file = sprintf("out/updated_mu_%s_sim_%s.csv", mu_est, iter), 
           col.names = T, row.names = F )
 
 # Plot output
@@ -131,7 +131,7 @@ map.plot <- ggplot(data = sf_oz) +
 
 # Need to Save this plot
 ggsave(map.plot,
-       file = sprintf("out/Ausmap_mu_%s_sim_%s.png", mu_est, iter), 
+       file = sprintf("out/updated_mu_%s_sim_%s.png", mu_est, iter), 
     #   width = 10, height = 20, dpi = 1000, units = "in", 
        device='png')
 
