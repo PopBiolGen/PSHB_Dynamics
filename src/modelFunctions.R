@@ -93,9 +93,10 @@ step_within_population <- function(n_t,
                                    phi_A = 0.97,
                                    phi_P = 0.97,
                                    mu = mu_est,
+                                   dens.dep = TRUE,
                                    survival_threshold) {
   # Calculate the survival probability based on cumulative offspring
-  survival_prob <- ifelse(cumulative_offspring < survival_threshold, 1, 0)
+  if (dens.dep) survival_prob <- ifelse(cumulative_offspring < survival_threshold, 1, 0) else survival_prob <- 1
   
   # calculate temperature dependent vital rates for this time interval
   alpha_J <- alpha_J_temp(temperature)
