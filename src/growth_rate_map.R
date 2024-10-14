@@ -17,6 +17,11 @@ library(foreach)
 library(parallel)
 library(doParallel)
 
+# Load data for temperature function (from temperature-prediction-function.R -- spartan can't load Rdata file)
+merge_temp <- read.csv('src/temperatures/merge_temp.csv')
+mod_fit <- lm(mean_d ~ air_tmax*rh_tmax + ma30*rh_tmax, data = merge_temp)
+tree_temp_model_pars <- coef(mod_fit)
+
 # WA map
 # sf_oz <- subset(ozmap("states"), NAME=="Western Australia")
 sf_oz <- subset(ozmap("country")) # All Australia
@@ -28,8 +33,20 @@ mu_est <- 0.35
 
 # For now, manually select coordinate ranges to construct a retangular grid covering whole area
 # SILO data resolution = 0.05 x 0.05 degrees
-lat <- c(seq(-43.4, -10.4, by=map.res)) # Latitude range
-lon <- c(seq(113, 153.4, by=map.res)) # Longitude range
+# Full Aus range:
+#lat <- c(seq(-45, -10, by=map.res)) # Latitude range
+#lon <- c(seq(113, 153.4, by=map.res)) # Longitude range
+
+# Run 2 separate lat bands:
+lat <- c(seq(-45, -25.1, by=map.res)) # 1
+#lat <- c(seq(-25, -10, by=map.res)) # 2
+# Run 5x separate long bands:
+lon <- c(seq(110, 120, by=map.res)) # 1
+#lon <- c(seq(120.1, 130, by=map.res)) # 2
+#lon <- c(seq(130.1, 140, by=map.res)) # 3
+#lon <- c(seq(140.1, 145, by=map.res)) # 4 # Lots of area 140-160
+#lon <- c(seq(145.1, 160, by=map.res)) # 5
+
 grid <- (expand.grid(lon, lat)) # Grid containing each lat & lon combination
 colnames(grid) <- c("lon", "lat")
 
@@ -57,15 +74,27 @@ colnames(grid_coords)<- c("lon","lat")
 n.cores <- 7 # Assign number cores 
 my.cluster <- parallel::makeCluster(
   n.cores, 
-  type = "PSOCK"
+  type = "PSOCK",
+  outfile=""
 )
 print(my.cluster) #check cluster definition
 doParallel::registerDoParallel(cl = my.cluster) #register it to be used by %dopar%
+#install.packages("doSNOW")
+#install.packages("tcltk")
+library(doSNOW)
+library(tcltk)
+registerDoSNOW(my.cluster) # Save worker outfiles (to see errors)
+
+# Progress bar
+pb <- tkProgressBar(max=nrow(grid_coords))
+progress <- function(i) setTkProgressBar(pb, i)
+opts <- list(progress=progress)
 
 #### Create vector of outputs
 # Similar to for loop, but runs over multiple cores then combines outputs
 out_v <- foreach(i = 1:nrow(grid_coords), 
                  .combine='c', # Combine outputs into vector (can also use 'cbind' or 'rbind' to create matrix)
+                 .options.snow=opts, # Progress bar
                  .packages = c("httpcode", # Need to install packages on all Worker cores
                                "urltools",
                                "ggplot2",
@@ -74,7 +103,8 @@ out_v <- foreach(i = 1:nrow(grid_coords),
                                "viridis",
                                "dplyr",
                                "lubridate",
-                               "foreach")) %dopar% {
+                               "foreach",
+                               "tcltk")) %dopar% {
                                  locLong <- grid_coords[i,"lon"]
                                  locLat <- grid_coords[i,"lat"]
                                  yearSim <- run_year(lat = locLat, long = locLong, make_plot = FALSE) # FROM 'basic within-pop model.R'
@@ -92,6 +122,75 @@ out_v <- foreach(i = 1:nrow(grid_coords),
                                           mean_Temp, tot_mu,
                                           summer, autumn, winter, spring)) #
                                }
+##########################################################################
+# V2 (same as spartan)
+sim_fun <- function(locLat, locLong){
+  yearSim <- run_year(lat = locLat, long = locLong, make_plot = FALSE) # Run same model as 'basic within-pop model.R'
+  A_growth <- yearSim$growthRate[3] # Mean adult growth rates
+  n_A_end <- yearSim$popDat[3,366] # Number of adults at end of sim
+  mean_Temp <- mean(yearSim$temps) # Mean temperature at location
+  tot_mu <- sum(yearSim$P_mu) # Total out-dispersing Pre-adults
+  # Mean daily adult pop growth rate by season
+  summer <- mean(diff(log(yearSim$popDat[3,c(1:60,336:366)])))
+  autumn <- mean(diff(log(yearSim$popDat[3,61:152])))
+  winter <- mean(diff(log(yearSim$popDat[3,153:244])))
+  spring <- mean(diff(log(yearSim$popDat[3,245:335])))
+  return(c(locLong, locLat, 
+           A_growth, n_A_end, 
+           mean_Temp, tot_mu,
+           summer, autumn, winter, spring)) # Save as vector
+}
+
+out_v <- foreach(i = 1:nrow(grid_coords), 
+                 .combine='c', # Combine outputs into vector (can also use 'cbind' or 'rbind' to create matrix)
+               #  .options.snow=opts, # Progress bar
+                 .packages = c("httpcode", # Need to install packages on all Worker cores
+                               "urltools",
+                               "ggplot2",
+                               "ozmaps",
+                               "sf",
+                               "viridis",
+                               "dplyr",
+                               "lubridate",
+                               "foreach",
+                               "tcltk")) %dopar% {
+                                 locLong <- grid_coords[i,"lon"]
+                                 locLat <- grid_coords[i,"lat"]
+                                 
+                                 tryCatch({ # Skip step if there is an error (i.e. no SILO data at location)
+                                   
+                                   # Check whether weather data available at location...
+                                   check_SILO <- weatherOz::get_data_drill(
+                                     latitude = locLat,
+                                     longitude = locLong,
+                                     start_date = "20130101",
+                                     end_date = "20231231",
+                                     values = c(
+                                       "max_temp",
+                                       "min_temp",
+                                       "rh_tmax"
+                                     ),
+                                     api_key = Sys.getenv("SILO_API_KEY")
+                                   )}, 
+                                   error=function(e){
+                                       cat("ERROR :",conditionMessage(e), "\n") # Can print error message
+                                   })
+                                 
+                                 
+                                 if(exists('check_SILO')==TRUE){ # TRUE = if data does exist in SILO database
+                                   if(nrow(check_SILO) > 1){ # AND if >1 row
+                                     loc_i <- sim_fun(locLat, locLong) # Run sim function for location
+                                   } else{loc_i <- c(rep(NA, times=10))} # Otherwise fill with NAs
+                                 } else{
+                                   loc_i <- c(rep(NA, times=10)) # Otherwise fill with NAs
+                                 }
+                                 
+                                 return(loc_i) #
+                               }
+#########################################################################
+
+
+close(pb) # Close progress bar
 outputs_grid <- matrix(out_v, 
                     nrow=nrow(grid_coords), 
                        ncol=10, # Ensure same number of cols as number of outputs
@@ -106,7 +205,7 @@ colnames(outputs_grid)<- c("lon","lat", # Add lat & lon, leave remaining columns
 stopCluster(my.cluster)
 
 write.csv(outputs_grid, # Save output
-          file = "out/test14.08.csv", col.names = T, row.names = F )
+          file = "out/out_lon1_lat1_mu.35.csv", col.names = T, row.names = F )
 
 # Plot output
 map.plot <- ggplot(data = sf_oz) + 
@@ -124,13 +223,9 @@ map.plot <- ggplot(data = sf_oz) +
 
 library(ggsave)
 ggsave(map.plot,
-       file = "out/mapAus_mu0.png", 
+       file = "out/map_lon1_lat1_mu.35.png", 
        #   width = 10, height = 20, dpi = 1000, units = "in", 
        device='png')
-
-write.csv(outputs_grid, # Save output
-          file = "out/test.csv", col.names = T, row.names = F )
-
 
 
 #### FOR LOOP Version ####

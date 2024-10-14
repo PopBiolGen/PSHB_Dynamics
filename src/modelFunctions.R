@@ -436,7 +436,7 @@ random_clamped_normal <- function(mean, sd, min = -Inf, max = Inf, dim = c(1, 1)
 # HERE add dispersing P output
 
 # Runs a year of population growth at a given location
-run_year <- function(lat, long, warmup = 10, survival_threshold = 1e11, make_plot = FALSE){
+run_year <- function(lat, long, warmup = 10, survival_threshold = 1e30, make_plot = FALSE){
   # get tree temp
   temps <- tree_temp_prediction(lat = locLat, long = locLong)
   temps <- c(rep(mean(temps), warmup), temps) # add mean temperature for warmup iterations

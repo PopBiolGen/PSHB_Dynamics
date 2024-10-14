@@ -27,7 +27,7 @@ mod_fit <- lm(mean_d ~ air_tmax*rh_tmax + ma30*rh_tmax, data = merge_temp)
 tree_temp_model_pars <- coef(mod_fit)
 
 # Assign mu parameter
-mu_est <- 0.35
+mu_est <- 0
 
 # Run numerical sims
 yearSim <- run_year(lat = locLat, long = locLong, make_plot = TRUE)
