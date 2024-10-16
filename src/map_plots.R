@@ -9,17 +9,17 @@ sf_oz <- subset(ozmap("country")) # All Australia
 
 ### Merge separated regions into 1 output file ####
 
-filenames <- list.files("out/files/Aus/mu_0", # FOLDER NAME
+filenames <- list.files("out/files/mu_0", # FOLDER NAME
                         pattern="*.csv", full.names=TRUE)
 # Combine into a single df
 outAus <- filenames %>% 
   purrr::map_dfr(readr::read_csv)
 outAus <- outAus[-(which(rowSums(outAus)==0 )),] # Remove empty rows (missing values I think, but also means lat & lon = 0)
 write.csv(outAus,
-          file = "out/files/Aus/mu_0/Aus_mu0.csv", col.names = T, row.names = F )
+          file = "out/files/mu_0/Aus_mu0.csv", col.names = T, row.names = F )
 
 ##### Map from single mu values: ####
-# outAus <- read.csv("out/files/Aus/mu_0.35/Aus_mu.35.csv")
+mu0 <- read.csv("out/files/mu_0/Aus_mu0.csv")
 
 plot_theme <- theme(panel.background = element_blank(),
                          axis.line = element_blank(), 
@@ -28,10 +28,14 @@ plot_theme <- theme(panel.background = element_blank(),
                          axis.title = element_blank(),
                          plot.title = element_text(size=10))
 
-Aus_mu <- ggplot(data = sf_oz) + 
-  geom_tile(data=outAus,  # Bit of a rough way to do it, but plot all points so colour gradient is the same...
+Aus_mu0 <- ggplot(data = sf_oz) + 
+  geom_tile(data=mu0,  # Bit of a rough way to do it, but plot all points so colour gradient is the same...
             aes(x=lon, y=lat, fill=A_growth)) +
-  scale_fill_viridis(name = "Mean daily adult growth rate")+
+  scale_fill_viridis(name = "Mean daily adult growth rate\n",
+                     limits=c(-0.026, 
+                              0.076),
+                     breaks=c(seq(-0.025, 0.075, by=0.025)),
+                     labels=c(seq(-0.025, 0.075, by=0.025)))+
   geom_sf(fill=NA)+ 
   scale_x_continuous(limits=c(min(outAus$lon)-0.1,
                               max(outAus$lon)+0.1))+ # Fit plot to lat & lon range
@@ -42,6 +46,32 @@ Aus_mu <- ggplot(data = sf_oz) +
         axis.text = element_blank(), 
         axis.ticks = element_blank(), 
         axis.title = element_blank())
+
+Aus_mu0
+# SAVE
+
+#### Positive growth only ####
+
+Aus_mu0_pos <- ggplot(data = sf_oz) + 
+  geom_tile(data = mu0,  # Bit of a rough way to do it, but plot all points so colour gradient is the same...
+            aes(x=lon, y=lat, fill=A_growth)) +
+  scale_fill_viridis(name = "Mean daily adult growth rate\n",
+                     limits=c(0, 
+                              0.076),
+                     breaks=c(seq(0, 0.075, by=0.025)),
+                     labels=c(seq(0, 0.075, by=0.025)))+
+  geom_sf(fill=NA)+ 
+  scale_x_continuous(limits=c(min(outAus$lon)-0.1,
+                              max(outAus$lon)+0.1))+ # Fit plot to lat & lon range
+  scale_y_continuous(limits=c(min(outAus$lat)-0.1,
+                              max(outAus$lat)+0.1))+
+  theme(panel.background = element_blank(),
+        axis.line = element_blank(), 
+        axis.text = element_blank(), 
+        axis.ticks = element_blank(), 
+        axis.title = element_blank())
+
+Aus_mu0_pos
 
 ##################
 #### Compare mu = 0 and mu = 0.35 ####
