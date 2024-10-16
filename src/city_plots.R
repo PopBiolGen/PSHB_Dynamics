@@ -2,7 +2,6 @@
 
 ################################
 
-
 library(dplyr)
 library(lubridate)
 library(readr)
@@ -82,83 +81,3 @@ dev.off()
 
 
 ##################################
-
-yearSim <- run_year(lat = city_coords$lat[city_coords$city=="Cairns"],
-                    long = city_coords$lon[city_coords$city=="Cairns"], 
-                    make_plot = TRUE)
-population_data <- yearSim$popDat
-
-
-
-
-
-
-
-View(yearSim$popDat)
-
-population_data <- yearSim$popDat
-
-
-plot_growth_rates(population_data, window_size = 5, legend_size = 0.7)
-
-## Function to plot growth rates of all life stages over time with smoothing
-plot_growth_rates <- function(population_data, window_size = 5, legend_size = 0.7) {
-  # Extract population data for all life stages
-  juv_vec <- population_data[1,]
-  pre_adult_vec <- population_data[2,]
-  ad_vec <- population_data[3,]
-  
-  # Calculate growth rates for all life stages
-  juv_growth_rate <- diff(log(juv_vec))
-  pre_adult_growth_rate <- diff(log(pre_adult_vec))
-  ad_growth_rate <- diff(log(ad_vec))
-  
-  # Smooth the growth rate curves using a moving average
-  juv_growth_rate_smoothed <- stats::filter(juv_growth_rate, rep(1/window_size, window_size), sides = 2)
-  pre_adult_growth_rate_smoothed <- stats::filter(pre_adult_growth_rate, rep(1/window_size, window_size), sides = 2)
-  ad_growth_rate_smoothed <- stats::filter(ad_growth_rate, rep(1/window_size, window_size), sides = 2)
-  
-  # Plot smoothed growth rates for all life stages
-  plot(juv_growth_rate_smoothed, type = "l", main = "Growth rates over time", 
-       xlab = "Day of year", ylab = "Growth rate", col = "red", lwd = 2, bty = "l")
-  lines(pre_adult_growth_rate_smoothed, col = "green", lwd = 2)
-  lines(ad_growth_rate_smoothed, col = "darkorange", lwd = 2)
-  legend("topright", legend = c("Juveniles", "Pre-adults", "Adults"), col = c("red", "green", "darkorange"), lty = 1, lwd = 2, cex = legend_size)
-}
-
-
-plot(juv_growth_rate_smoothed, type = "l", 
-     main = "", 
-     xlab = "Day of year", 
-     ylab = "Growth rate", 
-     col = "grey75", lwd = 2, 
-     bty = "l")
-lines(pre_adult_growth_rate_smoothed, col = "grey50", lwd = 2)
-lines(ad_growth_rate_smoothed, col = "grey25", lwd = 2)
-legend("bottomright", legend = c("Juveniles", "Pre-adults", "Adults"), 
-       col = c("grey75", "grey50", "grey25"), 
-       lty = 1, lwd = 2, cex = 0.75)
-
-
-
-# ylim = c(mingrow, maxgrow)
-
-"red"
-legend("topright", 
-       legend = c("Juveniles", "Pre-adults", "Adults"), 
-       col = c("red", "green", "darkorange"), 
-       lty = 1, lwd = 2, cex = legend_size)
-
-
-plot(juv_growth_rate_smoothed, type = "l", main = "Growth rates over time", 
-     xlab = "Day of year", ylab = "Growth rate", col = "red", lwd = 2, bty = "l")
-
-jgr <- as.data.frame(juv_growth_rate_smoothed)
-colnames(jgr) <- 'gr'
-View(jgr)
-
-ggplot(data=jgr,
-       aes(y=x, x=row_number(x)))+
-  geom_point()
-       
-       
