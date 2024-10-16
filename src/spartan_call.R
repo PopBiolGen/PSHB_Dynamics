@@ -27,7 +27,8 @@ pkgs = c("readr", "dplyr", "gdata", "ggplot2", "gganimate", "gifski",
          "lubridate",
          "foreach",
          "parallel",
-         "doParallel") # Define packages.
+         "doParallel",
+         "maps", "nasapower") # Define packages.
 new.pkgs <- pkgs[!(pkgs %in% installed.packages(lib=lib)[,"Package"])]
 if(length(new.pkgs)) install.packages(new.pkgs, lib=lib, repos=repo)
 inst = lapply(pkgs, library, character.only = TRUE)
