@@ -75,6 +75,43 @@ get_env_data <- function(lat, long){
  return(wd)
 }
 
+# If running model for a different country - get weather data from Nasapower database
+get_env_os <- function(lat, long){ # OVERSEAS
+  # Data from 'nasapower'
+  wd <- get_power(
+    community = "ag", # Ag sciences community
+    pars = c("T2M", "RH2M"), # Temp & relative humidity
+    temporal_api = "hourly", # Take hourly records to find rh_tmax 
+    lonlat = c(long, lat),
+    dates = c("2013-01-01", "2023-12-31")
+  )
+  wd <- wd %>% 
+    dplyr::mutate(DOY = yday(dmy(paste(DY, MO, YEAR, sep = "-")))) # Calc day of year
+  
+  wd_min <- wd %>% 
+    group_by(DOY, YEAR) %>% 
+    slice(which.min(T2M)) %>% # Min daily temp
+    select(YEAR, DOY, T2M) %>% 
+    rename_with(~'air_tmin', T2M)
+  
+  wd_max <- wd %>% 
+    group_by(DOY, YEAR) %>% 
+    slice(which.max(T2M)) %>% # Max daily temp
+    select(YEAR, DOY, T2M, RH2M) %>% # & relative humidity at max temp
+    rename_with(~c('air_tmax', 'rh_tmax'), c(T2M, RH2M))
+  
+  wd <- merge(wd_max, wd_min, by = c('YEAR', 'DOY'))
+  
+  wd <- wd %>% # Match SILO data format
+    mutate(meanDaily = (air_tmax + air_tmin)/2, 
+           soil = zoo::rollmean(meanDaily, k = 30, fill = NA, align = "right")) %>%
+    select(DOY, air_tmax, rh_tmax, soil) %>%
+    group_by(DOY) %>%
+    summarise(across(everything(), \(x) mean(x, na.rm = TRUE)))
+  
+  return(wd)
+}
+
 # a version that applies the TPC function for a given list of parameters (will be
 # greta arrays)
 TPC_temp <- function(temperature, parameters) {
@@ -139,7 +176,9 @@ step_within_population <- function(n_t,
 # gets environmental data from Australia SILO database
 tree_temp_prediction <- function(lat = -32.005892, long = 115.896019){
  # load("out/tree-temp-model-pars.Rdata")
-  locDat <- get_env_data(lat, long)
+  if (map.where(database="world", locLong, locLat) == "Australia") {
+  locDat <- get_env_data(lat, long) } else {
+  locDat <- get_env_os(lat, long) }
   newDat <- list(air_tmax = locDat$air_tmax,
        rh_tmax = locDat$rh_tmax,
        ma30 = locDat$soil)
