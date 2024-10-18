@@ -12,6 +12,7 @@
 ## Load up the required packages
 library(dplyr)
 library(lubridate)
+library(maps)
 
 ## Load up the functions
 source("src/TPCFunctions.R")
