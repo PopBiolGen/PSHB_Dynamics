@@ -16,17 +16,27 @@ tree_temp_model_pars <- coef(mod_fit)
 mu_est <- 0
 
 # South Africa coords
-# Locations from van Rooyen et al. map (https://www.fabinet.up.ac.za/pdf/PSHB/7-PSHB%20distribution%20map%202021-03-04.pdf)
+# Locations from van Rooyen et al. map &
+# https://www.fabinet.up.ac.za/pshb
 # Matched against records from iNaturalist
 
 George <- c(long = 22.46,
             lat = -33.95)
+
+#Durban <- c(long = 31.05,
+ #               lat = -29.77)
+            
+Durban <- c(long = 31.01,
+            lat = -29.85)
 
 Durban_Kloof <- c(long = 30.83,
                   lat = -29.76)
 
 Jo <- c(long = 28.06,
             lat = -26.16)
+
+Capetown <- c(long = 18.47,
+              lat = -33.96)
 
 # Need to fix - when running this function, locLong & locLat aren't saved...
 # run_loc <- function(loc) {
@@ -42,11 +52,17 @@ locLat <- George["lat"]
 George_sim <- run_year(lat = locLat, long = locLong, make_plot = TRUE)
 George_sim$growthRate
 
-# Durban
+# Durban (Kloof)
 locLong <- Durban_Kloof["long"]
 locLat <- Durban_Kloof["lat"]
 Durban_Kloof_sim <- run_year(lat = locLat, long = locLong, make_plot = TRUE)
 Durban_Kloof_sim$growthRate
+
+# Durban
+locLong <- Durban["long"]
+locLat <- Durban["lat"]
+Durban_sim <- run_year(lat = locLat, long = locLong, make_plot = TRUE)
+Durban_sim$growthRate
 
 # Johannesburg
 locLong <- Jo["long"]
@@ -54,12 +70,21 @@ locLat <- Jo["lat"]
 Jo_sim <- run_year(lat = locLat, long = locLong, make_plot = TRUE)
 Jo_sim$growthRate
 
+# Cape Town
+locLong <- Capetown["long"]
+locLat <- Capetown["lat"]
+Capetown_sim <- run_year(lat = locLat, long = locLong, make_plot = TRUE)
+Capetown_sim$growthRate
+
 
 ##### Grid plot of cities - daily growth rate ####
 
-city_coords <- data.frame(city = c('George', 'Durban', 'Johannesburg'),
-                          lat = c(George["lat"], Durban_Kloof["lat"], Jo["lat"]),
-                          lon = c(George["long"], Durban_Kloof["long"], Jo["long"]))
+city_coords <- data.frame(city = c('George', 'Durban', 'Durban (Kloof)', 
+                                   'Johannesburg', 'Cape Town'),
+                          lat = c(George["lat"], Durban["lat"], Durban_Kloof["lat"], 
+                                  Jo["lat"], Capetown["lat"]),
+                          lon = c(George["long"], Durban["long"], Durban_Kloof["long"], 
+                                  Jo["long"], Capetown["long"]))
 
 # Max & min growth same as Aus cities:
 mingrow <- -0.02
@@ -67,7 +92,7 @@ maxgrow <- 0.1
 
 # Pick a location
 dev.off()
-par(mfrow = c(1, 4))
+par(mfrow = c(2, 3))
 
 for(i in 1:nrow(city_coords)){
   
@@ -120,9 +145,13 @@ legend("center", legend = c("Juveniles", "Pre-adults", "Adults"),
 
 
 ##############################################################
-# OVERSEAS weather data
-get_env_os <- function(lat, long){
+# Look at OVERSEAS weather data
+#get_env_os <- function(lat, long){
 # Data from 'nasapower'
+
+long <- Durban["long"]
+lat <- Durban["lat"]
+
 wd <- get_power(
   community = "ag", # Ag sciences community
   pars = c("T2M", "RH2M"), # Temp & relative humidity
@@ -147,14 +176,68 @@ wd_max <- wd %>%
 
 wd <- merge(wd_max, wd_min, by = c('YEAR', 'DOY'))
 
-wd <- wd %>% # Match SILO data format
+wd2 <- wd %>% # Match SILO data format
   mutate(meanDaily = (air_tmax + air_tmin)/2, 
          soil = zoo::rollmean(meanDaily, k = 30, fill = NA, align = "right")) %>%
   select(DOY, air_tmax, rh_tmax, soil) %>%
   group_by(DOY) %>%
   summarise(across(everything(), \(x) mean(x, na.rm = TRUE)))
 
-return(wd)
-}
+durban.temp <- ggplot()+
+  geom_line(data = wd, 
+            aes(x=DOY, y=air_tmax, group=YEAR), 
+            col="pink")+
+  geom_line(data = wd, 
+            aes(x=DOY, y=air_tmin, group=YEAR), 
+            col="skyblue")+
+  geom_line(data = wd2, 
+            aes(x=DOY, y=air_tmax), 
+            col="red")+
+  geom_line(data = wd2, 
+            aes(x=DOY, y=soil), 
+            col="brown")+
+  scale_y_continuous(limits=c(0,35))+
+  ggtitle("Durban temp")
+
+durban.rh <- ggplot()+
+  geom_line(data = wd, 
+            aes(x=DOY, y=rh_tmax, group=YEAR),
+            col="skyblue")+
+  geom_line(data = wd2, 
+            aes(x=DOY, y=rh_tmax),
+            col="blue")+
+  scale_y_continuous(limits=c(0,100))+
+  ggtitle('Durban humidity')
+
+
+durban.all <- ggplot()+
+  geom_line(data = wd, 
+            aes(x=DOY, y=rh_tmax, group=YEAR),
+            col="skyblue")+
+  geom_line(data = wd2, 
+            aes(x=DOY, y=rh_tmax),
+            col="blue")+
+  scale_y_continuous(limits=c(0,100))+
+  geom_line(data = wd, 
+            aes(x=DOY, y=air_tmax, group=YEAR), 
+            col="pink")+
+  geom_line(data = wd, 
+            aes(x=DOY, y=air_tmin, group=YEAR), 
+            col="lightblue")+
+  geom_line(data = wd2, 
+            aes(x=DOY, y=air_tmax), 
+            col="red")+
+  geom_line(data = wd2, 
+            aes(x=DOY, y=soil), 
+            col="brown")+
+  ggtitle('Durban')
+
+library(egg)
+ggarrange(kloof.all, kloof.temp, kloof.rh,
+          durban.all, durban.temp, durban.rh,
+          nrow=2, ncol=3)
+
+#return(wd)
+#}
   
 map.where(database="world", locLong, locLat) == "Australia"  
