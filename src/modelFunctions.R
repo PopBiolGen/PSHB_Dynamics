@@ -174,7 +174,7 @@ step_within_population <- function(n_t,
 # mean relative humidity of that day
 # uses model parameters generated in src/temperatures/temperature-prediction-function.R
 # gets environmental data from Australia SILO database
-tree_temp_prediction <- function(lat = -32.005892, long = 115.896019){
+tree_temp_prediction <- function(lat, long){ #lat = -32.005892, long = 115.896019){
  # load("out/tree-temp-model-pars.Rdata")
   if (map.where(database="world", locLong, locLat) == "Australia") {
   locDat <- get_env_data(lat, long) } else {
@@ -203,7 +203,7 @@ plot_population_dynamics <- function(temps, population_data, legend_size = 0.7, 
     yl <- "log(Population size)"
   }
   matplot(t(population_data), type = "l", bty = "l", main = "Population dynamics over time", xlab = xl, ylab = yl, col = c("red", "green", "darkorange"), lwd = 2)
-  legend('topleft', legend = c('Juveniles', 'Pre-adults', 'Adults'), col = c("red", "green", "darkorange"), lty = 1:3, lwd = 2, cex = legend_size)
+#  legend('topleft', legend = c('Juveniles', 'Pre-adults', 'Adults'), col = c("red", "green", "darkorange"), lty = 1:3, lwd = 2, cex = legend_size)
 }
 
 ## Function to plot growth rates of all life stages over time with smoothing
@@ -228,7 +228,7 @@ plot_growth_rates <- function(population_data, window_size = 5, legend_size = 0.
        xlab = "Day of year", ylab = "Growth rate", col = "red", lwd = 2, bty = "l")
   lines(pre_adult_growth_rate_smoothed, col = "green", lwd = 2)
   lines(ad_growth_rate_smoothed, col = "darkorange", lwd = 2)
-  legend("topright", legend = c("Juveniles", "Pre-adults", "Adults"), col = c("red", "green", "darkorange"), lty = 1, lwd = 2, cex = legend_size)
+#  legend("topright", legend = c("Juveniles", "Pre-adults", "Adults"), col = c("red", "green", "darkorange"), lty = 1, lwd = 2, cex = legend_size)
 }
 
 ## Function to plot population dynamics over time
