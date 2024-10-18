@@ -73,6 +73,31 @@ Aus_mu0_pos <- ggplot(data = sf_oz) +
 
 Aus_mu0_pos
 
+###########
+## Zoom in sw WA ##
+swwa <- subset(mu0,
+               lon < 120 & lat < -28.5)
+
+ggplot(data = sf_oz) + 
+  geom_tile(data = swwa,  # Bit of a rough way to do it, but plot all points so colour gradient is the same...
+            aes(x=lon, y=lat, fill=A_growth)) +
+  scale_fill_viridis(name = "Mean daily adult growth rate\n",
+                     limits=c(0, 0.06),
+                     breaks=c(seq(0, 0.06, by=0.02)),
+                     labels=c(seq(0, 0.06, by=0.02)))+
+  geom_sf(fill=NA)+ 
+  scale_x_continuous(limits=c(min(swwa$lon)-0.05,
+                              max(swwa$lon)+0.05))+ # Fit plot to lat & lon range
+  scale_y_continuous(limits=c(min(swwa$lat)-0.05,
+                              max(swwa$lat)+0.05))+
+  theme(panel.background = element_blank(),
+        axis.line = element_blank(), 
+        axis.text = element_blank(), 
+        axis.ticks = element_blank(), 
+        axis.title = element_blank())+
+  geom_point(aes(x = 115.861258, y = -31.952311),
+             pch=1, fill=NA, size=4)
+
 ##################
 #### Compare mu = 0 and mu = 0.35 ####
 mu0 <- read.csv("out/files/Aus/mu_0/Aus_mu0.csv")
