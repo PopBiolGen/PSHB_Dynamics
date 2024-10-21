@@ -174,7 +174,7 @@ step_within_population <- function(n_t,
 # mean relative humidity of that day
 # uses model parameters generated in src/temperatures/temperature-prediction-function.R
 # gets environmental data from Australia SILO database
-tree_temp_prediction <- function(lat, long){ #lat = -32.005892, long = 115.896019){
+tree_temp_prediction <- function(lat, long, model = "weighted_mean"){ #lat = -32.005892, long = 115.896019){
  # load("out/tree-temp-model-pars.Rdata")
   if (map.where(database="world", locLong, locLat) == "Australia") {
   locDat <- get_env_data(lat, long) } else {
@@ -182,7 +182,16 @@ tree_temp_prediction <- function(lat, long){ #lat = -32.005892, long = 115.89601
   newDat <- list(air_tmax = locDat$air_tmax,
        rh_tmax = locDat$rh_tmax,
        ma30 = locDat$soil)
-  predict(mod_fit, newdata = newDat)
+  # function for prediction using weighted mean model
+  tree_temp <- function(air_tmax, rh_tmax, ma30, int = -0.4884, beta = 0.0349){
+    logit.p <- int + beta*rh_tmax # rh predicts p
+    p <- plogis(logit.p)
+    mean_temp <- p*air_tmax + (1-p)*ma30
+  }
+  if (model == "weighted_mean"){
+    out <- tree_temp(newDat$air_tmax, newDat$rh_tmax, newDat$ma30)
+  } else {out <- predict(mod_fit, newdata = newDat)}
+  return(out)
 }
 
 ## Function to plot daily mean temperatures
