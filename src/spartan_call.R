@@ -39,13 +39,15 @@ library(weatherOz)
 
 Sys.setenv(SILO_API_KEY="andrew.coates@curtin.edu.au")
 
-# Assign number of Spartan cores to use
-n.cores.spartan <- 20
+# Set parameters:
 
-# Assign mu values to run sims with (over different iterations)
-mu_est_iter <- c(0.35, 0, 0.5)
+# n.cores.spartan <- 20 # Assign number of Spartan cores to use (when running parallel only)
 
-map.res <- 0.1 # resolution of map (degrees) - 0.05 deg = 5 km
+# mu values 
+# mu_est_iter <- c(0.35, 0, 0.5) # Run diff mu over different iterations
+mu_est <- 0 # Let's focus on just 1 mu for now...
+
+map.res <- 0.1 # resolution of map (degrees) -> 0.05 deg = 5 km
 
 # Run different, smaller jobs with different segments of Aus:
 # Run 2x separate lat bands:
@@ -62,6 +64,9 @@ lat_list <- list(lat1, lat1, lat1, lat1,
                  lat2, lat2, lat2, lat2)
 lon_list <- list(lon1, lon2, lon3, lon4,
                  lon1, lon2, lon3, lon4)
+
+model <- "weighted_mean" # if model == 'weighted_mean' use weighted mean model (with greta coeff) to predicts tree temp
+ # otherwise use 'mod_fit' lm
 
 # Source script
 source("src/growth_rate_map_spartan.R")

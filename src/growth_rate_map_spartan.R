@@ -28,7 +28,6 @@ sf_oz <- subset(ozmap("country"))
 
 # Play around with different estimates of mu (probability of dispersal)
 # mu_est <- mu_est_iter[iter]
-mu_est <- 0 # Let's focus on just 1 mu for now...
 
 # For now, manually select coordinate ranges to construct a retangular grid covering whole area
 # SILO data resolution = 0.05 x 0.05 degrees
