@@ -15,6 +15,9 @@ tree_temp_model_pars <- coef(mod_fit)
 # Assign mu parameter
 mu_est <- 0
 
+model <- "weighted_mean" # if model == 'weighted_mean' use weighted mean model (with greta coeff) to predicts tree temp
+# otherwise use 'mod_fit' lm
+
 # South Africa coords
 # Locations from van Rooyen et al. map &
 # https://www.fabinet.up.ac.za/pshb

@@ -15,13 +15,16 @@ merge_temp <- read.csv('src/temperatures/merge_temp.csv')
 mod_fit <- lm(mean_d ~ air_tmax*rh_tmax + ma30*rh_tmax, data = merge_temp)
 tree_temp_model_pars <- coef(mod_fit)
 
+model <- "weighted_mean" # if model == 'weighted_mean' use weighted mean model (with greta coeff) to predicts tree temp
+# otherwise use 'mod_fit' lm
+
 # Assign mu parameter
 mu_est <- 0
 
 city_coords <- read_csv("src/city_coords.csv")
 
 # Looking at plots without manual-scaled axes:
-mingrow <- -0.02
+mingrow <- -0.04
 maxgrow <- 0.1
 
 # Pick a location
@@ -29,7 +32,7 @@ dev.off()
 par(mfrow = c(3, 4))
               
 for(i in 1:nrow(city_coords)){
-
+#  for(i in 5:10){
   locLat <- city_coords$lat[i]
   locLong <- city_coords$lon[i]
   city_name <- city_coords$city[i]
@@ -68,7 +71,7 @@ for(i in 1:nrow(city_coords)){
   #       lty = 1, lwd = 2, cex = 0.75)
   abline(h=0, lty=2)
   axis(side = 1, at = c(seq(0, 300, by=100))) 
-  axis(side = 2, at = c(15, 50, 75, 100))
+  axis(side = 2, at = c(seq(-0.04, 0.1, by=0.02)))
 }
 
 # Plot just legend:
