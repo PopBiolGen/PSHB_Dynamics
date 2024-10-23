@@ -176,9 +176,15 @@ step_within_population <- function(n_t,
 # gets environmental data from Australia SILO database
 tree_temp_prediction <- function(lat, long, model = "weighted_mean"){ #lat = -32.005892, long = 115.896019){
  # load("out/tree-temp-model-pars.Rdata")
-  if (map.where(database="world", locLong, locLat) == "Australia") {
-  locDat <- get_env_data(lat, long) } else {
-  locDat <- get_env_os(lat, long) }
+#  if (map.where(database="world", locLong, locLat) == "Australia") { # map.where isn't good for points close to edge of polygons (i.e. coastline)
+ 
+  loc_coord <- (expand.grid(locLong, locLat)) # Turn coords into grid
+  loc_coord$points <- st_as_sf(loc_coord, coords=1:2, # Convert coords to sf object
+                               crs=st_crs(sf_oz)) # Coordinate reference system (ozmaps)
+     
+  if (!is.na(as.numeric(st_intersects(loc_coord$points, sf_oz))) == TRUE) {  # If coords fall within ozmaps (i.e. in Australia):
+  locDat <- get_env_data(lat, long) } else { # Use SILO data
+  locDat <- get_env_os(lat, long) } # If outside of Australia, use overseas data (nasapower)
   newDat <- list(air_tmax = locDat$air_tmax,
        rh_tmax = locDat$rh_tmax,
        ma30 = locDat$soil)
