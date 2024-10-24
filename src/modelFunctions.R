@@ -174,7 +174,7 @@ step_within_population <- function(n_t,
 # mean relative humidity of that day
 # uses model parameters generated in src/temperatures/temperature-prediction-function.R
 # gets environmental data from Australia SILO database
-tree_temp_prediction <- function(lat, long, model = "weighted_mean"){ #lat = -32.005892, long = 115.896019){
+tree_temp_prediction <- function(lat, long, model){ #= "weighted_mean"){ #lat = -32.005892, long = 115.896019){
  # load("out/tree-temp-model-pars.Rdata")
 #  if (map.where(database="world", locLong, locLat) == "Australia") { # map.where isn't good for points close to edge of polygons (i.e. coastline)
  
@@ -493,7 +493,7 @@ random_clamped_normal <- function(mean, sd, min = -Inf, max = Inf, dim = c(1, 1)
 # Runs a year of population growth at a given location
 run_year <- function(lat, long, warmup = 10, survival_threshold = 1e30, make_plot = FALSE){
   # get tree temp
-  temps <- tree_temp_prediction(lat = locLat, long = locLong)
+  temps <- tree_temp_prediction(lat = locLat, long = locLong, model = model)
   temps <- c(rep(mean(temps), warmup), temps) # add mean temperature for warmup iterations
   
   # Initial population 
