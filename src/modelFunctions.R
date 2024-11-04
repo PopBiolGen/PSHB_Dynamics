@@ -161,7 +161,7 @@ step_within_population <- function(n_t,
   
   # Number of Pre-adults dispersing away from host
   n_mu_t <- n_t[2]  * phi_P * (1 - alpha_P) * # Number of surviving and non-transitioning P
-    mu # mu = Proportion that DO disperse
+    mu_disp_est * phi_mu_est # mu = Proportion that DO disperse AND survive dispersal (mu here = mu(1-phi_mu))
   
   # Return both the updated population vector and cumulative offspring
   return(list(n = n_tplus, cum_n = cumulative_offspring, n_mu = n_mu_t))
