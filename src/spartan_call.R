@@ -45,9 +45,12 @@ Sys.setenv(SILO_API_KEY="andrew.coates@curtin.edu.au")
 
 # mu values 
 # mu_est_iter <- c(0.35, 0, 0.5) # Run diff mu over different iterations
-mu_est <- 0 # Let's focus on just 1 mu for now...
+mu_disp_est <- 0.5 # estimated mu parameter (proportion P dispersing)
+phi_mu_est <- 0.5 # estimated phi_mu (proportion survival during dispersal)
+# mu_est <- 0
+mu_est <- mu_disp_est * (1 - phi_mu_est) # new 'mu' estimate is the proportion of P lost through dispersal mortality (assuming net incoming vs outgoing P = 0)
 
-map.res <- 0.1 # resolution of map (degrees) -> 0.05 deg = 5 km
+map.res <- 0.05 # resolution of map (degrees) -> 0.05 deg = 5 km
 
 # Run different, smaller jobs with different segments of Aus:
 # Run 2x separate lat bands:
