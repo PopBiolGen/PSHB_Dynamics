@@ -18,6 +18,10 @@ mu_est <- 0
 model <- "weighted_mean" # if model == 'weighted_mean' use weighted mean model (with greta coeff) to predicts tree temp
 # otherwise use 'mod_fit' lm
 
+city_coords <- read_csv("src/city_coords.csv")
+Perth <- c(long = city_coords$lon[city_coords$city == "Perth"],
+            lat = city_coords$lat[city_coords$city == "Perth"])
+
 # South Africa coords
 # Locations from van Rooyen et al. map &
 # https://www.fabinet.up.ac.za/pshb
@@ -80,14 +84,31 @@ Capetown_sim <- run_year(lat = locLat, long = locLong, make_plot = TRUE)
 Capetown_sim$growthRate
 
 
+## California coords
+# https://ucanr.maps.arcgis.com/apps/Viewer/index.html?appid=3446e311c5bd434eabae98937f085c80
+
+
+Laguna_Beach <- c(lat = 33.54, # OC
+                           long = -117.74)
+
+San_Marino <- c(lat = 34.13, # LA county
+                         long = -118.11)
+
+Santa_Paula <- c(lat = 34.33, # Ventura county
+                          long = -119.11)
+
+
 ##### Grid plot of cities - daily growth rate ####
 
-city_coords <- data.frame(city = c('George', 'Durban', 'Durban (Kloof)', 
-                                   'Johannesburg', 'Cape Town'),
-                          lat = c(George["lat"], Durban["lat"], Durban_Kloof["lat"], 
-                                  Jo["lat"], Capetown["lat"]),
-                          lon = c(George["long"], Durban["long"], Durban_Kloof["long"], 
-                                  Jo["long"], Capetown["long"]))
+city_coords <- data.frame(city = c('Perth', 'George', 'Durban',
+                                   'Johannesburg', 'Cape Town',
+                                   'Orange County', 'LA County', 'Ventura County'),
+                          lat = c(Perth["lat"], George["lat"], Durban["lat"],
+                                  Jo["lat"], Capetown["lat"],
+                                  Laguna_Beach["lat"], San_Marino["lat"], Santa_Paula["lat"]),
+                          lon = c(Perth["long"], George["long"], Durban["long"], 
+                                  Jo["long"], Capetown["long"],
+                                  Laguna_Beach["long"], San_Marino["long"], Santa_Paula["long"]))
 
 # Max & min growth same as Aus cities:
 mingrow <- -0.02
@@ -95,7 +116,7 @@ maxgrow <- 0.1
 
 # Pick a location
 dev.off()
-par(mfrow = c(2, 3))
+par(mfrow = c(3, 3))
 
 for(i in 1:nrow(city_coords)){
   
