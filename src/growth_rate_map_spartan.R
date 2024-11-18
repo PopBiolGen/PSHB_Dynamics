@@ -23,7 +23,7 @@ merge_temp <- read.csv('src/temperatures/merge_temp.csv')
 mod_fit <- lm(mean_d ~ air_tmax*rh_tmax + ma30*rh_tmax, data = merge_temp)
 tree_temp_model_pars <- coef(mod_fit)
 
-# WA map
+# Aus map
 sf_oz <- subset(ozmap("country"))
 
 # Play around with different estimates of mu (probability of dispersal)
@@ -37,9 +37,10 @@ sf_oz <- subset(ozmap("country"))
 
 # Coords now listed in spartan_call
 
+if(country == "Australia"){
 # Each spartan job (iter) corresponds to 1 lat & lon combo
-lat <- unlist(lat_list[iter])
-lon <- unlist(lon_list[iter])
+lat <- unlist(lat_list[iter_spartan])
+lon <- unlist(lon_list[iter_spartan])
 
 grid <- (expand.grid(lon, lat)) # Grid containing each lat & lon combination
 colnames(grid) <- c("lon", "lat")
@@ -63,6 +64,10 @@ grid <- grid[!(grid$land %in% "FALSE"),] # Remove ocean coords
 
 grid_coords <- as.matrix(grid[,-c(3,4)]) # Subset just lat & lon, convert to matrix
 colnames(grid_coords)<- c("lon","lat")
+
+} else { # If not Australia (for now, alternative is Africa)
+  grid_coords <- as.matrix(read.csv('src/grid_coords_Sth_Africa.csv')) # Upload pre-made grid of Sth Africa
+}
 
 outputs_grid <- matrix(0, 
                        nrow=nrow(grid_coords), 
@@ -108,7 +113,7 @@ colnames(outputs_grid)<- c("lon","lat", # Add lat & lon, leave remaining columns
 
 
 write.csv(outputs_grid, # Save output
-          file = sprintf("out/updated_mu_%s_sim_%s.csv", mu_est, iter), 
+          file = sprintf("out/Sth_Africa_%s_sim_%s.csv", mu_est, iter_spartan), 
           col.names = T, row.names = F )
 
 # Plot output
@@ -130,7 +135,7 @@ map.plot <- ggplot(data = sf_oz) +
 
 # Need to Save this plot
 ggsave(map.plot,
-       file = sprintf("out/updated_mu_%s_sim_%s.png", mu_est, iter), 
+       file = sprintf("out/WA_mu_%s_sim_%s.png", mu_est, iter_spartan), 
     #   width = 10, height = 20, dpi = 1000, units = "in", 
        device='png')
 
