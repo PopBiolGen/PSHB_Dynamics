@@ -5,7 +5,7 @@
 rm(list=ls()) # Clear workspace
 
 args <- commandArgs(trailingOnly = TRUE) # Create command line for interacting with job_submission.slurm script
-iter <- as.numeric(args[1]) # iter corresponds to array number (iteration) of job
+iter_spartan <- as.numeric(args[1]) # iter corresponds to array number (iteration) of job
 
 # Check for package dependenices and install/load in packages as required.
 .libPaths("/home/alcoates/R/lib")
@@ -50,7 +50,9 @@ phi_mu_est <- 0.5 # estimated phi_mu (proportion survival during dispersal)
 # mu_est <- 0
 mu_est <- mu_disp_est * (1 - phi_mu_est) # new 'mu' estimate is the proportion of P lost through dispersal mortality (assuming net incoming vs outgoing P = 0)
 
-map.res <- 0.05 # resolution of map (degrees) -> 0.05 deg = 5 km
+country <- "South Africa" # Assign which country you're working in
+
+map.res <- 0.1 # resolution of map (degrees) -> 0.05 deg = 5 km
 
 # Run different, smaller jobs with different segments of Aus:
 # Run 2x separate lat bands:
