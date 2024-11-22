@@ -8,11 +8,23 @@ args <- commandArgs(trailingOnly = TRUE) # Create command line for interacting w
 iter_spartan <- as.numeric(args[1]) # iter corresponds to array number (iteration) of job
 
 # Check for package dependenices and install/load in packages as required.
-.libPaths("/home/alcoates/R/lib")
-lib = .libPaths()[1]
+# .libPaths("/home/alcoates/R/lib") # Old Spartan Library
+
+# R_LIBS_SITE="/software/projects/pawsey1103/setonix/2024.05/r/4.3:/software/projects/pawsey1103/acoates/setonix/2024.05/r/4.3:/software/setonix/2024.05/software/linux-sles15-zen3/gcc-12.2.0/r-4.3.0-llieqbuwjngu7buqaftswodfq3wx65dc/rlib/R/library"
+
+# Sys.setenv(SILO_API_KEY="andrew.coates@curtin.edu.au")
+
+# lib = .libPaths()[1]
 repo<- "https://cran.ms.unimelb.edu.au/" # Set mirror to download packages.
-pkgs = c("readr", "dplyr", "gdata", "ggplot2", "gganimate", "gifski", 
-         "mapdata", "egg", "corrplot", "Matrix", "magic", "reshape", "ggstance",
+pkgs = c("readr", "dplyr", "gdata", 
+         "ggplot2", 
+         #"gganimate", "gifski", 
+         "mapdata", 
+         #"egg", 
+         "corrplot", 
+         #"Matrix", 
+         "magic", "reshape", 
+         #"ggstance",
          "pillar",
          "httpcode", # NEW PACKAGES
          "urltools",
@@ -25,19 +37,20 @@ pkgs = c("readr", "dplyr", "gdata", "ggplot2", "gganimate", "gifski",
          'zoo',
          "dplyr",
          "lubridate",
-         "foreach",
-         "parallel",
-         "doParallel",
+         #"foreach","parallel","doParallel",
          "maps", "nasapower") # Define packages.
-new.pkgs <- pkgs[!(pkgs %in% installed.packages(lib=lib)[,"Package"])]
-if(length(new.pkgs)) install.packages(new.pkgs, lib=lib, repos=repo)
+# Ignore installation for now (should hopefully already be installed?)
+# new.pkgs <- pkgs[!(pkgs %in% installed.packages(lib=lib)[,"Package"])]
+# if(length(new.pkgs)) install.packages(new.pkgs, lib=lib, repos=repo)
 inst = lapply(pkgs, library, character.only = TRUE)
 
-install.packages("weatherOz", lib=lib,
-                 repos = "https://ropensci.r-universe.dev")
-library(weatherOz)
+# Issue with ozmaps
+#install.packages("ozmaps", lib=lib,
+#                 repos = "https://cloud.r-project.org/package=ozmaps")
 
-Sys.setenv(SILO_API_KEY="andrew.coates@curtin.edu.au")
+#install.packages("weatherOz", lib=lib,
+#                 repos = "https://ropensci.r-universe.dev")
+library(weatherOz)
 
 # Set parameters:
 
@@ -46,11 +59,11 @@ Sys.setenv(SILO_API_KEY="andrew.coates@curtin.edu.au")
 # mu values 
 # mu_est_iter <- c(0.35, 0, 0.5) # Run diff mu over different iterations
 mu_disp_est <- 0.5 # estimated mu parameter (proportion P dispersing)
-phi_mu_est <- 0.5 # estimated phi_mu (proportion survival during dispersal)
-# mu_est <- 0
-mu_est <- mu_disp_est * (1 - phi_mu_est) # new 'mu' estimate is the proportion of P lost through dispersal mortality (assuming net incoming vs outgoing P = 0)
+phi_mu_est <- 0.2 # estimated phi_mu (proportion survival during dispersal)
+mu_est <- 0.4
+# mu_est <- mu_disp_est * (1 - phi_mu_est) # new 'mu' estimate is the proportion of P lost through dispersal mortality (assuming net incoming vs outgoing P = 0)
 
-country <- "South Africa" # Assign which country you're working in
+country <- "Australia" # Assign which country you're working in
 
 map.res <- 0.1 # resolution of map (degrees) -> 0.05 deg = 5 km
 
