@@ -6,14 +6,15 @@ temps <- yearSim$temp
 c(min(temps), max(temps)) # King's Park av tree temps within range over whole year
 
 # Estimated K of TSHB (from Walgama) = 373 DD
-# Including pre-oviposition period = 136 DD
-walgamaP <- 373
+walgamaP <- 237
 # Estimated K (Umeda & Paine) = 398 cumulative DD (not including pre-oviposition period)
-# Using Walgama preoviposition period, = 534 DD
-umedaJ <- 398
-umedaP <- 534
+umedaP <- 398
+# DOdge (KSHB)
+dodgeP <- 318
+# Including pre-oviposition period = 136 DD
+walgamaPreov <- 136
 
-K <- walgamaP
+K <- dodgeP
 
 gen_time <- matrix(0, nrow=2, ncol=length(temps))
 gen_time[1,1] <- temps[1]
