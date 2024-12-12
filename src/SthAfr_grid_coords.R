@@ -39,6 +39,9 @@ outputs_grid <- as.data.frame(outputs_grid)
 min.growth <- min(outputs_grid$A_growth)
 max.growth <- max(outputs_grid$A_growth)
 
+cities <- read_csv("src/known_PSHB_coords.csv")
+cities <- subset(cities, country == "South Africa")
+
 map.plot.sa <- ggplot(data = mapdata) + 
   coord_map(xlim = c(min(outputs_grid$lon)-.05, 
                      max(outputs_grid$lon)+.05), 
@@ -52,13 +55,24 @@ map.plot.sa <- ggplot(data = mapdata) +
   scale_fill_viridis(name = "Mean daily adult growth rate",
                      limits=c(round(min.growth, digits=3),
                               round(max.growth, digits=3)))+
+  
+  geom_point(data=cities, aes(x=lon, y=lat),
+             size=1.5)+
+  geom_text(data=cities, aes(x=lon, y=lat,
+                             label=city),
+            size=3.5, vjust=-0.75, hjust=0.05)+
+  
   theme(panel.background = element_blank(),
         axis.line = element_blank(), 
         axis.text = element_blank(), 
         axis.ticks = element_blank(), 
         axis.title = element_blank())
-
+map.plot.sa
 ggsave(map.plot.sa,
-       file = "out/map_Sth_Africa_mu0.png", 
+       file = "out/map_Sth_Africa_mu0_cities.png", 
        #   width = 10, height = 20, dpi = 1000, units = "in", 
        device='png')
+
+#
+ggplot(SA, aes(x=A_growth))+
+  geom_histogram()
