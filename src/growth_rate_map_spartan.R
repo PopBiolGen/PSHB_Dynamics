@@ -113,7 +113,7 @@ colnames(outputs_grid)<- c("lon","lat", # Add lat & lon, leave remaining columns
 
 
 write.csv(outputs_grid, # Save output
-          file = sprintf("out/Sth_Africa_%s_sim_%s.csv", mu_est, iter_spartan), 
+          file = sprintf("out/pawsey_%s_sim_%s.csv", mu_est, iter_spartan), 
           col.names = T, row.names = F )
 
 # Plot output
@@ -135,7 +135,7 @@ map.plot <- ggplot(data = sf_oz) +
 
 # Need to Save this plot
 ggsave(map.plot,
-       file = sprintf("out/WA_mu_%s_sim_%s.png", mu_est, iter_spartan), 
+       file = sprintf("out/pawsey_mu_%s_sim_%s.png", mu_est, iter_spartan), 
     #   width = 10, height = 20, dpi = 1000, units = "in", 
        device='png')
 
