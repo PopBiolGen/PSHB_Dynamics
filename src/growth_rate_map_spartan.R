@@ -66,8 +66,11 @@ grid_coords <- as.matrix(grid[,-c(3,4)]) # Subset just lat & lon, convert to mat
 colnames(grid_coords)<- c("lon","lat")
 
 } else { # If not Australia (for now, alternative is Africa)
-  grid_coords <- as.matrix(read.csv('src/grid_coords_Sth_Africa.csv')) # Upload pre-made grid of Sth Africa
-}
+  
+  if(country == "South Africa") {
+    grid_coords <- as.matrix(read.csv('src/grid_coords_Sth_Africa.csv'))} else { # Upload pre-made grid of Sth Africa
+
+    grid_coords <- as.matrix(read.csv('src/grid_coords_Cal.csv'))}}
 
 outputs_grid <- matrix(0, 
                        nrow=nrow(grid_coords), 
