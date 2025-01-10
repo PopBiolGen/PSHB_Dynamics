@@ -116,10 +116,18 @@ Aus_mu0_pos
 ###### Zoom in sw WA ####
 
 swwa <- read.csv('out/files/WA/WA.hi.res_0_sim_1.csv')
-QZ <- read_csv("src/QZdf4.csv")
+swwa.2 <- read.csv('out/files/WA/WA.hi.res_0.2_sim_1.csv')
+swwa.4 <- read.csv('out/files/WA/WA.hi.res_0.4_sim_1.csv')
+
+QZ <- read_csv("src/QZdf.csv")
 
 min(swwa$A_growth)
 max(swwa$A_growth)
+
+# Fremantle Port
+#-32.045226, 115.738609
+
+
 
 ggplot(data = sf_oz) + 
   geom_sf(fill=NA)+ 
@@ -140,7 +148,13 @@ ggplot(data = sf_oz) +
   #                            -30.5))+
   geom_polygon(data = QZ,  # Bit of a rough way to do it, but plot all points so colour gradient is the same...
                aes(x=Longitude, y=Latitude),
-               fill=NA, col="red", lwd=0.8) +
+               fill=NA, col="red", lwd=0.8, lty=1) +
+  # Point at Port Fremantle
+  geom_point(aes(x=115.738609, y=-32.045226), 
+             size=3)+
+  geom_text(aes(x=115.738609, y=-32.045226), 
+label = "Port Fremantle",
+hjust=1.01, vjust = 1)+
   theme(panel.background = element_blank(),
         axis.line = element_blank(), 
         axis.text = element_blank(), 
@@ -162,6 +176,48 @@ ggplot(data = sf_oz) +
 # Quarantine Zone
 # https://www.agric.wa.gov.au/borer#:~:text=in%20your%20browser.-,Quarantine%20Area%20(QA),across%2030%20local%20government%20areas.
 
+#### Seasons ####
+seasons <- read_csv("out/files/WA/WA_seasons_0_sim_1.csv")
+
+seasons <- melt(seasons, # Melt p for each locus (pT, pR) into single column
+                  id.vars = colnames(select(seasons, -c(growth_sum, growth_aut, growth_win, growth_spr))))
+colnames(seasons)[c(7,8)] <- c("season","growth")
+
+min(seasons$growth)
+max(seasons$growth)
+
+ggplot(data = sf_oz) + 
+  geom_sf(fill=NA)+ 
+  geom_tile(data = seasons,  # Bit of a rough way to do it, but plot all points so colour gradient is the same...
+            aes(x=lon, y=lat, fill=growth)) +
+  scale_fill_viridis(name = "Mean daily adult growth rate\n")+
+  coord_sf(xlim = c(115,
+                    117.5),
+           ylim = c(-33.6,
+                    -30.5))+
+  facet_wrap(.~ season)+
+  #  scale_x_continuous(limits=c(115,
+  #                             117))+ # Fit plot to lat & lon range
+  # scale_y_continuous(limits=c(-33.5,
+  #                            -30.5))+
+  geom_polygon(data = QZ,  # Bit of a rough way to do it, but plot all points so colour gradient is the same...
+               aes(x=Longitude, y=Latitude),
+               fill=NA, col="red", lwd=0.4, lty=1) +
+  # Point at Port Fremantle
+  geom_point(aes(x=115.738609, y=-32.045226), 
+             size=2)+
+  geom_text(aes(x=115.738609, y=-32.045226), 
+            label = "Port Fremantle",
+            hjust=1.01, vjust = 1)+
+  theme(panel.background = element_blank(),
+        axis.line = element_blank(), 
+        axis.text = element_blank(), 
+        axis.ticks = element_blank(), 
+        axis.title = element_blank(),
+        legend.text = element_text(size=12),
+        legend.key.size = unit(0.8, 'cm'),
+        legend.title = element_text(size=14))
+
 
 ###########################################
 
@@ -182,6 +238,7 @@ Aus_mu0.2 <- ggplot(data = sf_oz) +
   geom_tile(data=mu0.2,  # Bit of a rough way to do it, but plot all points so colour gradient is the same...
             aes(x=lon, y=lat, fill=A_growth)) +
   scale_fill_viridis(name = "Mean daily population growth rate\n(adults)\n",
+                     option = "inferno",
                      limits=c(-0.03, 
                               0.042),
                      breaks=c(seq(-0.03, 0.04, by=0.01)),
@@ -319,11 +376,12 @@ ggplot(data = sf_oz) +
             aes(x=lon, y=lat, fill=A_growth)) +
   scale_fill_viridis(name = "Mean daily population\n growth rate (adults)\n",
                      limits = c(0, maxgrow))+
+                   #  option="inferno")+
   new_scale_fill() +
   geom_tile(data=subset(df, A_growth<=0),  # Bit of a rough way to do it, but plot all points so colour gradient is the same...
             aes(x=lon, y=lat, fill=A_growth)) +
   scale_fill_gradientn(name = "Mean daily population\n growth rate (adults)\n",
-                       colours = c("white", "red"),
+                       colours = c("white", "grey30"),#"red"),
                        limits=c(mingrow, 0))+
   
   geom_sf(fill=NA)+ 
