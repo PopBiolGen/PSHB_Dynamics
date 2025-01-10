@@ -26,49 +26,46 @@ tree_temp_model_pars <- coef(mod_fit)
 # sf_oz <- subset(ozmap("states"), NAME=="Western Australia")
 sf_oz <- subset(ozmap("country")) # All Australia
 
-map.res <- 0.1 # resolution of map (degrees) - 0.05 deg = 5 km
+# Coords now listed in spartan_call
 
-# Play around with different estimates of mu (probability of dispersal)
-mu_est <- 0.35
+iter_spartan <- 1 # Manually assign which equivalent spartan iter to run
 
-# For now, manually select coordinate ranges to construct a retangular grid covering whole area
-# SILO data resolution = 0.05 x 0.05 degrees
-# Full Aus range:
-#lat <- c(seq(-45, -10, by=map.res)) # Latitude range
-#lon <- c(seq(113, 153.4, by=map.res)) # Longitude range
+if(country == "Australia"){
+  # Each spartan job (iter) corresponds to 1 lat & lon combo
+  lat <- unlist(lat_list[iter_spartan])
+  lon <- unlist(lon_list[iter_spartan])
+  
+  grid <- (expand.grid(lon, lat)) # Grid containing each lat & lon combination
+  colnames(grid) <- c("lon", "lat")
+  
+  ## Need to subset only the coordinates that fall on land (ignore ocean)
+  
+  grid$points <- st_as_sf(grid, coords=1:2, # Convert coords to sf object
+                          crs=st_crs(sf_oz)) # Coordinate reference system
+  
+  # Determine whether points are for land or ocean
+  grid$land <- !is.na(as.numeric(st_intersects(grid$points, sf_oz))) # Land (TRUE) when coords match with map polygon
+  grid <- grid[!(grid$land %in% "FALSE"),] # Remove ocean coords
+  
+  # Check on map
+  #ggplot(data = sf_oz) +
+  #  geom_sf()+
+  #  geom_point(data=grid,
+  #             aes(x=lon, y=lat, col=land))+
+  #  scale_x_continuous(limits=c(min(lon),max(lon)))+
+  #  scale_y_continuous(limits=c(min(lat),max(lat)))
+  
+  grid_coords <- as.matrix(grid[,-c(3,4)]) # Subset just lat & lon, convert to matrix
+  colnames(grid_coords)<- c("lon","lat")
+  
+} else { # If not Australia (for now, alternative is Africa)
+  grid_coords <- as.matrix(read.csv('src/grid_coords_Sth_Africa.csv')) # Upload pre-made grid of Sth Africa
+}
 
-# Run 2 separate lat bands:
-lat <- c(seq(-45, -25.1, by=map.res)) # 1
-#lat <- c(seq(-25, -10, by=map.res)) # 2
-# Run 5x separate long bands:
-lon <- c(seq(110, 120, by=map.res)) # 1
-#lon <- c(seq(120.1, 130, by=map.res)) # 2
-#lon <- c(seq(130.1, 140, by=map.res)) # 3
-#lon <- c(seq(140.1, 145, by=map.res)) # 4 # Lots of area 140-160
-#lon <- c(seq(145.1, 160, by=map.res)) # 5
+outputs_grid <- matrix(0, 
+                       nrow=nrow(grid_coords), 
+                       ncol=6)
 
-grid <- (expand.grid(lon, lat)) # Grid containing each lat & lon combination
-colnames(grid) <- c("lon", "lat")
-
-## Need to subset only the coordinates that fall on land (ignore ocean)
-
-grid$points <- st_as_sf(grid, coords=1:2, # Convert coords to sf object
-                        crs=st_crs(sf_oz)) # Coordinate reference system
-
-# Determine whether points are for land or ocean
-grid$land <- !is.na(as.numeric(st_intersects(grid$points, sf_oz))) # Land (TRUE) when coords match with map polygon
-grid <- grid[!(grid$land %in% "FALSE"),] # Remove ocean coords
-
-# Check on map
-ggplot(data = sf_oz) +
-  geom_sf()+
-  geom_point(data=grid,
-             aes(x=lon, y=lat, col=land))+
-  scale_x_continuous(limits=c(min(lon),max(lon)))+
-  scale_y_continuous(limits=c(min(lat),max(lat)))
-
-grid_coords <- as.matrix(grid[,-c(3,4)]) # Subset just lat & lon, convert to matrix
-colnames(grid_coords)<- c("lon","lat")
 
 ### FOREACH method (run parallel over multiple cores)
 n.cores <- 7 # Assign number cores 
@@ -131,14 +128,18 @@ sim_fun <- function(locLat, locLong){
   mean_Temp <- mean(yearSim$temps) # Mean temperature at location
   tot_mu <- sum(yearSim$P_mu) # Total out-dispersing Pre-adults
   # Mean daily adult pop growth rate by season
-  summer <- mean(diff(log(yearSim$popDat[3,c(1:60,336:366)])))
-  autumn <- mean(diff(log(yearSim$popDat[3,61:152])))
-  winter <- mean(diff(log(yearSim$popDat[3,153:244])))
-  spring <- mean(diff(log(yearSim$popDat[3,245:335])))
+#  summer <- mean(diff(log(yearSim$popDat[3,c(1:60,336:366)])))
+#  autumn <- mean(diff(log(yearSim$popDat[3,61:152])))
+#  winter <- mean(diff(log(yearSim$popDat[3,153:244])))
+#  spring <- mean(diff(log(yearSim$popDat[3,245:335])))
+#  return(c(locLong, locLat, 
+#           A_growth, n_A_end, 
+#           mean_Temp, tot_mu,
+#           summer, autumn, winter, spring)) # Save as vector
+  
   return(c(locLong, locLat, 
            A_growth, n_A_end, 
-           mean_Temp, tot_mu,
-           summer, autumn, winter, spring)) # Save as vector
+           mean_Temp, tot_mu)) # Save as vector
 }
 
 out_v <- foreach(i = 1:nrow(grid_coords), 
@@ -153,40 +154,35 @@ out_v <- foreach(i = 1:nrow(grid_coords),
                                "dplyr",
                                "lubridate",
                                "foreach",
+                               "nasapower",
                                "tcltk")) %dopar% {
                                  locLong <- grid_coords[i,"lon"]
                                  locLat <- grid_coords[i,"lat"]
                                  
                                  tryCatch({ # Skip step if there is an error (i.e. no SILO data at location)
                                    
-                                   # Check whether weather data available at location...
-                                   check_SILO <- weatherOz::get_data_drill(
-                                     latitude = locLat,
-                                     longitude = locLong,
-                                     start_date = "20130101",
-                                     end_date = "20231231",
-                                     values = c(
-                                       "max_temp",
-                                       "min_temp",
-                                       "rh_tmax"
-                                     ),
-                                     api_key = Sys.getenv("SILO_API_KEY")
-                                   )}, 
-                                   error=function(e){
-                                       cat("ERROR :",conditionMessage(e), "\n") # Can print error message
-                                   })
+                                   loc_i <- sim_fun(locLat, locLong) # Run sim function for location
+                                   
+                                   outputs_grid[i, ] <- loc_i # Fill row with output data
+                                   
+                                 }, 
+                                 error=function(e){
+                                   #  cat("ERROR :",conditionMessage(e), "\n") # Can print error message
+                                 })
                                  
-                                 
-                                 if(exists('check_SILO')==TRUE){ # TRUE = if data does exist in SILO database
-                                   if(nrow(check_SILO) > 1){ # AND if >1 row
-                                     loc_i <- sim_fun(locLat, locLong) # Run sim function for location
-                                   } else{loc_i <- c(rep(NA, times=10))} # Otherwise fill with NAs
-                                 } else{
-                                   loc_i <- c(rep(NA, times=10)) # Otherwise fill with NAs
-                                 }
-                                 
-                                 return(loc_i) #
                                }
+
+colnames(outputs_grid)<- c("lon","lat", # Add lat & lon, leave remaining columns empty 
+                           "A_growth", # Mean daily Adult growth rate
+                           "n_A_end", # Adult population at end of sim
+                           "mean_Temp", # Mean temperature at site
+                           "tot_mu") # Total n dispersing P
+
+
+write.csv(outputs_grid, # Save output
+          file = sprintf("out/foreach_mu_%s.csv", mu_est), 
+          col.names = T, row.names = F )
+
 #########################################################################
 
 
