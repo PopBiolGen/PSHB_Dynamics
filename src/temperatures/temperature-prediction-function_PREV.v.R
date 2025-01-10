@@ -67,7 +67,8 @@ ggplot()+
   geom_point(data = merge_temp, aes(x=DOY, y=mean_d), col='brown')+ # real sapflow data
   geom_point(data = merge_temp, aes(x=DOY, y=mean_u), col='orange')+ # real sapflow data
   geom_point(data = lm_pred, aes(x=DOY, y=lm_pred), col="red")+ # linear model
-  geom_point(data = plot_data, aes(x=DOY, y=pred_temp), col="blue") # greta model
+  geom_point(data = plot_data, aes(x=DOY, y=pred_temp), col="blue")+ # greta model
+  geom_point(data=locDat, aes(x=DOY, y=air_tmax), col="green") # Maximum air temperature
 
 # output model parameters
 tree_temp_model_pars <- summary(draws)$statistics
