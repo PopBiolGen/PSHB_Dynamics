@@ -59,13 +59,13 @@ library(weatherOz)
 # mu values 
 # mu_est_iter <- c(0.35, 0, 0.5) # Run diff mu over different iterations
 mu_disp_est <- 0.5 # estimated mu parameter (proportion P dispersing)
-phi_mu_est <- 0.2 # estimated phi_mu (proportion survival during dispersal)
+phi_mu_est <- 0.5 # estimated phi_mu (proportion survival during dispersal)
 mu_est <- 0
 # mu_est <- mu_disp_est * (1 - phi_mu_est) # new 'mu' estimate is the proportion of P lost through dispersal mortality (assuming net incoming vs outgoing P = 0)
 
-#country <- "Australia" # Assign which country you're working in
+country <- "Australia" # Assign which country you're working in
 #country <- "South Africa"
-country <- "US"
+#country <- "US"
 
 map.res <- 0.1 # resolution of map (degrees) -> 0.05 deg = 5 km
 

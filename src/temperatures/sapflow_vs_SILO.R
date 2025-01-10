@@ -28,7 +28,7 @@ ggplot(data= subset(sflow, DOY >= 350 & DOY <= 360))+
   geom_point(data= subset(wd, DOY >= 350 & DOY <= 360),
              aes(x=datetime, y=air_tmax), col="darkgreen", size=3)
 
-sflow_day <- aggregate(Max.Td.In...C. ~ Date, FUN=mean, data=sflow)
+sflow_day <- aggregate(Max.Td.In...C. ~ Date + DOY, FUN=mean, data=sflow)
 sflow_day$datetime <- with(sflow_day, ymd(sflow_day$Date) + hms("12:00:00"))
 
 
@@ -79,7 +79,6 @@ ggplot(data= sflow)+
 
 
 
-
 # Zoom in
 sflow.1 <- subset(sflow, DOY < 15)
 wd.1 <- subset(wd, DOY < 15)
@@ -107,7 +106,7 @@ ggplot(data= sflow.1)+
   theme(panel.background = element_blank())
 
   
-sflow_day <- aggregate(Max.Td.In...C. ~ Date, FUN=mean, data=sflow)
+sflow_day <- aggregate(Max.Td.In...C. ~ Date + DOY, FUN=mean, data=sflow)
 sflow_day$datetime <- with(sflow_day, ymd(sflow_day$Date) + hms("12:00:00"))
 
 ###### 2nd sapflow dataset ####
@@ -133,7 +132,7 @@ ggplot(data= subset(sflow2, DOY >= 350 & DOY <= 360))+
   geom_point(data= subset(wd2, DOY >= 350 & DOY <= 360),
              aes(x=datetime, y=air_tmax), col="darkgreen", size=3)
 
-sflow2_day <- aggregate(Max.Td.In...C. ~ Date, FUN=mean, data=sflow2)
+sflow2_day <- aggregate(Max.Td.In...C. ~ Date + DOY, FUN=mean, data=sflow2)
 sflow2_day$datetime <- with(sflow2_day, ymd(sflow2_day$Date) + hms("12:00:00"))
 
 
@@ -195,22 +194,61 @@ wd2$model_pred <- tree_temp(wd2$air_tmax, wd2$rh_tmax,
 
 
 ggplot()+
-  geom_line(data = sflow,
-            aes(x=datetime, y=Max.Td.In...C.),
-            lwd=0.1, col="red")+
-  geom_line(data=wd, 
-            aes(x=datetime, y=model_pred),
-            col="blue")+
+  geom_point(data = sflow_day,
+            aes(x=DOY, y=Max.Td.In...C.),
+            size=2, col="black")+
+  geom_point(data=wd, 
+            aes(x=DOY, y=meanDaily),
+            size=2, col="orange")+
+  geom_point(data=wd, 
+             aes(x=DOY, y=model_pred),
+             size=2, col="blue")+
   theme(panel.background = element_blank())
+#  geom_line(data = sflow_day,
+#             aes(x=DOY, y=Max.Td.In...C.),
+#             col="black")+
+#  geom_line(data=wd, 
+#             aes(x=DOY, y=meanDaily),
+#             col="orange")+
+#  geom_line(data=wd, 
+#             aes(x=DOY, y=model_pred),
+#             col="blue")+
+#  theme(panel.background = element_blank())
 
 ggplot()+
-  geom_line(data = sflow2,
-            aes(x=datetime, y=Max.Td.In...C.),
-            lwd=0.1, col="red")+
-  geom_line(data=wd2, 
-            aes(x=datetime, y=model_pred),
-            col="blue")+
+  geom_point(data = sflow2_day,
+             aes(x=DOY, y=Max.Td.In...C.),
+             size=2, col="black")+
+  geom_point(data=wd2, 
+             aes(x=DOY, y=meanDaily),
+             size=2, col="orange")+
+  geom_point(data=wd2, 
+             aes(x=DOY, y=model_pred),
+             size=2, col="blue")+
   theme(panel.background = element_blank())
+
+# Together
+ggplot()+
+  geom_point(data = sflow2_day,
+             aes(x=DOY, y=Max.Td.In...C.),
+             size=1.5, col="black")+
+  geom_point(data=wd2, 
+             aes(x=DOY, y=meanDaily),
+             size=1.5, col="orange")+
+  geom_point(data=wd2, 
+             aes(x=DOY, y=model_pred),
+             size=1.5, col="blue")+
+  geom_point(data = sflow_day,
+             aes(x=DOY, y=Max.Td.In...C.),
+             size=1.5, col="black")+
+  geom_point(data=wd, 
+             aes(x=DOY, y=meanDaily),
+             size=1.5, col="orange")+
+  geom_point(data=wd, 
+             aes(x=DOY, y=model_pred),
+             size=1.5, col="blue")+
+  theme(panel.background = element_blank())
+  
 
 
 ### Change temperature in day ####
