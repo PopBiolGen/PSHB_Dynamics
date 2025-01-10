@@ -27,7 +27,7 @@ write.csv(gridsa, 'src/grid_coords_Sth_Africa.csv',
 #########################
 
 # Plot output
-
+outputs_grid <- read_csv("out/files/Sth_Africa_0_sim_1.csv")
 options(bitmapType='cairo') # To save png correctly
 
 dev.off()
@@ -60,7 +60,7 @@ map.plot.sa <- ggplot(data = mapdata) +
              size=1.5)+
   geom_text(data=cities, aes(x=lon, y=lat,
                              label=city),
-            size=3.5, vjust=-0.75, hjust=0.05)+
+            size=3.5, vjust=-0.5, hjust= -0.175)+
   
   theme(panel.background = element_blank(),
         axis.line = element_blank(), 
