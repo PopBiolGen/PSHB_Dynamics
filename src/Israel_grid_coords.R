@@ -1,27 +1,28 @@
 library(ggplot2)
 library(maps)
 library(mapdata)
-# South Africa coords grid
 
-latsa <- c(seq(-35.5, -21.5, by=map.res))
-lonsa <- c(seq(15.3, 33.5, by=map.res))
+# 33.402722, 34.841143
 
-gridsa <- (expand.grid(lonsa, latsa)) # Grid containing each lat & lon combination
-colnames(gridsa) <- c("lon", "lat")
+latis <- c(seq(29.2, 33.7, by=map.res)) 
+lonis <- c(seq(33.7, 36, by=map.res))
+
+gridis <- (expand.grid(lonis, latis)) # Grid containing each lat & lon combination
+colnames(gridis) <- c("lon", "lat")
 
 # Determine whether points are for land or ocean
-mapsa <- map(region="South Africa", fill=TRUE)
-gridsa$land <- !is.na(as.numeric(map.where(database=mapsa, gridsa$lon, gridsa$lat) == "South Africa")) # Land (TRUE) when coords match with map polygon
+mapis <- map(region="Israel", fill=TRUE)
+gridis$land <- !is.na(as.numeric(map.where(database=mapis, gridis$lon, gridis$lat) == "South Africa")) # Land (TRUE) when coords match with map polygon
 
-gridsa <- gridsa[!(gridsa$land %in% "FALSE"),] # Remove ocean coords
-gridsa <- gridsa[,c(1,2)]
+gridis <- gridis[!(gridis$land %in% "FALSE"),] # Remove ocean coords
+gridis <- gridis[,c(1,2)]
 
 ggplot() +
-  geom_point(data=gridsa,
+  geom_point(data=gridis,
              aes(x=lon, y=lat))
 
 
-write.csv(gridsa, 'src/grid_coords_Sth_Africa.csv',
+write.csv(gridis, 'src/grid_coords_Israel.csv',
           col.names = T, row.names = F )
 
 #########################
