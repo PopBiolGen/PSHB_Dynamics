@@ -6,6 +6,7 @@ library(ggpubr)
 library(readr)
 library(dplyr)
 library(ggnewscale)
+library(glue)
 sf_oz <- subset(ozmap("country")) # All Australia
 #sf_oz <- subset(ozmap("states"))
 
@@ -50,11 +51,18 @@ outAus <- outAus[-(which(is.na(outAus$A_growth))),] # Remove NAs (after filling 
 write.csv(outAus,
           file = "out/files/mu_0.2/Aus_mu0.2.csv", col.names = T, row.names = F )
 
-##### Map from single mu values: ####
+##### Map  ####
 mu0 <- read.csv("out/files/mu_0/Aus_mu0.csv")
 mu0.2 <- read.csv("out/files/mu_0.2/Aus_mu0.2.csv")
 mu0.4 <- read.csv("out/files/mu_0.4/Aus_mu0.4.csv")
+mu0$mu <- 0
+mu0.2$mu <- 0.2
+mu0.4$mu <- 0.4
+
+aus <- rbind(mu0, mu0.2, mu0.4)
+
 cities <- read_csv("src/city_coords.csv")
+
 plot_theme <- theme(panel.background = element_blank(),
                          axis.line = element_blank(), 
                          axis.text = element_blank(), 
@@ -64,9 +72,10 @@ plot_theme <- theme(panel.background = element_blank(),
 
 #### Australia mu = 0 ####
 Aus_mu0 <- ggplot(data = sf_oz) + 
-  geom_tile(data=mu0,  # Bit of a rough way to do it, but plot all points so colour gradient is the same...
+  geom_tile(data = subset(aus, mu==0),
             aes(x=lon, y=lat, fill=A_growth)) +
-  scale_fill_viridis(name = "Mean daily population growth rate\n(adults)\n",
+  scale_fill_viridis(name = "Mean daily population\ngrowth rate (adults)\n",
+                     option= "inferno",
                      limits=c(-0.026, 
                               0.076),
                      breaks=c(seq(-0.025, 0.075, by=0.025)),
@@ -77,7 +86,7 @@ Aus_mu0 <- ggplot(data = sf_oz) +
   scale_y_continuous(limits=c(min(mu0$lat)-0.1,
                               max(mu0$lat)+0.1))+
   geom_point(data=cities, aes(x=lon, y=lat),
-             size=1)+
+             size=2, pch=21, stroke=1, fill="white")+
   theme(panel.background = element_blank(),
         axis.line = element_blank(), 
         axis.text = element_blank(), 
@@ -86,9 +95,55 @@ Aus_mu0 <- ggplot(data = sf_oz) +
         legend.text = element_text(size=12),
         legend.key.size = unit(0.8, 'cm'),
         legend.title = element_text(size=14))
-
 Aus_mu0
-# SAVE
+
+#### Compare mu #####
+
+min(aus$A_growth) # -0.03
+max(aus$A_growth) # 0.075
+
+# Positive only
+
+ggplot(data = sf_oz)+ # subset(ozmap("states"))) + 
+  
+  geom_sf(fill= "grey90")+ #, col="black")+ 
+  
+  geom_tile(data = subset(aus, A_growth >= 0), #
+            aes(x=lon, y=lat, fill=A_growth)) +
+  
+  facet_grid(.~ glue('mu*" = {mu}"'),
+             labeller = label_parsed) +
+  scale_fill_viridis(name = "Mean daily population\ngrowth rate (adults)\n",
+                     option= "inferno",
+                     limits=c(0, #-0.03, 
+                              0.075),
+                     breaks=c(seq(0, 0.08, by=0.02)),
+                     labels=c(seq(0, 0.08, by=0.02)))+
+  
+#  scale_fill_gradientn(name="Mean daily population\ngrowth rate (adults)\n", #
+#                       limits=c(-0.03, 
+#                                0.075),
+#                       colors = c("white","#FFFF66","#CC0000"), # Set a gradient along these colours (blue to red)
+#                       values =   c(scales::rescale(c(-0.03,0,0.075))),
+#                       breaks=c(seq(-0.02,0.08, by=0.02)))+
+  
+  scale_x_continuous(limits=c(min(mu0$lon)-0.1,
+                              max(mu0$lon)+0.1))+ # Fit plot to lat & lon range
+  scale_y_continuous(limits=c(min(mu0$lat)-0.1,
+                              max(mu0$lat)+0.1))+
+  geom_point(data=cities, aes(x=lon, y=lat),
+             size=1.2, pch=21, stroke=1, fill="white")+
+  theme(panel.background = element_blank(),
+        axis.line = element_blank(), 
+        axis.text = element_blank(), 
+        axis.ticks = element_blank(), 
+        axis.title = element_blank(),
+        strip.text = element_text(size=16),
+        strip.background = element_rect(fill=NA),
+        legend.text = element_text(size=12),
+        legend.key.size = unit(0.8, 'cm'),
+        legend.title = element_text(size=14))
+
 
 #### mu = 0 Positive growth only ####
 
@@ -116,8 +171,6 @@ Aus_mu0_pos
 ###### Zoom in sw WA ####
 
 swwa <- read.csv('out/files/WA/WA.hi.res_0_sim_1.csv')
-swwa.2 <- read.csv('out/files/WA/WA.hi.res_0.2_sim_1.csv')
-swwa.4 <- read.csv('out/files/WA/WA.hi.res_0.4_sim_1.csv')
 
 QZ <- read_csv("src/QZdf.csv")
 
@@ -127,8 +180,7 @@ max(swwa$A_growth)
 # Fremantle Port
 #-32.045226, 115.738609
 
-
-
+# Just mu = 0
 ggplot(data = sf_oz) + 
   geom_sf(fill=NA)+ 
   geom_tile(data = swwa,  # Bit of a rough way to do it, but plot all points so colour gradient is the same...
@@ -169,17 +221,65 @@ hjust=1.01, vjust = 1)+
 # https://www.agric.wa.gov.au/borer#:~:text=in%20your%20browser.-,Quarantine%20Area%20(QA),across%2030%20local%20government%20areas.
 
 
-#  geom_point(aes(x = 115.861258, y = -31.952311),
- #            pch=1, fill=NA, size=4)
+#### WA compare mu ####
+swwa <- read.csv('out/files/WA/WA.hi.res_0_sim_1.csv')
+swwa$mu = 0
+swwa.2 <- read.csv('out/files/WA/WA.hi.res_0.2_sim_1.csv')
+swwa.2 <- swwa.2[,c(1:6)]
+swwa.2$mu = 0.2
+swwa.4 <- read.csv('out/files/WA/WA.hi.res_0.4_sim_1.csv')
+swwa.4$mu = 0.4
 
-# QUARANTINE ZONE 
-# Quarantine Zone
-# https://www.agric.wa.gov.au/borer#:~:text=in%20your%20browser.-,Quarantine%20Area%20(QA),across%2030%20local%20government%20areas.
+wa <- rbind(swwa, swwa.2, swwa.4)
 
-#### Seasons ####
+min(swwa.4$A_growth) # -.0075
+max(swwa$A_growth) # .059
+
+
+ggplot(data = sf_oz) + 
+  geom_sf(fill=NA)+ 
+  geom_tile(data = wa,  # Bit of a rough way to do it, but plot all points so colour gradient is the same...
+            aes(x=lon, y=lat, fill=A_growth)) +
+  scale_fill_viridis(name = "Mean daily adult\ngrowth rate\n",
+                     option = "inferno",
+                     limits=c(-0.0075,
+                              0.06),
+                     breaks=c(seq(0, 0.06, by=0.02)),
+                     labels=c(seq(0, 0.06, by=0.02)))+
+  coord_sf(xlim = c(115,
+                    117.5),
+           ylim = c(-33.6,
+                    -30.5))+
+  geom_polygon(data = QZ,  # Bit of a rough way to do it, but plot all points so colour gradient is the same...
+               aes(x=Longitude, y=Latitude),
+               fill=NA, col="red", 
+               lwd=0.6, lty=1) +
+  # Point at Port Fremantle
+  geom_point(aes(x=115.738609, y=-32.045226), 
+             size=2)+
+  #  geom_text(aes(x=115.738609, y=-32.045226), 
+  #           label = "Port Fremantle",
+  #          hjust=1.01, vjust = 1)+
+  facet_grid(.~ glue('mu*" = {mu}"'),
+             labeller = label_parsed)+
+  theme(panel.background = element_blank(),
+        axis.line = element_blank(), 
+        axis.text = element_blank(), 
+        axis.ticks = element_blank(), 
+        axis.title = element_blank(),
+        strip.text = element_text(size=14),
+        strip.background = element_rect(fill=NA),
+        legend.text = element_text(size=12),
+        legend.key.size = unit(0.8, 'cm'),
+        legend.title = element_text(size=14))
+
+
+
+
+#### WA Seasons ####
 seasons <- read_csv("out/files/WA/WA_seasons_0_sim_1.csv")
 
-seasons <- melt(seasons, # Melt p for each locus (pT, pR) into single column
+seasons <- melt(seasons, # 
                   id.vars = colnames(select(seasons, -c(growth_sum, growth_aut, growth_win, growth_spr))))
 colnames(seasons)[c(7,8)] <- c("season","growth")
 
@@ -219,156 +319,8 @@ ggplot(data = sf_oz) +
         legend.title = element_text(size=14))
 
 
-###########################################
 
-#### mu = 0.2 ####
-mu0.2 <- read.csv("out/files/mu_0.2/Aus_mu0.2.csv")
-
-plot_theme <- theme(panel.background = element_blank(),
-                    axis.line = element_blank(), 
-                    axis.text = element_blank(), 
-                    axis.ticks = element_blank(), 
-                    axis.title = element_blank(),
-                    plot.title = element_text(size=10))
-
-max(mu0.2$A_growth)
-min(mu0.2$A_growth)
-
-Aus_mu0.2 <- ggplot(data = sf_oz) + 
-  geom_tile(data=mu0.2,  # Bit of a rough way to do it, but plot all points so colour gradient is the same...
-            aes(x=lon, y=lat, fill=A_growth)) +
-  scale_fill_viridis(name = "Mean daily population growth rate\n(adults)\n",
-                     option = "inferno",
-                     limits=c(-0.03, 
-                              0.042),
-                     breaks=c(seq(-0.03, 0.04, by=0.01)),
-                     labels=c(seq(-0.03, 0.04, by=0.01)))+
-  geom_sf(fill=NA)+ 
-  scale_x_continuous(limits=c(min(mu0.2$lon)-0.1,
-                              max(mu0.2$lon)+0.1))+ # Fit plot to lat & lon range
-  scale_y_continuous(limits=c(min(mu0.2$lat)-0.1,
-                              max(mu0.2$lat)+0.1))+
-  theme(panel.background = element_blank(),
-        axis.line = element_blank(), 
-        axis.text = element_blank(), 
-        axis.ticks = element_blank(), 
-        axis.title = element_blank(),
-        legend.text = element_text(size=12),
-        legend.key.size = unit(0.8, 'cm'),
-        legend.title = element_text(size=14))
-
-Aus_mu0.2
-# SAVE
-
-#### mu = 0.2 Positive growth only ####
-
-Aus_mu0.2_pos <- ggplot(data = sf_oz) + 
-  geom_tile(data = mu0.2,  # Bit of a rough way to do it, but plot all points so colour gradient is the same...
-            aes(x=lon, y=lat, fill=A_growth)) +
-  scale_fill_viridis(name = "Mean daily population growth rate\n(adults)\n",
-                     limits=c(0, 
-                              0.042),
-                     breaks=c(seq(0, 0.04, by=0.01)),
-                     labels=c(seq(0, 0.04, by=0.01)))+
-  geom_sf(fill=NA)+ 
-  scale_x_continuous(limits=c(min(mu0.2$lon)-0.1,
-                              max(mu0.2$lon)+0.1))+ # Fit plot to lat & lon range
-  scale_y_continuous(limits=c(min(mu0.2$lat)-0.1,
-                              max(mu0.2$lat)+0.1))+
-  theme(panel.background = element_blank(),
-        axis.line = element_blank(), 
-        axis.text = element_blank(), 
-        axis.ticks = element_blank(), 
-        axis.title = element_blank(),
-        legend.text = element_text(size=12),
-        legend.key.size = unit(0.8, 'cm'),
-        legend.title = element_text(size=14))
-
-Aus_mu0.2_pos
-
-#### mu = 0.4 ####
-mu0.4 <- read.csv("out/files/mu_0.4/Aus_mu0.4.csv")
-
-plot_theme <- theme(panel.background = element_blank(),
-                    axis.line = element_blank(), 
-                    axis.text = element_blank(), 
-                    axis.ticks = element_blank(), 
-                    axis.title = element_blank(),
-                    plot.title = element_text(size=10))
-
-max(mu0.4$A_growth)
-min(mu0.4$A_growth)
-
-Aus_mu0.4 <- ggplot(data = sf_oz) + 
-  geom_tile(data=mu0.4,  # Bit of a rough way to do it, but plot all points so colour gradient is the same...
-            aes(x=lon, y=lat, fill=A_growth)) +
-  scale_fill_viridis(name = "Mean daily population growth rate\n(adults)\n",
-                     limits=c(-0.03, 
-                              0.02),
-                     breaks=c(seq(-0.03, 0.02, by=0.01)),
-                     labels=c(seq(-0.03, 0.02, by=0.01)))+
-  geom_sf(fill=NA)+ 
-  scale_x_continuous(limits=c(min(mu0.4$lon)-0.1,
-                              max(mu0.4$lon)+0.1))+ # Fit plot to lat & lon range
-  scale_y_continuous(limits=c(min(mu0.4$lat)-0.1,
-                              max(mu0.4$lat)+0.1))+
-  theme(panel.background = element_blank(),
-        axis.line = element_blank(), 
-        axis.text = element_blank(), 
-        axis.ticks = element_blank(), 
-        axis.title = element_blank(),
-        legend.text = element_text(size=12),
-        legend.key.size = unit(0.8, 'cm'),
-        legend.title = element_text(size=14))
-
-Aus_mu0.4
-# SAVE
-
-#### mu = 0.4 Positive growth only ####
-
-Aus_mu0.4_pos <- ggplot(data = sf_oz) + 
-  geom_tile(data = mu0.4,  # Bit of a rough way to do it, but plot all points so colour gradient is the same...
-            aes(x=lon, y=lat, fill=A_growth)) +
-  scale_fill_viridis(name = "Mean daily population growth rate\n(adults)\n",
-                     limits=c(0, 
-                              0.02),
-                     breaks=c(seq(0, 0.02, by=0.01)),
-                     labels=c(seq(0, 0.02, by=0.01)))+
-  geom_sf(fill=NA)+ 
-  scale_x_continuous(limits=c(min(mu0.4$lon)-0.1,
-                              max(mu0.4$lon)+0.1))+ # Fit plot to lat & lon range
-  scale_y_continuous(limits=c(min(mu0.4$lat)-0.1,
-                              max(mu0.4$lat)+0.1))+
-  theme(panel.background = element_blank(),
-        axis.line = element_blank(), 
-        axis.text = element_blank(), 
-        axis.ticks = element_blank(), 
-        axis.title = element_blank(),
-        legend.text = element_text(size=12),
-        legend.key.size = unit(0.8, 'cm'),
-        legend.title = element_text(size=14))
-
-Aus_mu0.4_pos
-
-##################
-#### Compare mu (same scale) ####
-plot_theme_grid <- theme(panel.background = element_blank(),
-                         axis.line = element_blank(), 
-                         axis.text = element_blank(), 
-                         axis.ticks = element_blank(), 
-                         axis.title = element_blank(),
-                         plot.title = element_text(size=12),
-                         legend.position = "none")
-# Min and max growth rates across both sims
-mingrow <- min(mu0.4$A_growth)
-maxgrow <- max(mu0$A_growth)
-# Lat & lon limits
-minlat <- min(mu0$lat)
-maxlat <- max(mu0$lat)
-minlon <- min(mu0$lon)
-maxlon <- max(mu0$lon)
-
-#### Diff col for neg growth ####
+#### Aus diff col for neg growth ####
 
 mu_plot <- function(df, title){
 ggplot(data = sf_oz) + 
@@ -416,37 +368,6 @@ legend <- as_ggplot(get_plot_component(plot_leg,
 ggarrange(plot_mu0_pos, plot_mu0.2_pos, plot_mu0.4_pos, legend, ncol=4)
 
 
-#### Same scale ####
-
-plot_mu0 <- ggplot(data = sf_oz) + 
-  geom_tile(data=mu0,  # Bit of a rough way to do it, but plot all points so colour gradient is the same...
-            aes(x=lon, y=lat, fill=A_growth)) +
-  scale_fill_viridis(name = "Mean daily population\n growth rate (adults)\n",
-                     limits = c(mingrow, maxgrow))+
-  geom_sf(fill=NA)+ 
-  ggtitle("mu = 0")+
-  scale_x_continuous(limits=c(minlon-0.1,
-                              maxlon+0.1))+ # Fit plot to lat & lon range
-  scale_y_continuous(limits=c(minlat-0.1,
-                              maxlat+0.1))+
-  plot_theme_grid
-
-plot_mu0.2 <- ggplot(data = sf_oz) + 
-  geom_tile(data=mu0.2,  # Bit of a rough way to do it, but plot all points so colour gradient is the same...
-            aes(x=lon, y=lat, fill=A_growth)) +
-  scale_fill_viridis(name = "Mean daily population\n growth rate (adults)\n",
-                     limits = c(mingrow, maxgrow))+
-  geom_sf(fill=NA)+ 
-  ggtitle("mu = 0.2")+
-  scale_x_continuous(limits=c(minlon-0.1,
-                              maxlon+0.1))+ # Fit plot to lat & lon range
-  scale_y_continuous(limits=c(minlat-0.1,
-                              maxlat+0.1))+
-  plot_theme_grid
-
-ggarrange(plot_mu0, plot_mu0.2, ncol=2)
-
-
 ######################
 #### Map total number of dispersing PA ####
 
@@ -478,66 +399,7 @@ plot_disp
 
 
 
-##### Extra MAPS to explore results ####
-# Plot areas with pop growth >x
-ggplot(data = sf_oz) + 
-  geom_tile(data= subset(mu0, A_growth>=0.05),  # Bit of a rough way to do it, but plot all points so colour gradient is the same...
-            aes(x=lon, y=lat, fill=A_growth)) +
-  scale_fill_viridis(name = "Mean daily population growth rate\n(adults)\n",
-                     limits=c(-0.026, 
-                              0.076),
-                     breaks=c(seq(-0.025, 0.075, by=0.025)),
-                     labels=c(seq(-0.025, 0.075, by=0.025)))+
-  geom_sf(fill=NA)+ 
-  scale_x_continuous(limits=c(min(outAus$lon)-0.1,
-                              max(outAus$lon)+0.1))+ # Fit plot to lat & lon range
-  scale_y_continuous(limits=c(min(outAus$lat)-0.1,
-                              max(outAus$lat)+0.1))+
-  theme(panel.background = element_blank(),
-        axis.line = element_blank(), 
-        axis.text = element_blank(), 
-        axis.ticks = element_blank(), 
-        axis.title = element_blank(),
-        legend.text = element_text(size=12),
-        legend.key.size = unit(0.8, 'cm'),
-        legend.title = element_text(size=14))
-
-# Map positive growth rates only 
-plot_mu0_pos <- ggplot(data = sf_oz) + 
-  geom_tile(data = subset(mu0, A_growth>0), 
-            aes(x=lon, y=lat, fill=A_growth)) +
-  scale_fill_viridis(name = "Mean daily adult growth rate",
-                     limits = c(0, 
-                                maxgrow))+
-  geom_sf(fill=NA)+ 
-  ggtitle("mu = 0")+
-  scale_x_continuous(limits=c(minlon-0.1,
-                              maxlon+0.1))+ # Fit plot to lat & lon range
-  scale_y_continuous(limits=c(minlat-0.1,
-                              maxlat+0.1))+
-  plot_theme
-plot_mu0_pos
-
-## Map total number of dispersing PA
-
-plot_mu2_disp <- ggplot(data = sf_oz) + 
-  geom_tile(data = mu0.2, 
-            aes(x=lon, y=lat, 
-                fill=tot_mu)) +
-  scale_fill_viridis(name = "Total dispersers per year",
-                     trans = "log10",
-                     limits=c(1, max(mu0.2$tot_mu)))+
-  geom_sf(fill=NA)+ 
-  ggtitle("mu = 0.35")+
-  scale_x_continuous(limits=c(minlon-0.1,
-                              maxlon+0.1))+ # Fit plot to lat & lon range
-  scale_y_continuous(limits=c(minlat-0.1,
-                              maxlat+0.1))+
-  plot_theme
-
-plot_mu2_disp
-
-# Plot final adult population (>1 only)
+#### Plot final adult population (>1 only) ####
 ggplot(data = sf_oz) + 
   geom_tile(data = subset(mu0.2, n_A_end > 1),  # Bit of a rough way to do it, but plot all points so colour gradient is the same...
             aes(x=lon, y=lat, fill=n_A_end)) +
@@ -554,12 +416,11 @@ ggplot(data = sf_oz) +
         axis.title = element_blank())
 
 #### Distribution of growth rates: ####
-ggplot(outAus, aes(x=A_growth))+
+ggplot(subset(aus, mu==0.2), aes(x=A_growth))+
   geom_histogram()
 
 
 #### DATA BY SEASON ####
-# Time series (by season)
 # NEED TO UPDATE SIM TO INCLUDE SEASONAL GROWTH RATES...
 
 # Map grid:
