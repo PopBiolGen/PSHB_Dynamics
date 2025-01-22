@@ -1,25 +1,32 @@
 #!/bin/bash
 
-#SBATCH --array=1-10
+#SBATCH --account=pawsey1103
 
-#SBATCH -p cascade
+#SBATCH --array=1-8
 
-#SBATCH --time=32:00:00
+#SBATCH --time=23:00:00
 
 #SBATCH --nodes=1
 
 #SBATCH --ntasks=1
 
-#SBATCH --cpus-per-task=18
+#SBATCH --cpus-per-task=4
 
-#SBATCH --mem=100000
+#SBATCH --mem=200G
 
-#SBATCH --mail-user=acoates@unimelb.edu.au
+#SBATCH -o ./output%j.%a.out
+
+#SBATCH --mail-user=andrew.coates@curtin.edu.au
 #SBATCH --mail-type=ALL,TIME_LIMIT_90
 
-module purge
-module load foss/2022a R/4.2.2
+module load r/4.3.0
 
-cd /data/cephfs/punim1173/salmonlice
+module load gdal/3.7.3-ztwnpws
+module load geos/3.12.0-wntgupl
+module load .proj/9.2.1-svjrii5
+module load .udunits/2.2.28-lffxtmr
+module load jags/4.3.0-esckzev
 
-Rscript --vanilla src/2loci/parameters_2loci.R ${SLURM_ARRAY_TASK_ID}
+cd $MYSCRATCH/PSHB
+
+Rscript src/spartan_call.R ${SLURM_ARRAY_TASK_ID}
