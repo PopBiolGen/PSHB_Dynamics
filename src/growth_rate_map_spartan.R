@@ -70,7 +70,10 @@ colnames(grid_coords)<- c("lon","lat")
   if(country == "South Africa") {
     grid_coords <- as.matrix(read.csv('src/grid_coords_Sth_Africa.csv'))} else { # Upload pre-made grid of Sth Africa
 
-    grid_coords <- as.matrix(read.csv('src/grid_coords_Cal.csv'))}}
+      if(country == "South Africa") {
+      grid_coords <- as.matrix(read.csv('src/grid_coords_Cal.csv'))} else {
+        
+        grid_coords <- as.matrix(read.csv('src/grid_coords_Israel.csv'))}}}
 
 outputs_grid <- matrix(0, 
                        nrow=nrow(grid_coords), 
@@ -116,31 +119,30 @@ colnames(outputs_grid)<- c("lon","lat", # Add lat & lon, leave remaining columns
 
 
 write.csv(outputs_grid, # Save output
-          file = sprintf("out/pawsey_%s_sim_%s.csv", mu_est, iter_spartan), 
+          file = sprintf("out/pawsey_%s_%s_sim_%s.csv", country, mu_est, iter_spartan), 
           col.names = T, row.names = F )
 
 # Plot output
 
 options(bitmapType='cairo') # To save png correctly
 
-map.plot <- ggplot(data = sf_oz) + 
-  geom_tile(data=as.data.frame(outputs_grid), # Save from matrix to dataframe
-            aes(x=lon, y=lat, fill=A_growth)) + # E.g. Adult growth rate
-  geom_sf(fill=NA)+ # WA map
-  scale_x_continuous(limits=c(min(lon)-.05,max(lon)+.05))+ # Fit plot to lat & lon range
-  scale_y_continuous(limits=c(min(lat)-.05,max(lat)+.05))+
-  scale_fill_viridis(name = "Mean daily adult growth rate")+
-  theme(panel.background = element_blank(),
-        axis.line = element_blank(), 
-        axis.text = element_blank(), 
-        axis.ticks = element_blank(), 
-        axis.title = element_blank())
+#map.plot <- ggplot(data = sf_oz) + 
+#  geom_tile(data=as.data.frame(outputs_grid), # Save from matrix to dataframe
+#            aes(x=lon, y=lat, fill=A_growth)) + # E.g. Adult growth rate
+#  geom_sf(fill=NA)+ #
+#  scale_x_continuous(limits=c(min(lon)-.05,max(lon)+.05))+ # Fit plot to lat & lon range
+#  scale_y_continuous(limits=c(min(lat)-.05,max(lat)+.05))+
+#  scale_fill_viridis(name = "Mean daily adult growth rate")+
+#  theme(panel.background = element_blank(),
+#        axis.line = element_blank(), 
+#        axis.text = element_blank(), 
+#        axis.ticks = element_blank(), 
+#        axis.title = element_blank())
 
 # Need to Save this plot
-ggsave(map.plot,
-       file = sprintf("out/pawsey_mu_%s_sim_%s.png", mu_est, iter_spartan), 
-    #   width = 10, height = 20, dpi = 1000, units = "in", 
-       device='png')
+#ggsave(map.plot,
+#       file = sprintf("out/pawsey_mu_%s_sim_%s.png", mu_est, iter_spartan), 
+#       device='png')
 
 
 
