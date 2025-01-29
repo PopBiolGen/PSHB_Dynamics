@@ -1,6 +1,8 @@
 ---
-title: "PSHB Models"
-output: html_document
+title: "Supplementary Material"
+output:
+  html_document: default
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE} 
@@ -8,11 +10,9 @@ knitr::opts_chunk$set(echo=TRUE)
 options(scipen = 10, digits = 2)
 ```
 
-## Thermal Performance Curves (TPCs)
+## PSHB Thermal Performance Curves (TPCs)
 
-To generate functions for temperature-dependent transition and survival probabilities, we fit empirical data to a family of temperature performance curves (TPCs). TPCs describe the relationship between temperature, $T$, and performance, $P$ (which in this instance is the probability of transition or survival).
-
-As described in Phillips *et al.*, (2014), a TPC function was described as a meeting of two Gaussian functions:
+Three of our PSHB life-history parameters are temperature-dependent: the daily probabilities of juvenile transition ($\alpha_J$), pre-oviposition transition ($\alpha_P$) and juvenile survival ($\phi_J$). To generate functions for temperature-dependent transition and survival, we fit temperature performance curves (TPCs) to empirical PSHB data. TPCs describe the relationship between temperature, $T$, and performance, $P$. In this instance, performance is the probability of transition or survival. As described in Phillips *et al.*, (2014), a TPC function is given as a meeting of two Gaussian functions:
 
 $$
 \begin{gather}
@@ -21,40 +21,38 @@ $$
     \ P_{max}e^{- \frac{-(T-T_{opt})^2} {2c^2} } & \text{ for } T<T_{opt}\\
     P_{max}e^{- \frac{-(T-T_{opt})^2} {2(cd)^2} } & \text{ for } T \ge T_{opt}
   \end{cases}
-\end{gather}\text{(Equation 1),}
+\end{gather}\text{(Supp. Eq. 1),}
 $$ 
-where $P_{max}$ is the maximum performance and $T_{opt}$ is the optimum temperature (*i.e.*, the temperature required $P_{max}$). The parameter $c$ determines the rate at which peroformance increases with temperature up to $T_{opt}$. The parameter $d$ determines the decrease in performance at temperatures above  $T_{opt}$.
+where $P_{max}$ is the maximum performance value and $T_{opt}$ is the optimum temperature (*i.e.*, the temperature at $P_{max}$). Performance increases with temperature up to $T_{opt}$, according to $c$. At temperatures above $T_{opt}$, performance decreases, as given by $d$.
 
-Once the priors were estimated, we had generated three TPCs - for $\alpha_J$, $\alpha_P$ and $\phi_J$ - that were used by our PSHB population model.
-
-When running the population model, the daily tree temperature was input as $T$ in Equation 1, which generated the values of $\alpha_J$, $\alpha_P$ and $\phi_J$ to use for that time-step.
-
-The fitting of TPCs to empirical data is given below.
+TPCs for $\alpha_J$, $\alpha_P$ and $\phi_J$ were generated, and parameter values for Supp. Eq. 1 were estimated  (described below). When running the population model, the daily tree temperature was input as $T$ in Equation 1, to calculate the values of $\alpha_J$, $\alpha_P$ and $\phi_J$ to use for that time-step.
 
 
-#### $\alpha_J$ data and priors
+### $\alpha_J$ TPC
 
-The probability of juvenile PSHB transitioning to the preoviposition stage is given by $\alpha_J$. We estimated $\alpha_J$ using data from Umeda and Paine, (2019), who monitored PSHB development (from egg to the pre-oviposition stage) under temperatures ranging 18 – 32 °C. Development rates are summarised in Supplementary Table 1. 
+The daily probability of juvenile PSHB transitioning to the preoviposition stage is given by $\alpha_J$. We estimated $\alpha_J$ using data from Umeda and Paine, (2019), who monitored PSHB development (from egg to the pre-oviposition stage) under temperatures ranging 18 – 32 °C. Development rates are summarised in Supplementary Table 1. 
 
-We also used data from Walgama and Zalucki, (2007), who recorded development times for the tea shot hole borer (TSHB, within the *E. wallacea* species complex) at 15 – 32° C. We took the development times, $\delta$, for eggs, larvae and pupae from Table 1, Figure 1, and Table 2, respectively (Walgama & Zalucki, 2007). These are given in Supplementary Table 1. For each temperature, we summed these development times to calculate the total duration of the juvenile stage, $\delta_{total}$, and used this to calculate the daily transition rate, as $\alpha_{J} = \delta_{total}^{-1}$ (Supp. Table 1).
+We also used data from Walgama and Zalucki, (2007), who recorded development times for the tea shot hole borer (TSHB, within the *E. wallacea* species complex) at 15 – 32° C. Development times for eggs, larvae and pupae were obtained from Table 1, Figure 1, and Table 2, respectively (Supp. Table 1). For each temperature, we summed development times to calculate the total duration of the juvenile stage, $\delta$, and converted this to a daily transition rate: $\alpha_{J} = \delta^{-1}$ (Supp. Table 1). Transition rates from the two studies are plotted in Supp. Figure 1.
 
 
-### Supplementary Table 1
+#### Supplementary Table 1
+###### The development times of PSHB eggs, larvae and pupae at different temperatures (from Walgama & Zalucki, 2007), used to estimate daily juvenile transition rates; and daily juvenile transition rates at different temperatures given in Umeda & Paine, (2019).   
 
-| Temperature (C)|  Juvenile development rate (Umeda & Paine) | Egg development time | Larva development time | Pupa development time | Juvenile development rate (Walgama & Zalucki) |
+| Temperature (°C)| Egg development time (days) | Larva development time (days) | Pupa development time (days) | Juvenile transition rate (Walgama & Zalucki) | Juvenile transition rate (Umeda & Paine) |
 |:--:|:--:|:--:|:--:|:--:|:--:|
-| 15 |  | no hatching |  | no emergence | 0 |
-| 18 | 0.013 | 23.5 | 34.72 | 15 | 0.014 |
-| 20 | 0.02 | 18.5 | 25.06 | 14 | 0.017 |
-| 22 |  | 13 |  | 9 |  |
-| 25 | 0.0258 | 7.3 | 14.53 | 7.5 | 0.034 |
-| 28 |  | 5.5 | 7.14 | 6 | 0.054 |
-| 30 | 0.0421 | 5 |  | 4 |  |
-| 32 | 0.0206 | 10.9 |  | 7 |  |
+| 15 | no hatching |  | no emergence | 0 |  |
+| 18 | 23.5 | 34.72 | 15 | 0.014 | 0.013 |
+| 20 | 18.5 | 25.06 | 14 | 0.017 | 0.02 |
+| 22 | 13 |  | 9 |  |  |
+| 25 | 7.3 | 14.53 | 7.5 | 0.034 | 0.0258 |
+| 28 | 5.5 | 7.14 | 6 | 0.054 |  |
+| 30 | 5 |  | 4 |  | 0.0421 |
+| 32 | 10.9 |  | 7 |  | 0.0206 |
 
 
 
-We then fit a TPC to this data using the functions *??*
+We fit a TPC to the empirical data using... 
+*how to describe these functions??*
 
 ```{r TPC.q.fit}
 # Equation 1:
@@ -107,14 +105,20 @@ plotTemp <- seq(12, 35, 0.2)
 survProbPred <- TPC.q(plotTemp, rmax = pars[1], Trmax = pars[2], acc = pars[3], dec.prop = pars[4])
 
 plot(alpha_j_rate_walgama~alpha_j_temp_walgama,
-     xlab = "Temperature (C)", 
+     xlab = expression(paste("Tree temperature (",degree,"C)")), 
      ylab = expression('Juvenile transition probability ( '*alpha[j]*' )'))
 points(alpha_j_rate_umeda~alpha_j_temp_umeda, pch=17)
 lines(survProbPred~plotTemp)
 ```
 
 
-The parameter estimates for this TPC ($P_{max}$, $T_{opt}$, $c$, $d$) were calculated, along with their standard deviations (*taken from the inverse of the Hessian?*):
+#### Supplementary Figure 1
+###### Juvenile transition probabilities at different temperatures, given by Umeda & Paine (triangles) and Walgama & Zalucki (circles), with TPC fitted to the data.
+
+
+
+
+The parameter estimates for the TPC ($P_{max}$, $T_{opt}$, $c$, $d$) and their standard deviations were:
 
 ```{r alpha_J_TPC_priors, echo=FALSE}
 par_names_TPC <- c(quote(P[max]), quote(T[opt]), quote(c), quote(d))
@@ -124,35 +128,32 @@ rownames(alpha_J_priors) <- par_names_TPC
 colnames(alpha_J_priors) <- c('Estimate', 'SD')
 alpha_J_priors
 ```
+*How to describe how we get these??*
 
 
-### $\alpha_P$ data and priors
+### $\alpha_P$ TPC
 
-The probability of transition from the pre-ovipositing stage is given by $\alpha_P$. There is limited empirical data for this stage that we could use. We assumed that the TPCs for $\alpha_J$ and $\alpha_P$ have the same values for $T_{opt}$, $c$, $d$. Therefore, the only change is $P_{max}$.
+The transition probability for the pre-ovipositing stage is given by $\alpha_P$. There is limited empirical data for this stage. In Walgama and Zalucki (2007),  the pre-oviposition period for TSHB was estimated to be 136 degree-days, or 8 days at $T_{opt}$, and with a minimum temperature of 15°C. We therefore assigned $P_{max}=1/8$. We assumed that the other TPC parameters ($T_{opt}$, $c$, $d$) were the same as for  
 
-Walgama and Zalucki (2007) estimated the pre-oviposition period in TSHB as 136 degree-days, or 8 days at $T_{opt}$, and with a minimum temperature of 15°C. We estimated $P_{max}=1/8$, which gives the priors:
 
-```{r alpha_P_TPC, echo=FALSE}
-alpha_P_priors <- alpha_J_priors
-colnames(alpha_P_priors) <- c("Estimate", "SD")
-alpha_P_priors["P[max]", 1] <- 1/8
-alpha_P_priors["P[max]", 2] <- sqrt(1/8/alpha_J_priors["P[max]", 1]*(alpha_J_priors["P[max]", 2]^2))
-alpha_P_priors
-```
+### $\phi_J$ TPC
 
-### $\phi_J$ data and priors
+The daily survival probability of juveniles, $\phi_J$, is also likely temperature-dependent. Walgama and Zalucki (2007) report the total mortality of eggs and pupae at different temperatures. We extracted these data (from Figure 2 of that study), and provide it in Supp. Table 2.
 
-The daily temperature-dependent survival of juveniles is given by $\phi_J$. Walgama and Zalucki (2007) report the total mortality of eggs and pupae at different temperatures (which we extracted from their Figure 2). 
-
-We used the total proportion mortality, $\lambda$ (given Supp. Table 2), and the total duration of the stage, $\delta$ (given Supp. Table 1), to calculate the daily probability of survival, $\phi$:
+We used these values of total proportion mortality, along with the total duration of each stage (given Supp. Table 1), to calculate the daily probability of survival:
 
 \begin{align}
 \phi = e^{-(\frac{-log(1-\lambda)}{\delta})}
 \end{align}
 
-(Conversion of total mortality to daily survival:)
+where $\lambda$ is the total mortality of the stage, and $\delta$ is the total duration of the stage. Estimates of $\phi_J$ from the empirical data are given in Supp. Table 2, and plotted in Supp. Figure 2.
+
 ```{r phi_J_data}
+# Don't need this, just showing the working of phi calculation
+
 library(readr)
+library(dplyr)
+library(lubridate)
 sDat <- read.csv(file = "../dat/walgamaFig2DataExtract.csv")
 sDat$Mortality <- sDat$Mortality/100 # convert to probability of mortality over n days
 sDat$Mortality[sDat$Mortality>1] <- 1 # catch the 1.002s
@@ -160,37 +161,39 @@ mortRate <- -log(1-sDat$Mortality)/sDat$Days # convert to a rate
 mortProb <- 1-exp(-mortRate) # convert to a daily probability
 ```
 
-# Supplementary Table 2
-| Temperature (C)|  Egg mortality | Daily egg survival | Pupa mortality | Daily pupa survival |
+#### Supplementary Table 2
+###### Total proportion mortality of eggs and pupae at different temperatures (from Walgama & Zalucki 2007), and the daily survival probabilities estimated from these data.
+
+| Temperature (°C)|  Total egg mortality | Total pupa mortality | Daily egg survival | Daily pupa survival |
 |:--:|:--:|:--:|:--:|:--:|
-| 15 |  1 |  |1  |  | 
-| 18 | 0.2 | 0.991 | 0.278 | 0.979 | 
-| 20 | 0.163 | 0.990 | 0.147 | 0.989 | 
-| 22 |  0.14 | 0.988 |  0.124 | 0.985 |
-| 25 | 0.12 | 0.983 | 0.051 | 0.993 | 
-| 28 |  0.021 | 0.996 | 0.002 | 0.999 | 
-| 30 | 0.051 | 0.990 |  0.014 | 0.996 | 
-| 32 | 0.421 | 0.951 | 0.041  | 0.994 | 
+| 15 |  1 | 1 |  |  | 
+| 18 | 0.2 |0.278 | 0.991 |  0.979 | 
+| 20 | 0.163 |0.147 | 0.990 |  0.989 | 
+| 22 |  0.14 |0.124 | 0.988 |   0.985 |
+| 25 | 0.12 |0.051 | 0.983 |  0.993 | 
+| 28 |  0.021 |0.002 | 0.996 |  0.999 | 
+| 30 | 0.051 |0.014 | 0.990 |   0.996 | 
+| 32 | 0.421 |0.041  | 0.951 |  0.994 | 
 
 
-As above, we fitted a TPC to the data and estimated the prior values.
+As above, we fitted a TPC to the empirical data (Supp. Fig. 2) and parameter values for the TPC function.
 
 ```{r plot_phi_J_TPC, echo=FALSE}
 survProb <- 1-mortProb
 sDat <- cbind(sDat, mortProb, survProb)
 
-source("../src/TPCFunctions.R")
 TPCmatrix <- cbind(sDat$Temperature, survProb)
 TPCmatrix <- na.omit(TPCmatrix)
 pars <- TPC.q.fit(TPCmatrix, in.acc = 0.3)$par
 temps <- seq(10, 35, 0.1)
 survProbPred <- TPC.q(temps, rmax = pars[1], Trmax = pars[2], acc = pars[3], dec.prop = pars[4])
 plot(survProb~sDat$Temperature,
-     xlab = "Temperature (C)", 
-     ylab = expression('Juvenile survival probability ( '*phi[j]*' )'))
+     xlab = expression(paste("Temperature (",degree,"C)")), 
+     ylab = expression('Juvenile survival probability ( '*phi[J]*' )'))
 lines(survProbPred~temps)
 ```
-
+#### Supplementary Figure 2
+###### Juvenile survival probabilities at different temperatures given by Walgama & Zalucki, with TPC fitted to the data.
 
 ```{r phi_j_TPC_priors_2, echo=FALSE}
 phi_J_fit <- TPC.q.fit(TPCmatrix, in.acc = 0.3, hessian = TRUE)
@@ -203,80 +206,39 @@ phi_J_priors
 ```
 
 
-
-#### Tree temperature predictions
+## Tree temperature predictions
 
 Tree temperature, $T_{tree}$, was a function of the maximum air temperature, $T_{max}$, and the soil temperature, $T_{soil}$:
 
 \begin{align}
-\T_{tree} = pT_{max} + (1-p)T_{soil}
+T_{tree} = p_tT_{max} + (1-p_t)T_{soil} &\text{,}
 \end{align}
 
-where $p$ was calculated as a function of relative humidity, $H$. Specifically, $p$ was the *?probability density function? -- plogis in R* of the linear function $bH+c$.
+where $p_t$ can take a value between 0 and 1, and is a function of the relative humidity, $H$. Specifically, $p_t$ was taken as the *inverse logit(?)* of a linear function:
 
-To estimate values for $b$ and $c$ we used the greta package... *explain*
+\begin{align}
+p_t = \text{inverse logit}(bH+c)
+\end{align}
 
-
-``` {r load_lib, echo=FALSE}
-library(dplyr)
-library(lubridate)
-library(weatherOz)
-library(greta)
-````
-
-``` {r get_temp_data, echo=FALSE}
-# Load some sapflow data
-fList <- list.files("../dat/sapflow")
-sflow <- read.csv(paste0("../dat/sapflow/", fList[1]), skip = 18, header = TRUE) %>%
-  select(Date, Time, Max.Td.In...C., Max.Tu.In...C.) %>%
-  mutate(Date = dmy(Date), year = year(Date), DOY =yday(Date)) %>%
-  #filter(year == 2022) %>%
-  group_by(DOY) %>%
-  summarise(mean_d = mean(Max.Td.In...C.), mean_u = mean(Max.Tu.In...C.))
-  
-sflow2 <- read.csv(paste0("../dat/sapflow/", fList[2]), skip = 40, header = TRUE) %>%
-  select(Date, Time, Max.Td.In...C., Max.Tu.In...C.) %>%
-  mutate(Date = dmy(Date), year = year(Date), DOY =yday(Date)) %>%
-  #filter(year == 2022) %>%
-  group_by(DOY) %>%
-  summarise(mean_d = mean(Max.Td.In...C.), mean_u = mean(Max.Tu.In...C.))
-
-sflow <- rbind(sflow, sflow2)
-
-# Load some weather observations for King's Park
-# use weatherOz SILO database
-wd <- get_data_drill(
-  latitude = -31.961833,
-  longitude = 115.833689,
-  start_date = "20130101",
-  end_date = "20231231",
-  values = c(
-    "max_temp",
-    "min_temp",
-    "rain",
-    "rh_tmax"
-  ),
-  api_key = Sys.getenv("SILO_API_KEY")
-)
-wd <- wd %>% mutate(DOY = yday(dmy(paste(day, month, year, sep = "-")))) %>%
-  mutate(meanDaily = (air_tmax + air_tmin)/2, meanAnnTemp = mean(meanDaily),
-         soil = zoo::rollmean(meanDaily, k = 30, fill = NA, align = "right"),
-         ma30 = zoo::rollmean(meanDaily, k = 30, fill = NA, align = "right"), 
-         ma60 = zoo::rollmean(meanDaily, k = 60, fill = NA, align = "right"), 
-         ma90 = zoo::rollmean(meanDaily, k = 90, fill = NA, align = "right"),
-         ma120 = zoo::rollmean(meanDaily, k = 120, fill = NA, align = "right")
-         ) %>%
-  select(DOY, air_tmax, air_tmin, meanDaily, meanAnnTemp, ma30, ma60, ma90, ma120, rainfall, rh_tmax, soil) %>%
-  group_by(DOY) %>%
-  summarise(across(everything(), \(x) mean(x, na.rm = TRUE)))
-
-merge_temp <- merge(wd, sflow, by="DOY", all.x = T)
+In the population model:
+``` {r temp_fun_model}
+#  logit.p <- int + beta*rh_tmax # int & beta are hard-coded, rh_tmax is gotten through SILO
+#  p <- plogis(logit.p)
+#  mean_temp <- p*air_tmax + (1-p)*ma30 # mean_temp then used to estimate transition & survival probs 
 ```
 
-``` {r tree-temp_PREV}
-# Get sap flow datasets
-# & merge with SILO data -- Mean daily data for 2013-2023 in King's Park
+
+To estimate values for $b$ and $c,$ we fitted this model in a Bayesian framework using HMC, implemented in the greta package (Golding, 2019).
+
+
+``` {r get_temp_data, echo=FALSE}
+source("../src/temperatures/get-calibration-data_markdown.R")
+```
+
+``` {r tree_temp_greta}
+# Where merge_temp is data set combining sap flow and SILO data
 merge_temp <- na.omit(merge_temp) # remove NAs (otherwise greta doesn't work?)
+
 treeTemps <- as_data(merge_temp$mean_d) # mean daily probe temp
 rh <- as_data(merge_temp$rh_tmax) # relative humidity
 air <- as_data(merge_temp$air_tmax) # max air temp
@@ -296,7 +258,7 @@ distribution(treeTemps) <- normal(mean_temp, sd)
   
 gMod <- model(int, beta, sd)
 
-plot(gMod)
+plot(gMod) # Plot representation of model
 
 draws <- mcmc(gMod, n_samples = 1000, chains = 4)
 bayesplot::mcmc_trace(draws)
@@ -309,16 +271,26 @@ pred_temp <- apply(draws_plot[[1]], 2, mean)
 ci_temp <- apply(draws_plot[[1]], 2, quantile, prob = c(0.025, 0.975))
 plot_data <- cbind(DOY = merge_temp$DOY, pred_temp, t(ci_temp))
 plot_data <- plot_data[order(plot_data[,"DOY"]),]
-
-plot(treeTemps~DOY, data = merge_temp)
-lines(plot_data[,"2.5%"]~plot_data[,"DOY"], col = "blue")
-lines(plot_data[,"97.5%"]~plot_data[,"DOY"], col = "blue")
-
-summary(draws)$statistics
-
 ```
 
+*How much of this to include??*
 
-When running the PSHB population model, we used these estimates of $b$ and $c$ to calculate the value of $p$ for the humidity at each time-step, which was then used to predict tree temperature (using the functions...)
+``` {r tree_temp_plot}
+plot(treeTemps~DOY, data = merge_temp,
+     ylab = expression(paste("Tree temperature (",degree,"C)")), 
+     xlab = "Day of year")
+lines(plot_data[,"2.5%"]~plot_data[,"DOY"], col = "red")
+lines(plot_data[,"97.5%"]~plot_data[,"DOY"], col = "red")
+```
+#### Supp. Figure
+###### Mean daily tree temperatures per day of year, as recorded by sap flow loggers (points), and as predicted by our Bayesian model (95% upper and lower CI, red lines).
 
+The mean estimates for $b$ and $c$ in the humidity function were calculated:
+``` {r pt_coeffs}
+pt_coef <- summary(draws)$statistics
+rownames(pt_coef) <- c("c", "b", "SD")
+pt_coef
+```
+
+and then used in the population model to calculate $p_t$ at each time-step, according to humidity.
 
