@@ -12,7 +12,7 @@ options(scipen = 10, digits = 2)
 
 ## PSHB Thermal Performance Curves (TPCs)
 
-Three of our PSHB life-history parameters are temperature-dependent: the daily probabilities of juvenile transition ($\alpha_J$), pre-oviposition transition ($\alpha_P$) and juvenile survival ($\phi_J$). To generate functions for temperature-dependent transition and survival, we fit temperature performance curves (TPCs) to empirical PSHB data. TPCs describe the relationship between temperature, $T$, and performance, $P$. In this instance, performance is the probability of transition or survival. As described in Phillips *et al.*, (2014), a TPC function is given as a meeting of two Gaussian functions:
+Three of our PSHB life-history parameters are temperature-dependent: the daily probabilities of juvenile transition ($\alpha_J$), pre-oviposition transition ($\alpha_P$) and juvenile survival ($\phi_J$). To generate functions for temperature-dependent transition and survival, we fit temperature performance curves (TPCs) to empirical PSHB data. TPCs describe the relationship between temperature, $T$, and performance, $P$ (in this instance, performance is the probability of transition or survival). As described in Phillips *et al.*, (2014), a TPC function is given as a meeting of two Gaussian functions:
 
 $$
 \begin{gather}
@@ -25,14 +25,12 @@ $$
 $$ 
 where $P_{max}$ is the maximum performance value and $T_{opt}$ is the optimum temperature (*i.e.*, the temperature at $P_{max}$). Performance increases with temperature up to $T_{opt}$, according to $c$. At temperatures above $T_{opt}$, performance decreases, as given by $d$.
 
-TPCs for $\alpha_J$, $\alpha_P$ and $\phi_J$ were generated, and parameter values for Supp. Eq. 1 were estimated  (described below). When running the population model, the daily tree temperature was input as $T$ in Equation 1, to calculate the values of $\alpha_J$, $\alpha_P$ and $\phi_J$ to use for that time-step.
+TPCs for $\alpha_J$, $\alpha_P$ and $\phi_J$ were fit to empirical data, and values for $P_{max}$, $T_{opt}$, $c$ and $d$ were estimated  (described below). When running the population model, the daily tree temperature was input as $T$ in Supp. Equation 1, to calculate the values of $\alpha_J$, $\alpha_P$ and $\phi_J$ to use for that time-step.
 
 
 ### $\alpha_J$ TPC
 
-The daily probability of juvenile PSHB transitioning to the preoviposition stage is given by $\alpha_J$. We estimated $\alpha_J$ using data from Umeda and Paine, (2019), who monitored PSHB development (from egg to the pre-oviposition stage) under temperatures ranging 18 – 32 °C. Development rates are summarised in Supplementary Table 1. 
-
-We also used data from Walgama and Zalucki, (2007), who recorded development times for the tea shot hole borer (TSHB, within the *E. wallacea* species complex) at 15 – 32° C. Development times for eggs, larvae and pupae were obtained from Table 1, Figure 1, and Table 2, respectively (Supp. Table 1). For each temperature, we summed development times to calculate the total duration of the juvenile stage, $\delta$, and converted this to a daily transition rate: $\alpha_{J} = \delta^{-1}$ (Supp. Table 1). Transition rates from the two studies are plotted in Supp. Figure 1.
+The daily probability of juvenile PSHB transitioning to the preoviposition stage is given by $\alpha_J$. We estimated $\alpha_J$ using data from Umeda and Paine, (2019), who monitored PSHB development (from egg to the pre-oviposition stage) under temperatures ranging 18 – 32 °C. Development rates are summarised in Supplementary Table 1. We also used data from Walgama and Zalucki, (2007), who recorded development times for the tea shot hole borer (TSHB, within the *E. wallacea* species complex) at 15 – 32° C. Development times for eggs, larvae and pupae were obtained from Table 1, Figure 1, and Table 2, respectively (Supp. Table 1). For each temperature, we summed development times to calculate the total duration of the juvenile stage, $\delta$, and converted this to a daily transition rate: $\alpha_{J} = \delta^{-1}$ (Supp. Table 1). Transition rates from the two studies are plotted in Supp. Figure 1.
 
 
 #### Supplementary Table 1
@@ -53,6 +51,7 @@ We also used data from Walgama and Zalucki, (2007), who recorded development tim
 
 We fit a TPC to the empirical data using... 
 *how to describe these functions??*
+The TPC is plotted in Supp. Figure 1.
 
 ```{r TPC.q.fit}
 # Equation 1:
@@ -110,14 +109,15 @@ plot(alpha_j_rate_walgama~alpha_j_temp_walgama,
 points(alpha_j_rate_umeda~alpha_j_temp_umeda, pch=17)
 lines(survProbPred~plotTemp)
 ```
-
-
+  
+  
+  
+  
 #### Supplementary Figure 1
 ###### Juvenile transition probabilities at different temperatures, given by Umeda & Paine (triangles) and Walgama & Zalucki (circles), with TPC fitted to the data.
-
-
-
-
+  
+    
+    
 The parameter estimates for the TPC ($P_{max}$, $T_{opt}$, $c$, $d$) and their standard deviations were:
 
 ```{r alpha_J_TPC_priors, echo=FALSE}
@@ -129,24 +129,25 @@ colnames(alpha_J_priors) <- c('Estimate', 'SD')
 alpha_J_priors
 ```
 *How to describe how we get these??*
-
-
+  
+    
+    
 ### $\alpha_P$ TPC
 
 The transition probability for the pre-ovipositing stage is given by $\alpha_P$. There is limited empirical data for this stage. In Walgama and Zalucki (2007),  the pre-oviposition period for TSHB was estimated to be 136 degree-days, or 8 days at $T_{opt}$, and with a minimum temperature of 15°C. We therefore assigned $P_{max}=1/8$. We assumed that the other TPC parameters ($T_{opt}$, $c$, $d$) were the same as for  
-
-
+  
+  
 ### $\phi_J$ TPC
 
 The daily survival probability of juveniles, $\phi_J$, is also likely temperature-dependent. Walgama and Zalucki (2007) report the total mortality of eggs and pupae at different temperatures. We extracted these data (from Figure 2 of that study), and provide it in Supp. Table 2.
 
-We used these values of total proportion mortality, along with the total duration of each stage (given Supp. Table 1), to calculate the daily probability of survival:
+We used these values of total proportion mortality, along with the total duration of each stage in that study (given Supp. Table 1), to calculate the daily probability of survival:
 
 \begin{align}
 \phi = e^{-(\frac{-log(1-\lambda)}{\delta})}
 \end{align}
 
-where $\lambda$ is the total mortality of the stage, and $\delta$ is the total duration of the stage. Estimates of $\phi_J$ from the empirical data are given in Supp. Table 2, and plotted in Supp. Figure 2.
+where $\lambda$ is the total mortality of the stage, and $\delta$ is the total duration of the stage. Estimates of $\phi$ from the empirical data are given in Supp. Table 2, and plotted in Supp. Figure 2.
 
 ```{r phi_J_data}
 # Don't need this, just showing the working of phi calculation
@@ -160,7 +161,8 @@ sDat$Mortality[sDat$Mortality>1] <- 1 # catch the 1.002s
 mortRate <- -log(1-sDat$Mortality)/sDat$Days # convert to a rate
 mortProb <- 1-exp(-mortRate) # convert to a daily probability
 ```
-
+  
+  
 #### Supplementary Table 2
 ###### Total proportion mortality of eggs and pupae at different temperatures (from Walgama & Zalucki 2007), and the daily survival probabilities estimated from these data.
 
@@ -174,9 +176,9 @@ mortProb <- 1-exp(-mortRate) # convert to a daily probability
 | 28 |  0.021 |0.002 | 0.996 |  0.999 | 
 | 30 | 0.051 |0.014 | 0.990 |   0.996 | 
 | 32 | 0.421 |0.041  | 0.951 |  0.994 | 
-
-
-As above, we fitted a TPC to the empirical data (Supp. Fig. 2) and parameter values for the TPC function.
+  
+  
+As above, we fitted a TPC to the empirical data (Supp. Fig. 2) and estimated the parameter values for the TPC function.
 
 ```{r plot_phi_J_TPC, echo=FALSE}
 survProb <- 1-mortProb
@@ -192,6 +194,8 @@ plot(survProb~sDat$Temperature,
      ylab = expression('Juvenile survival probability ( '*phi[J]*' )'))
 lines(survProbPred~temps)
 ```
+  
+    
 #### Supplementary Figure 2
 ###### Juvenile survival probabilities at different temperatures given by Walgama & Zalucki, with TPC fitted to the data.
 
@@ -208,16 +212,16 @@ phi_J_priors
 
 ## Tree temperature predictions
 
-Tree temperature, $T_{tree}$, was a function of the maximum air temperature, $T_{max}$, and the soil temperature, $T_{soil}$:
+Tree temperature, $T_{tree}$, was a weighted function of the maximum air temperature, $T_{max}$, and the soil temperature, $T_{soil}$:
 
 \begin{align}
 T_{tree} = p_tT_{max} + (1-p_t)T_{soil} &\text{,}
 \end{align}
 
-where $p_t$ can take a value between 0 and 1, and is a function of the relative humidity, $H$. Specifically, $p_t$ was taken as the *inverse logit(?)* of a linear function:
+This assumes that the internal wood temperature does not exceed the maximum air temperature, or get lower than the temperature of the soil 1 m below the surface. The relative weight of $T_{max}$ and $T_{soil}$ is given by $p_t$, which can take a value between 0 and 1. $p_t$ is a function of the relative humidity, $H$. Specifically, we assumed a linear relationship with humidity, and $p_t$ was calculated as the *inverse logit(?)* of:
 
 \begin{align}
-p_t = \text{inverse logit}(bH+c)
+p_t = (bH+c)
 \end{align}
 
 In the population model:
@@ -250,7 +254,7 @@ int <- normal(0, 3)
 beta <- normal(0, 3)
 sd <- lognormal(0, 3)
 
-p <- ilogit(int + beta*rh) # rh predicts p
+p <- ilogit(int + beta*rh) # Take the inverse logit to go from log-odds to probability
 
 mean_temp <- p*air + (1-p)*soil # predicted temp is weighted average of air/soil according to p
 
