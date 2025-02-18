@@ -21,8 +21,9 @@ $$
     \ P_{max}e^{- \frac{-(T-T_{opt})^2} {2c^2} } & \text{ for } T<T_{opt}\\
     P_{max}e^{- \frac{-(T-T_{opt})^2} {2(cd)^2} } & \text{ for } T \ge T_{opt}
   \end{cases}
-\end{gather}\text{(Supp. Eq. 1),}
+\end{gather}}
 $$ 
+
 where $P_{max}$ is the maximum performance value and $T_{opt}$ is the optimum temperature (*i.e.*, the temperature at $P_{max}$). Performance increases with temperature up to $T_{opt}$, according to $c$. At temperatures above $T_{opt}$, performance decreases, as given by $d$.
 
 TPCs for $\alpha_J$, $\alpha_P$ and $\phi_J$ were fit to empirical data, and values for $P_{max}$, $T_{opt}$, $c$ and $d$ were estimated  (described below). When running the population model, the daily tree temperature was input as $T$ in Supp. Equation 1, to calculate the values of $\alpha_J$, $\alpha_P$ and $\phi_J$ to use for that time-step.
@@ -49,9 +50,7 @@ The daily probability of juvenile PSHB transitioning to the preoviposition stage
 
 
 
-We fit a TPC to the empirical data using... 
-*how to describe these functions??*
-The TPC is plotted in Supp. Figure 1.
+A TPC was fit to the empirical data using the maximum likelihood method (Supp. Figure 1).
 
 ```{r TPC.q.fit}
 # Equation 1:
@@ -118,7 +117,7 @@ lines(survProbPred~plotTemp)
   
     
     
-The parameter estimates for the TPC ($P_{max}$, $T_{opt}$, $c$, $d$) and their standard deviations were:
+The parameter estimates for the TPC ($P_{max}$, $T_{opt}$, $c$, $d$) and their standard deviations (solving the Hessian matrix and taking the square root) were:
 
 ```{r alpha_J_TPC_priors, echo=FALSE}
 par_names_TPC <- c(quote(P[max]), quote(T[opt]), quote(c), quote(d))
@@ -128,7 +127,7 @@ rownames(alpha_J_priors) <- par_names_TPC
 colnames(alpha_J_priors) <- c('Estimate', 'SD')
 alpha_J_priors
 ```
-*How to describe how we get these??*
+
   
     
     
@@ -139,13 +138,11 @@ The transition probability for the pre-ovipositing stage is given by $\alpha_P$.
   
 ### $\phi_J$ TPC
 
-The daily survival probability of juveniles, $\phi_J$, is also likely temperature-dependent. Walgama and Zalucki (2007) report the total mortality of eggs and pupae at different temperatures. We extracted these data (from Figure 2 of that study), and provide it in Supp. Table 2.
+The daily survival probability of juveniles, $\phi_J$, is also supposed to be temperature-dependent. Walgama and Zalucki (2007) report the total egg and pupa mortalities at different temperatures. These data (extracted from Figure 2 of that study) are provided in Supp. Table 2. We used these values of total proportion mortality, along with the total duration of eggs and pupae at each temperature (Supp. Table 1), to calculate the daily probability of survival:
 
-We used these values of total proportion mortality, along with the total duration of each stage in that study (given Supp. Table 1), to calculate the daily probability of survival:
-
-\begin{align}
-\phi = e^{-(\frac{-log(1-\lambda)}{\delta})}
-\end{align}
+$$
+\phi = e^{-(\frac{-log(1-\lambda)}{\delta})}\tag{Supp. Eq. 2}
+$$
 
 where $\lambda$ is the total mortality of the stage, and $\delta$ is the total duration of the stage. Estimates of $\phi$ from the empirical data are given in Supp. Table 2, and plotted in Supp. Figure 2.
 
@@ -214,32 +211,24 @@ phi_J_priors
 
 Tree temperature, $T_{tree}$, was a weighted function of the maximum air temperature, $T_{max}$, and the soil temperature, $T_{soil}$:
 
-\begin{align}
-T_{tree} = p_tT_{max} + (1-p_t)T_{soil} &\text{,}
-\end{align}
+$$
+T_{tree} = p_tT_{max} + (1-p_t)T_{soil}\tag{Supp. Eq. 3}
+$$
 
-This assumes that the internal wood temperature does not exceed the maximum air temperature, or get lower than the temperature of the soil 1 m below the surface. The relative weight of $T_{max}$ and $T_{soil}$ is given by $p_t$, which can take a value between 0 and 1. $p_t$ is a function of the relative humidity, $H$. Specifically, we assumed a linear relationship with humidity, and $p_t$ was calculated as the *inverse logit(?)* of:
+This assumes that the internal wood temperature does not exceed the maximum air temperature, nor get lower than the temperature of the soil. The relative weight of $T_{max}$ and $T_{soil}$ is given by $p_t$, which can take a value between 0 and 1. $p_t$ is a function of the relative humidity, $H$. Specifically, we assumed a linear relationship with humidity:
 
-\begin{align}
-p_t = (bH+c)
-\end{align}
+$$
+\text{logit}(p_t) = bH+c\tag{Supp. Eq. 4}
+$$
 
-In the population model:
-``` {r temp_fun_model}
-#  logit.p <- int + beta*rh_tmax # int & beta are hard-coded, rh_tmax is gotten through SILO
-#  p <- plogis(logit.p)
-#  mean_temp <- p*air_tmax + (1-p)*ma30 # mean_temp then used to estimate transition & survival probs 
-```
-
-
-To estimate values for $b$ and $c,$ we fitted this model in a Bayesian framework using HMC, implemented in the greta package (Golding, 2019).
+To estimate values for $b$ and $c,$ we fitted this model in a Bayesian framework using Hamiltonian Monte Carlo (HMC) Markov Chain, implemented in the greta package (Golding, 2019). The prior probabilities for $b$ and $c$ were both set as normal distributions with a mean of 0 and standard deviation of 3.
 
 
 ``` {r get_temp_data, echo=FALSE}
 source("../src/temperatures/get-calibration-data_markdown.R")
 ```
 
-``` {r tree_temp_greta}
+``` {r tree_temp_greta, echo=FALSE}
 # Where merge_temp is data set combining sap flow and SILO data
 merge_temp <- na.omit(merge_temp) # remove NAs (otherwise greta doesn't work?)
 
@@ -277,24 +266,39 @@ plot_data <- cbind(DOY = merge_temp$DOY, pred_temp, t(ci_temp))
 plot_data <- plot_data[order(plot_data[,"DOY"]),]
 ```
 
-*How much of this to include??*
-
 ``` {r tree_temp_plot}
-plot(treeTemps~DOY, data = merge_temp,
-     ylab = expression(paste("Tree temperature (",degree,"C)")), 
-     xlab = "Day of year")
-lines(plot_data[,"2.5%"]~plot_data[,"DOY"], col = "red")
-lines(plot_data[,"97.5%"]~plot_data[,"DOY"], col = "red")
+#plot(treeTemps~DOY, data = merge_temp,
+#     ylab = expression(paste("Tree temperature (",degree,"C)")), 
+#     xlab = "Day of year")
+#lines(plot_data[,"2.5%"]~plot_data[,"DOY"], col = "red")
+#lines(plot_data[,"97.5%"]~plot_data[,"DOY"], col = "red")
+#lines(plot_data[,"pred_temp"]~plot_data[,"DOY"], col = "red")
+#lines(merge_temp[,"air_tmax"]~merge_temp[,"DOY"], col = "orange")
+#lines(merge_temp[,"ma30"]~merge_temp[,"DOY"], col = "orange")
+
+library(ggplot2)
+ggplot()+
+  geom_line(data=plot_data,
+            aes(x=DOY, y=pred_temp), col="red", lwd=0.8)+
+  geom_line(data=wd,
+            aes(x=DOY, y=air_tmax), col="darkblue", lwd=0.8)+
+  geom_line(data=wd,
+            aes(x=DOY, y=ma30), col="lightblue", lwd=0.8)+
+  geom_point(data = merge_temp,
+             aes(y=mean_u, x=DOY),
+             pch=21, size=2)+
+  scale_y_continuous(name = expression(paste("Temperature (",degree,"C)")))+ 
+  scale_x_continuous(name = "Day of year")
+
 ```
 #### Supp. Figure
-###### Mean daily tree temperatures per day of year, as recorded by sap flow loggers (points), and as predicted by our Bayesian model (95% upper and lower CI, red lines).
+###### Mean daily tree temperatures per day of year, as recorded by sap flow loggers (points), and as predicted by our model (red line), given the mean daily maximum air temperature (dark blue line) and soil temperature (light blue).
 
-The mean estimates for $b$ and $c$ in the humidity function were calculated:
+The estimates for $b$ and $c$ from the HMC function were:
 ``` {r pt_coeffs}
 pt_coef <- summary(draws)$statistics
 rownames(pt_coef) <- c("c", "b", "SD")
 pt_coef
 ```
 
-and then used in the population model to calculate $p_t$ at each time-step, according to humidity.
-
+When running the population model, tree temperatures were calculated each time-step according to Supp. Equations 3 and 4, using the coefficient values given above and that day's $T_{tree}$, $T_{soil}$ and $H$ values.
