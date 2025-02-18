@@ -52,7 +52,6 @@ Capetown <- c(long = 18.47,
 #  run_year(lat = locLat, long = locLong, make_plot = TRUE)
 #  }
 
-
 #George
 locLong <- George["long"]
 locLat <- George["lat"]
