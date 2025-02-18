@@ -75,7 +75,7 @@ map.plot.us <- ggplot(data = mapdata) +
                      breaks = seq(-0.01, 0.05, by=0.01))+#round(max.growth, digits=3)))+
   
   geom_point(data=cities, aes(x=lon, y=lat),
-             size=2.4, pch=21, stroke=1.4, fill="white")+
+             size=2, pch=21, stroke=1, fill="white")+
 #  geom_text(data=cities, aes(x=lon, y=lat,
 #                             label=city),
 #            size=4, 
@@ -98,7 +98,7 @@ ggsave(map.plot.us,
        device='png')
 
 ##### With city blow outs ####
-scale <- 0.28
+scale <- 0.31
 
 map.plot.us2 <- map.plot.us +
   theme(#legend.justification = "top",
@@ -110,9 +110,9 @@ blowplot <- ggdraw() +
   draw_image("out/plots/cities/San Marino.png",  x = -0.28, y = -0.33, scale = scale)+ 
   draw_image("out/plots/cities/Santa Paula.png",  x = -0.28, y = 0, scale = scale)+
   
-  draw_image("out/plots/cities/stage_leg.jpeg",  x = 0.22, y = -0.33, scale = 0.19)
+  draw_image("out/plots/cities/stage_leg.jpeg",  x = 0.24, y = -0.33, scale = 0.21)
 
-ggsave(blowplot, filename="out/plots/blowplot_Cali_leg.pdf",
+ggsave(blowplot, filename="out/plots/blowplot_Cali_2.pdf",
        width=9, height=6)
 
 

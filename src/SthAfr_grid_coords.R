@@ -58,7 +58,7 @@ map.plot.sa <- ggplot(data = mapdata) +
                               round(max.growth, digits=3)))+
   
   geom_point(data=cities, aes(x=lon, y=lat),
-             size=2.4, pch=21, stroke=1.4, fill="white")+
+             size=2.2, pch=21, stroke=1, fill="white")+
 #  geom_text(data=cities, aes(x=lon, y=lat,
 #                             label=city),
 #            size=4, 
@@ -90,16 +90,16 @@ map.plot.sa2 <- map.plot.sa +
   theme(#legend.justification = "top",
     plot.margin = unit(c(2.5,0,3.1,3.7), "cm"))
 
-scale<-0.28
+scale<-0.3
 
 blowplot <- ggdraw() +
   draw_plot(map.plot.sa2)+
   draw_image("out/plots/cities/Cape Town.png",  x = -0.39, y = -0.05, scale = scale)+ 
   draw_image("out/plots/cities/George.png",   x = -0.15, y = -0.36, scale = 0.27)+ 
-  draw_image("out/plots/cities/Durban.png",  x = 0.1, y = -0.36, scale = scale)+
+  draw_image("out/plots/cities/Durban.png",  x = 0.1, y = -0.35, scale = scale)+
   draw_image("out/plots/cities/Johannesburg.png",  x = -0.22, y = 0.35, scale = scale)+
   
-  draw_image("out/plots/cities/stage_leg.jpeg",  x = 0.3, y = -0.36, scale = 0.18)
+  draw_image("out/plots/cities/stage_leg.jpeg",  x = 0.32, y = -0.36, scale = 0.2)
 
-ggsave(blowplot, filename="out/plots/blowplot_SA_leg2.pdf",
+ggsave(blowplot, filename="out/plots/blowplot_SA_2.pdf",
        width=9, height=6)
