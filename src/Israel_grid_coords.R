@@ -1,6 +1,8 @@
 library(ggplot2)
 library(maps)
 library(mapdata)
+library(readr)
+library(viridis)
 
 # 33.402722, 34.841143
 
@@ -17,7 +19,7 @@ gridis$land <- !is.na(as.numeric(map.where(database=mapis, gridis$lon, gridis$la
 gridis <- gridis[!(gridis$land %in% "FALSE"),] # Remove ocean coords
 gridis <- gridis[,c(1,2)]
 
-ggplot() +
+ggplot(data = mapis) +
   geom_point(data=gridis,
              aes(x=lon, y=lat))
 
@@ -28,26 +30,27 @@ write.csv(gridis, 'src/grid_coords_Israel.csv',
 #########################
 
 # Plot output
-outputs_grid <- read_csv("out/files/Sth_Africa_0_sim_1.csv")
-options(bitmapType='cairo') # To save png correctly
-
-dev.off()
+outputs_grid <- read_csv("out/files/Israel_0_sim_1.csv")
+outputs_grid <- read_csv("out/files/Israel_upd.csv")
 
 library(mapdata)
-mapdata <- map_data(map='world', region="South Africa")
+library(cowplot)
+library(magick)
+
+mapdata <- map_data(map='world', region="Israel")
+
+cities <- read_csv("src/known_PSHB_coords.csv")
+cities <- subset(cities, country == "Israel")
 
 outputs_grid <- as.data.frame(outputs_grid)
 min.growth <- min(outputs_grid$A_growth)
 max.growth <- max(outputs_grid$A_growth)
 
-cities <- read_csv("src/known_PSHB_coords.csv")
-cities <- subset(cities, country == "South Africa")
-
-map.plot.sa <- ggplot(data = mapdata) + 
-  coord_map(xlim = c(min(outputs_grid$lon)-1.5, 
-                     max(outputs_grid$lon)+2.2), 
-            ylim = c(min(outputs_grid$lat)-1.5, 
-                     max(outputs_grid$lat)+1.5))+
+map.plot.is <- ggplot(data = mapdata) + 
+  coord_map(xlim = c(min(outputs_grid$lon), 
+                     max(outputs_grid$lon)), 
+            ylim = c(min(outputs_grid$lat), 
+                     max(outputs_grid$lat)))+
   geom_tile(data=outputs_grid, # Save from matrix to dataframe
             aes(x=lon, y=lat, fill=A_growth)) + # E.g. Adult growth rate
   geom_polygon(data = mapdata,
@@ -55,11 +58,11 @@ map.plot.sa <- ggplot(data = mapdata) +
                col = "black", fill=NA) +
   scale_fill_viridis(name = "Mean daily adult growth rate",
                      option= "inferno",
-                     limits=c(round(min.growth, digits=3),
+                     limits=c(0,
                               round(max.growth, digits=3)))+
   
   geom_point(data=cities, aes(x=lon, y=lat),
-             size=2.4, pch=21, stroke=1.4, fill="white")+
+             size=2.4, pch=21, stroke=1.2, fill="white")+
 #  geom_text(data=cities, aes(x=lon, y=lat,
 #                             label=city),
 #            size=4, 
@@ -75,32 +78,25 @@ map.plot.sa <- ggplot(data = mapdata) +
         legend.key.size = unit(0.8, 'cm'),
         legend.title = element_text(size=16))
 
-map.plot.sa
-ggsave(map.plot.sa,
-       file = "out/map_Sth_Africa_mu0_cities.png", 
+map.plot.is
+ggsave(map.plot.is,
+       file = "out/plots/map_Israel.pdf", 
        #   width = 10, height = 20, dpi = 1000, units = "in", 
-       device='png')
+       device='pdf')
 
-#
-ggplot(SA, aes(x=A_growth))+
-  geom_histogram()
 
-##
 
-map.plot.sa2 <- map.plot.sa +
+map.plot.is2 <- map.plot.is +
   theme(#legend.justification = "top",
-    plot.margin = unit(c(2.5,0,3.1,3.7), "cm"))
+    plot.margin = unit(c(0,0,0,0), "cm"))
 
-scale<-0.28
+scale<-0.32
 
 blowplot <- ggdraw() +
-  draw_plot(map.plot.sa2)+
-  draw_image("out/plots/cities/Cape Town.png",  x = -0.39, y = -0.05, scale = scale)+ 
-  draw_image("out/plots/cities/George.png",   x = -0.15, y = -0.36, scale = 0.27)+ 
-  draw_image("out/plots/cities/Durban.png",  x = 0.1, y = -0.36, scale = scale)+
-  draw_image("out/plots/cities/Johannesburg.png",  x = -0.22, y = 0.35, scale = scale)+
+  draw_plot(map.plot.is2)+
+  draw_image("out/plots/cities/Tel-Aviv.png",  x = -0.38, y = 0.32, scale = scale)+ 
   
-  draw_image("out/plots/cities/stage_leg.jpeg",  x = 0.3, y = -0.36, scale = 0.18)
+  draw_image("out/plots/cities/stage_leg.jpeg",  x = -0.39, y = 0.03, scale = 0.21)
 
-ggsave(blowplot, filename="out/plots/blowplot_SA_leg2.pdf",
+ggsave(blowplot, filename="out/plots/blowplot_Israel2.pdf",
        width=9, height=6)
