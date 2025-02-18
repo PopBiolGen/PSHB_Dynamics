@@ -68,7 +68,7 @@ get_env_data <- function(lat, long){
  #calculate 1 month moving average temp in lieu of soil temp at 100cm
  wd <- wd %>% dplyr::mutate(DOY = yday(dmy(paste(day, month, year, sep = "-")))) %>%
     mutate(meanDaily = (air_tmax+air_tmin)/2, soil = zoo::rollmean(meanDaily, k = 30, fill = NA, align = "right")) %>%
-    select(DOY, air_tmax, rh_tmax, soil) %>%
+    select(DOY, air_tmax, rh_tmax, soil, meanDaily) %>%
     group_by(DOY) %>%
     summarise(across(everything(), \(x) mean(x, na.rm = TRUE)))
   
@@ -186,17 +186,19 @@ tree_temp_prediction <- function(lat, long, model){ #= "weighted_mean"){ #lat = 
   locDat <- get_env_data(lat, long) } else { # Use SILO data
   locDat <- get_env_os(lat, long) } # If outside of Australia, use overseas data (nasapower)
   newDat <- list(air_tmax = locDat$air_tmax,
+                 meanDaily = locDat$meanDaily,
        rh_tmax = locDat$rh_tmax,
        ma30 = locDat$soil)
   # function for prediction using weighted mean model
-  tree_temp <- function(air_tmax, rh_tmax, ma30, int = -0.4884, beta = 0.0349){
+  tree_temp <- function(air_tmax, rh_tmax, ma30, int = -0.3277, beta = 0.0304){# int = -0.4884, beta = 0.0349){ # #
     logit.p <- int + beta*rh_tmax # rh predicts p
     p <- plogis(logit.p)
     mean_temp <- p*air_tmax + (1-p)*ma30
   }
   if (model == "weighted_mean"){
     out <- tree_temp(newDat$air_tmax, newDat$rh_tmax, newDat$ma30)
-  } else {out <- predict(mod_fit, newdata = newDat)}
+    # Try looking at ambient temp instead of tree temp
+  } else {out <- newDat$meanDaily} # {out <- predict(mod_fit, newdata = newDat)} # Old tree temp function
   return(out)
 }
 
