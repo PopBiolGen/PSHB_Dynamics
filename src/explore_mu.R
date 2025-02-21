@@ -111,7 +111,7 @@ explore_mu <- read.csv('out/explore_mu.csv')
 
 explore_mu$location <- factor(explore_mu$location, 
        levels=c("Perth","Johannesburg","Durban","George",
-                "Orange County","LA County","Ventura County"))
+                "Laguna Beach","San Marino","Santa Paula"))
 
 cols <- RColorBrewer::brewer.pal(9, "Set1")[c(1,2,3,4)]
 cols <- c(cols[1],cols[2],cols[2],cols[2],cols[3],cols[3],cols[3])
@@ -127,19 +127,19 @@ ggplot(explore_mu, aes(x=mu_est_i, y=A_growth_i, col=location,
   scale_linetype_manual(values=c(1,1,2,4,1,2,4),
                         name="Location")+
   scale_x_continuous(breaks=seq(0, 0.95, 0.1),
-                     name = "Proportion pre-adult mortality from dispersal")+
+                     name = expression('Proportion mortality from dispersal ('*mu*')'))+
   scale_y_continuous(name = "Mean daily adult population growth rate")+
-  theme(axis.text.x = element_text(size=10), #text(angle = 45, size = 28, vjust=1, hjust=1),
-        axis.text.y = element_text(size = 10),
-        axis.title.y = element_text(size=13, margin = margin(t = 0, r = 15, b = 0, l = 0)),
-        axis.title.x = element_text(size=13, margin = margin(t = 10, r = 0, b = 0, l = 0)),
+  theme(axis.text.x = element_text(size=14), #text(angle = 45, size = 28, vjust=1, hjust=1),
+        axis.text.y = element_text(size = 14),
+        axis.title.y = element_text(size=16, margin = margin(t = 0, r = 15, b = 0, l = 0)),
+        axis.title.x = element_text(size=16, margin = margin(t = 10, r = 0, b = 0, l = 0)),
         #panel.grid.major.x = element_blank(),
         #panel.grid.major.y = element_blank(),
         #panel.background = element_rect(fill = "white"),
         legend.key= element_rect(fill = NA),
         legend.key.width = unit(2, "line"),
-        legend.title = element_text(size = 13),
-        legend.text = element_text(size = 10),
-        axis.line = element_line(colour = "gray50", size = 0.6, linetype = "solid"),
+        legend.title = element_text(size = 16),
+        legend.text = element_text(size = 15),
+      #  axis.line = element_line(colour = "gray50", size = 0.6, linetype = "solid"))
         panel.border = element_rect(colour = "black", fill=NA,size=1.5))
 
