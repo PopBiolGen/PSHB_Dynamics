@@ -51,12 +51,11 @@ The daily probability of juvenile PSHB transitioning to the preoviposition stage
 
 A TPC was fit to the empirical data using the maximum likelihood method (Supp. Figure 1). The mean parameter estimates for the TPC ($P_{max}$, $T_{opt}$, $c$, $d$) and their standard deviations (solving the Hessian matrix and taking the square root) were:
 
-| Parameter | Mean | SD |
-|:--:|:--:|:--:|
-|$P_{max}$|0.045|0.0032|
-|$T_{opt}$|29.665|1.251|
-|$c$|6.909|1.0668|
-|$d$|0.269|0.1814|
+  * $P_{max} = 0.045\space(0.003)$
+  * $T_{opt} = 29.7\space(1.25)$
+  * $c = 6.9\space(1.07)$
+  * $d = 0.27\space(0.18)$
+ 
  
 ![Supp. Fig. 1. Juvenile transition probabilities at different temperatures, given by Umeda & Paine (triangles) and Walgama & Zalucki (circles), with TPC fitted to the data.](Supps_markdown_files/phi_J_TPC.jpeg) 
     
@@ -95,12 +94,10 @@ where $\lambda$ is the total mortality of the stage, and $\delta$ is the total d
   
 As above, we fitted a TPC to the empirical data (Supp. Fig. 2) and estimated the parameter values for the TPC function. The mean parameter estimates (and standard deviations) were:
 
-| Parameter | Mean | SD |
-|:--:|:--:|:--:|
-|$P_{max}$|0.99|0.004|
-|$T_{opt}$|29.5|2.36|
-|$c$|80|36.04|
-|$d$|0.15|0.19|
+  * $P_{max} = 0.99\space(0.004)$
+  * $T_{opt} = 29.5\space(2.36)$
+  * $c = 80\space(36)$
+  * $d = 0.15\space(0.19)$
 
 
 ![Supp. Fig. 2. Juvenile survival probabilities at different temperatures given by Walgama & Zalucki, with TPC fitted to the data.](Supps_markdown_files/phi_J_TPC.jpeg) 
@@ -122,10 +119,9 @@ $$
 
 To estimate values for $b$ and $c,$ we fitted this model in a Bayesian framework using Hamiltonian Monte Carlo (HMC) Markov Chain, implemented in the greta package (Golding, 2019). Priors for $b$ and $c$ were set as normal distributions with mean = 0 and standard deviation = 3. The estimates (mean and standard deviation) for the parameters in Supp Eq. 4 were calculated by the HMC function as:
 
-| Parameter | Mean | SD |
-|:--:|:--:|:--:|
-|$c$|-0.23|1.13|
-|$d$|-0.54|1.03|
+
+  * $c = -0.23\space(1.13)$
+  * $d = -0.54\space(1.03)$
 
 
 When running the population model, tree temperatures were calculated each time-step according to Supp. Equations 3 and 4, using the above values of $b$ and $c$, and that day's $T_{tree}$, $T_{soil}$ and $H$ values (from the climate database).
