@@ -21,7 +21,7 @@ $$
     \ P_{max}e^{- \frac{-(T-T_{opt})^2} {2c^2} } & \text{ for } T<T_{opt}\\
     P_{max}e^{- \frac{-(T-T_{opt})^2} {2(cd)^2} } & \text{ for } T \ge T_{opt}
   \end{cases}
-\end{gather}}
+\end{gather}\tag{Supp. Eq. 1}
 $$ 
 
 where $P_{max}$ is the maximum performance value and $T_{opt}$ is the optimum temperature (*i.e.*, the temperature at $P_{max}$). Performance increases with temperature up to $T_{opt}$, according to $c$. At temperatures above $T_{opt}$, performance decreases, as given by $d$.
@@ -104,7 +104,7 @@ survProbPred <- TPC.q(plotTemp, rmax = pars[1], Trmax = pars[2], acc = pars[3], 
 
 plot(alpha_j_rate_walgama~alpha_j_temp_walgama,
      xlab = expression(paste("Tree temperature (",degree,"C)")), 
-     ylab = expression('Juvenile transition probability ( '*alpha[j]*' )'))
+     ylab = expression('Juvenile transition probability ( '*alpha[J]*' )'))
 points(alpha_j_rate_umeda~alpha_j_temp_umeda, pch=17)
 lines(survProbPred~plotTemp)
 ```
@@ -116,6 +116,7 @@ lines(survProbPred~plotTemp)
 ###### Juvenile transition probabilities at different temperatures, given by Umeda & Paine (triangles) and Walgama & Zalucki (circles), with TPC fitted to the data.
   
     
+![Supp. Fig. 1. Juvenile transition probabilities at different temperatures, given by Umeda & Paine (triangles) and Walgama & Zalucki (circles), with TPC fitted to the data.](Supps_markdown_files/phi_J_TPC.jpeg) 
     
 The parameter estimates for the TPC ($P_{max}$, $T_{opt}$, $c$, $d$) and their standard deviations (solving the Hessian matrix and taking the square root) were:
 
@@ -127,7 +128,10 @@ rownames(alpha_J_priors) <- par_names_TPC
 colnames(alpha_J_priors) <- c('Estimate', 'SD')
 alpha_J_priors
 ```
-
+P_max = 0.045 (0.0032)
+T_opt = 29.665 (1.251)
+c = 6.909 (1.0668)
+d = 0.269 (0.1814)
   
     
     
@@ -192,9 +196,10 @@ plot(survProb~sDat$Temperature,
 lines(survProbPred~temps)
 ```
   
-    
 #### Supplementary Figure 2
 ###### Juvenile survival probabilities at different temperatures given by Walgama & Zalucki, with TPC fitted to the data.
+
+![Supp. Fig. 2. Juvenile survival probabilities at different temperatures given by Walgama & Zalucki, with TPC fitted to the data.](Supps_markdown_files/phi_J_TPC.jpeg) 
 
 ```{r phi_j_TPC_priors_2, echo=FALSE}
 phi_J_fit <- TPC.q.fit(TPCmatrix, in.acc = 0.3, hessian = TRUE)
@@ -205,7 +210,10 @@ rownames(phi_J_priors) <- par_names_TPC
 colnames(phi_J_priors) <- c("Estimate", "SD")
 phi_J_priors
 ```
-
+P_max = 0.99 (0.004)
+T_opt = 29.5 (2.358)
+c = 80 (36.043)
+d = 0.15 (0.188)
 
 ## Tree temperature predictions
 
@@ -225,80 +233,86 @@ To estimate values for $b$ and $c,$ we fitted this model in a Bayesian framework
 
 
 ``` {r get_temp_data, echo=FALSE}
-source("../src/temperatures/get-calibration-data_markdown.R")
+library(greta)
 ```
 
-``` {r tree_temp_greta, echo=FALSE}
-# Where merge_temp is data set combining sap flow and SILO data
-merge_temp <- na.omit(merge_temp) # remove NAs (otherwise greta doesn't work?)
 
-treeTemps <- as_data(merge_temp$mean_d) # mean daily probe temp
-rh <- as_data(merge_temp$rh_tmax) # relative humidity
-air <- as_data(merge_temp$air_tmax) # max air temp
-soil <- as_data(merge_temp$soil) # soil temp (30-day-average of air temp)
+![Supp. Fig. 3. Mean daily tree temperatures per day of year, as recorded by sap flow loggers (points), and as predicted by our model (red line), given the mean daily maximum air temperature (dark blue line) and soil temperature (light blue).](Supps_markdown_files/tree_temp_plot.png) 
 
-# describe predictor function
-# priors
-int <- normal(0, 3)
-beta <- normal(0, 3)
-sd <- lognormal(0, 3)
-
-p <- ilogit(int + beta*rh) # Take the inverse logit to go from log-odds to probability
-
-mean_temp <- p*air + (1-p)*soil # predicted temp is weighted average of air/soil according to p
-
-distribution(treeTemps) <- normal(mean_temp, sd)
-  
-gMod <- model(int, beta, sd)
-
-plot(gMod) # Plot representation of model
-
-draws <- mcmc(gMod, n_samples = 1000, chains = 4)
-bayesplot::mcmc_trace(draws)
-
-# make a plot of prediction bounds against data
-draws_plot <- calculate(mean_temp, 
-                        nsim = 1000,
-                        values = draws)
-pred_temp <- apply(draws_plot[[1]], 2, mean)
-ci_temp <- apply(draws_plot[[1]], 2, quantile, prob = c(0.025, 0.975))
-plot_data <- cbind(DOY = merge_temp$DOY, pred_temp, t(ci_temp))
-plot_data <- plot_data[order(plot_data[,"DOY"]),]
-```
-
-``` {r tree_temp_plot}
-#plot(treeTemps~DOY, data = merge_temp,
-#     ylab = expression(paste("Tree temperature (",degree,"C)")), 
-#     xlab = "Day of year")
-#lines(plot_data[,"2.5%"]~plot_data[,"DOY"], col = "red")
-#lines(plot_data[,"97.5%"]~plot_data[,"DOY"], col = "red")
-#lines(plot_data[,"pred_temp"]~plot_data[,"DOY"], col = "red")
-#lines(merge_temp[,"air_tmax"]~merge_temp[,"DOY"], col = "orange")
-#lines(merge_temp[,"ma30"]~merge_temp[,"DOY"], col = "orange")
-
-library(ggplot2)
-ggplot()+
-  geom_line(data=plot_data,
-            aes(x=DOY, y=pred_temp), col="red", lwd=0.8)+
-  geom_line(data=wd,
-            aes(x=DOY, y=air_tmax), col="darkblue", lwd=0.8)+
-  geom_line(data=wd,
-            aes(x=DOY, y=ma30), col="lightblue", lwd=0.8)+
-  geom_point(data = merge_temp,
-             aes(y=mean_u, x=DOY),
-             pch=21, size=2)+
-  scale_y_continuous(name = expression(paste("Temperature (",degree,"C)")))+ 
-  scale_x_continuous(name = "Day of year")
-
-```
 #### Supp. Figure
 ###### Mean daily tree temperatures per day of year, as recorded by sap flow loggers (points), and as predicted by our model (red line), given the mean daily maximum air temperature (dark blue line) and soil temperature (light blue).
 
 The estimates for $b$ and $c$ from the HMC function were:
 ``` {r pt_coeffs}
-pt_coef <- summary(draws)$statistics
-rownames(pt_coef) <- c("c", "b", "SD")
-pt_coef
+#pt_coef <- summary(draws)$statistics
+#rownames(pt_coef) <- c("c", "b", "SD")
+#pt_coef
 ```
+c = -0.23 (1.13)
+b = -0.54 (1.03)
+SD = 4.28 (0.91)
 
 When running the population model, tree temperatures were calculated each time-step according to Supp. Equations 3 and 4, using the coefficient values given above and that day's $T_{tree}$, $T_{soil}$ and $H$ values.
+
+
+## Estimating diffusion coefficient
+
+To estimate the diffusion coefficient, $D$, we generated a dispersal kernel for PSHB using mark-release-recapture data provided by Owens et al., (2019). We fit to these data a 2D Gaussian density function, to predict the number of individuals dispersing to a single point at distance $d$ from the release point.
+
+We assumed that each trap had a detection radius, $r$, so that any beetle dispersing to within $r$ of the point will be counted. Hence, the 2D density function was multiplied by $\pi r^2$ to capture all individuals within the detection radius.
+
+The complete function was:
+$$
+n(d) = \frac{\frac{n_0} {\sqrt{2\pi\sigma^2}}e^{-\frac{d^2}{2\sigma^2}}}{2\pi d}\pi r^2\tag{Supp. Eq. 5}
+$$
+
+We then used Bayesian inference with the greta package to fit this model to the mark-recapture data, and to estimate values for $\sigma$ and $r$. We chose uninformative priors of $\sigma \sim \text{unif}(0, 300)$ and $r \sim \text{unif}(0, 100)$. The total number of dispersing individuls was $n_0=7007$ (from the mark-recapture data).
+
+```{r dispersal inference, echo=FALSE}
+#### Repeat above using Owens dispersal data ####
+library(readr)
+library(dplyr)
+recap <- read_csv("../src/owens_recap.csv")
+ps <- aggregate(ntrap ~ trapID + dist, data = recap, FUN = sum) # sum trap counts across all trials
+ps <- ps[-(ps$trapID=="RP"),] # remove counts of non-dispersers (remaining at Release Point)
+colnames(ps)[2:3] <- c('d', 'obs')
+nr <- sum(subset(recap, trapID=='RP')$nfly) # total n PSHB that dispersed
+
+dfun <- function(d, dens0, sigma, radius){
+  # density at distance d according to 2D Gaussian function
+  d.at.d <- dens0 / sqrt(2*pi*sigma^2) * exp(-(d^2/(2*sigma^2))) / (2*pi*d)
+  # expected count
+  d.at.d * pi * radius^2
+}
+
+library(greta)
+
+# name data variables
+d.obs <- as_data(ps$obs)
+d.d <- as_data(ps$d)
+
+# define priors
+d.sigma <- uniform(0, 300) # possible dispersal sigmas
+t.rad <- uniform(0, 100) # possible radii
+
+# define model
+expected.count <- dfun(d.d, nr, sigma = d.sigma, radius = t.rad)
+distribution(d.obs) <- poisson(expected.count)
+
+g.mod <- model(d.sigma, t.rad)
+plot(g.mod)
+
+# sample the posterior
+draws <- mcmc(g.mod, n_samples = 1000, chains = 4)
+
+# did it converge?
+coda::gelman.diag(draws)
+bayesplot::mcmc_trace(draws)
+```
+
+```{r d.sigma}
+# How close did we come to input parameter values?
+summary(draws)
+
+```
+The mean estimate from Bayesian inference was $\sigma=35.6$, which we used to calculate the diffusion coefficient, as $D=\frac{\sigma^2}{2t}$.
