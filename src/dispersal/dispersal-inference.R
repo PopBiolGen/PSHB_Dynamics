@@ -23,8 +23,40 @@ ps$lambda <- dfun(ps$d, nr, s, r)
 # observed counts
 ps$obs <- rpois(nrow(ps), ps$lambda)
 
+#### Repeat above using Owens dispersal data ####
+library(readr)
+library(dplyr)
 
-## Make inference
+recap <- read_csv("src/owens_recap.csv")
+
+ps <- aggregate(ntrap ~ trapID + dist, data = recap, FUN = sum)
+ps <- ps[-(ps$trapID=="RP"),]
+colnames(ps)[2:3] <- c('d', 'obs')
+
+nr <- sum(subset(recap, trapID=='RP')$nfly) # total n PSHB that dispersed
+
+# After running greta (below)...
+# Check observed against predicted
+ps$lambda <- dfun(ps$d, nr, # Run dfun
+                  35.6, 8.2) # with values from summary(draws)
+ps$pred <- rpois(nrow(ps), ps$lambda)
+# Do predictions fit with observed data?
+ggplot()+
+  geom_point(data=ps,
+             aes(x=d, y=obs), col="blue")+
+  geom_point(data=ps,
+             aes(x=d, y=pred), col="red")
+
+# Predicted counts at smaller dist increments:
+ps <- data.frame(d = seq(5, 130, by=1))
+ps$lambda <- dfun(ps$d, 1000000, # Run dfun
+                  35.6, 8.2) # with values from summary(draws)
+ps$pred <- rpois(nrow(ps), ps$lambda)
+ggplot()+
+  geom_line(data=ps,
+             aes(x=d, y=pred), col="red")
+
+#### Make inference ####
 
 library(greta)
 
