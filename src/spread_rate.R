@@ -1,14 +1,4 @@
 
-m <- 1
-l <- 100
-t <- 1
-D <- (m*l^2)/(2*t)
-D
-RMSD <- sqrt(2*D*t)
-RMSD
-D <- RMSD^2/(2*t)
-D
-
 #####
 swwa <- read.csv('out/files/WA/WA.hi.res_0_sim_1.csv')
 
@@ -16,7 +6,7 @@ r_max <- max(swwa$A_growth)
 r_perth <- 0.05307253 # from basic model script
 r_mu.4 <- 0.006868913
 
-r <- r_perth
+r <- r_mu.4
 
 t <- 1
 
@@ -28,9 +18,18 @@ dat_mean <- 28
 dat_ad_mean <- 22
 dat_median <- 17
 
-md <- dat_ad_mean
+md <- dat_mean
 
 D <- md^2/(2*t)
+
+# OR using d.sigma (*see inference model)
+sd <- 35.6
+D <- sd^2/(2*t)
+#See: https://www2.gwu.edu/~phy21bio/Reading/randomwalkBerg.pdf
+
+#See Chat GPT:
+#https://chatgpt.com/share/67b55dae-65f0-8008-abd4-9b379b866d90
+
 
 
 vF <- 2*sqrt(r*D)
@@ -56,7 +55,7 @@ vF*365/1000
 # r_max
 # mill data: vF = 36 (m/day? = 13.2 km/y)
 
-################
+######## notes ########
 library(ggplot2)
 library(readr)
 disp <- read_csv("disp_owens.csv")

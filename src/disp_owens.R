@@ -23,6 +23,8 @@ ggplot(recap_sum,
 
 ggplot(subset(recap, trapID != "RP"),
        aes(x=dist, y=ntrap))+
+  geom_col(data=subset(recap_sum, dist != 0), 
+           aes(x=dist, y=ntrap))+
   geom_point()+
   scale_x_continuous(breaks=seq(15,125,5))
 
