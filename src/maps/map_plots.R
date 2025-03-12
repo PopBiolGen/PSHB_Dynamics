@@ -111,12 +111,14 @@ ggplot(data = sf_oz)+ # subset(ozmap("states"))) +
   geom_tile(data = subset(aus, A_growth >= 0), #
             aes(x=lon, y=lat, fill=A_growth)) +
   
+  geom_sf(fill= NA, col="black", lwd=0.3)+ 
+  
   facet_grid(.~ glue('mu*" = {mu}"'),
              labeller = label_parsed) +
   scale_fill_viridis(name = "Mean daily population\ngrowth rate (adults)\n",
                      option= "inferno",
                      limits=c(0, #-0.03, 
-                              0.075),
+                              0.08),
                      breaks=c(seq(0, 0.08, by=0.02)),
                      labels=c(seq(0, 0.08, by=0.02)))+
   
@@ -174,44 +176,41 @@ swwa <- read.csv('out/files/WA/WA.hi.res_0_sim_1.csv')
 
 QZ <- read_csv("src/QZdf.csv")
 
-min(swwa$A_growth)
-max(swwa$A_growth)
-
+#min(swwa$A_growth)
+#max(swwa$A_growth)
 # Fremantle Port
 #-32.045226, 115.738609
 
 # Just mu = 0
 ggplot(data = sf_oz) + 
-  geom_sf(fill=NA)+ 
   geom_tile(data = swwa,  # Bit of a rough way to do it, but plot all points so colour gradient is the same...
             aes(x=lon, y=lat, fill=A_growth)) +
-  scale_fill_viridis(name = "Mean daily adult growth rate\n",
-                     limits=c(min(swwa$A_growth),
+  scale_fill_viridis(name = "Mean daily adult\ngrowth rate\n",
+                     option = "inferno",
+                     limits=c(0.02,
                               0.06),
-                     breaks=c(seq(0.03, 0.06, by=0.01)),
-                     labels=c(seq(0.03, 0.06, by=0.01)))+
- coord_sf(xlim = c(115,
-                   117.5),
-          ylim = c(-33.6,
-                   -30.5))+
-#  scale_x_continuous(limits=c(115,
- #                             117))+ # Fit plot to lat & lon range
- # scale_y_continuous(limits=c(-33.5,
-  #                            -30.5))+
+                     breaks=c(seq(0.02, 0.06, by=0.01)),
+                     labels=c(seq(0.02, 0.06, by=0.01)))+
   geom_polygon(data = QZ,  # Bit of a rough way to do it, but plot all points so colour gradient is the same...
                aes(x=Longitude, y=Latitude),
-               fill=NA, col="red", lwd=0.8, lty=1) +
+               fill=NA, col="blue", 
+               lwd=0.75, lty=1) +
+  geom_sf(fill=NA, lwd=0.75, col="black")+ 
+  coord_sf(xlim = c(115,
+                    117.5),
+           ylim = c(-34.5,
+                    -30))+
   # Point at Port Fremantle
-  geom_point(aes(x=115.738609, y=-32.045226), 
-             size=3)+
-  geom_text(aes(x=115.738609, y=-32.045226), 
-label = "Port Fremantle",
-hjust=1.01, vjust = 1)+
+  #  geom_text(aes(x=115.738609, y=-32.045226), 
+  #           label = "Port Fremantle",
+  #          hjust=1.01, vjust = 1)+
   theme(panel.background = element_blank(),
         axis.line = element_blank(), 
         axis.text = element_blank(), 
         axis.ticks = element_blank(), 
         axis.title = element_blank(),
+        strip.text = element_text(size=14),
+        strip.background = element_rect(fill=NA),
         legend.text = element_text(size=12),
         legend.key.size = unit(0.8, 'cm'),
         legend.title = element_text(size=14))
@@ -235,31 +234,28 @@ wa <- rbind(swwa, swwa.2, swwa.4)
 min(swwa.4$A_growth) # -.0075
 max(swwa$A_growth) # .059
 
-
+# POS
 ggplot(data = sf_oz) + 
-  geom_sf(fill=NA)+ 
   geom_tile(data = wa,  # Bit of a rough way to do it, but plot all points so colour gradient is the same...
             aes(x=lon, y=lat, fill=A_growth)) +
   scale_fill_viridis(name = "Mean daily adult\ngrowth rate\n",
                      option = "inferno",
-                     limits=c(-0.0075,
+                     limits=c(0,
                               0.06),
                      breaks=c(seq(0, 0.06, by=0.02)),
                      labels=c(seq(0, 0.06, by=0.02)))+
+  geom_sf(fill=NA, lwd=0.75, col="black")+ 
   coord_sf(xlim = c(115,
                     117.5),
-           ylim = c(-33.6,
-                    -30.5))+
+           ylim = c(-34.5,
+                    -30))+
   geom_polygon(data = QZ,  # Bit of a rough way to do it, but plot all points so colour gradient is the same...
                aes(x=Longitude, y=Latitude),
                fill=NA, col="red", 
                lwd=0.6, lty=1) +
   # Point at Port Fremantle
-  geom_point(aes(x=115.738609, y=-32.045226), 
-             size=2)+
-  #  geom_text(aes(x=115.738609, y=-32.045226), 
-  #           label = "Port Fremantle",
-  #          hjust=1.01, vjust = 1)+
+  geom_segment(aes(x = 115.2, y = -32.11, xend = 115.72, yend = -32.045226),
+               arrow = arrow(length = unit(0.2, "cm")))+
   facet_grid(.~ glue('mu*" = {mu}"'),
              labeller = label_parsed)+
   theme(panel.background = element_blank(),
@@ -273,7 +269,39 @@ ggplot(data = sf_oz) +
         legend.key.size = unit(0.8, 'cm'),
         legend.title = element_text(size=14))
 
-
+ggplot(data = sf_oz) + 
+  geom_tile(data = wa,  # Bit of a rough way to do it, but plot all points so colour gradient is the same...
+            aes(x=lon, y=lat, fill=A_growth)) +
+  scale_fill_viridis(name = "Mean daily adult\ngrowth rate\n",
+                     option = "inferno",
+                     limits=c(0,
+                              0.06),
+                     breaks=c(seq(0, 0.06, by=0.02)),
+                     labels=c(seq(0, 0.06, by=0.02)))+
+  geom_sf(fill=NA, lwd=0.75, col="black")+ 
+  coord_sf(xlim = c(115,
+                    118.5),
+           ylim = c(-34.9,
+                    -30))+
+  geom_polygon(data = QZ,  # Bit of a rough way to do it, but plot all points so colour gradient is the same...
+               aes(x=Longitude, y=Latitude),
+               fill=NA, col="red", 
+               lwd=0.6, lty=1) +
+  # Point at Port Fremantle
+  geom_segment(aes(x = 115.2, y = -32.11, xend = 115.72, yend = -32.045226),
+               arrow = arrow(length = unit(0.2, "cm")))+
+  facet_grid(.~ glue('mu*" = {mu}"'),
+             labeller = label_parsed)+
+  theme(panel.background = element_blank(),
+        axis.line = element_blank(), 
+        axis.text = element_blank(), 
+        axis.ticks = element_blank(), 
+        axis.title = element_blank(),
+        strip.text = element_text(size=14),
+        strip.background = element_rect(fill=NA),
+        legend.text = element_text(size=12),
+        legend.key.size = unit(0.8, 'cm'),
+        legend.title = element_text(size=14))
 
 
 #### WA Seasons ####
@@ -368,22 +396,160 @@ legend <- as_ggplot(get_plot_component(plot_leg,
 ggarrange(plot_mu0_pos, plot_mu0.2_pos, plot_mu0.4_pos, legend, ncol=4)
 
 
-######################
+######
+#### Temp maps ####
+
+Aus <- read.csv("out/files/mu_0/Aus_mu0.csv")
+Cali <- read.csv("out/files/Cali_0_sim_1.csv")
+SA <- read.csv("out/files/Sth_Africa_0_sim_1.csv")
+
+cities <- read_csv("src/city_coords.csv")
+Aus_temp <- ggplot(data = sf_oz) + 
+  geom_tile(data = Aus,
+            aes(x=lon, y=lat, fill=mean_Temp)) +
+  scale_fill_viridis(name = expression(paste("Average tree temperature (",degree,"C)")),
+                     option= "inferno",
+                     limits=c(8, 
+                              35),
+                     breaks=c(seq(10, 35, by=5)),
+                     labels=c(seq(10, 35, by=5)))+
+  geom_sf(fill=NA)+ 
+  scale_x_continuous(limits=c(min(mu0$lon)-0.1,
+                              max(mu0$lon)+0.1))+ # Fit plot to lat & lon range
+  scale_y_continuous(limits=c(min(mu0$lat)-0.1,
+                              max(mu0$lat)+0.1))+
+  geom_point(data=cities, aes(x=lon, y=lat),
+             size=1.8, pch=21, stroke=1, fill="white")+
+  theme(panel.background = element_blank(),
+        axis.line = element_blank(), 
+        axis.text = element_blank(), 
+        axis.ticks = element_blank(), 
+        axis.title = element_blank(),
+        legend.text = element_text(size=12),
+        legend.key.size = unit(0.8, 'cm'),
+        legend.title = element_text(size=14),
+        legend.position = "none")
+Aus_temp
+
+## US
+mapdata <- map_data(map='state', region="california")
+cities <- read_csv("src/known_PSHB_coords.csv")
+cities <- subset(cities, country == "USA")
+cities$city <- factor(cities$city, levels=c("Santa Paula", "San Marino", "Laguna Beach"))
+
+us_temp <- ggplot(data = mapdata) + 
+  coord_map(xlim = c(min(Cali$lon)-.05, 
+                     max(Cali$lon)+.05), 
+            ylim = c(min(Cali$lat)-.05, 
+                     max(Cali$lat)+.05))+
+  geom_tile(data=Cali, # Save from matrix to dataframe
+            aes(x=lon, y=lat, fill=mean_Temp)) + # E.g. Adult growth rate
+  geom_polygon(data = mapdata,
+               aes(x = long, y = lat, group=group),
+               col = "black", fill=NA) +
+  scale_fill_viridis(name = expression(paste("Average tree temperature (",degree,"C)")),
+                     option= "inferno",
+                     limits=c(8, 
+                              35),
+                     breaks=c(seq(10, 35, by=5)),
+                     labels=c(seq(10, 35, by=5)))+
+  geom_point(data=cities, aes(x=lon, y=lat),
+             size=1.8, pch=21, stroke=1, fill="white")+
+  theme(panel.background = element_blank(),
+        axis.line = element_blank(), 
+        axis.text = element_blank(), 
+        axis.ticks = element_blank(), 
+        axis.title = element_blank(),
+        legend.text = element_text(size=12),
+        legend.key.size = unit(0.8, 'cm'),
+        legend.title = element_text(size=14),
+        legend.position="none")
+us_temp
+
+# South Africa
+mapdata <- map_data(map='world', region="South Africa")
+cities <- read_csv("src/known_PSHB_coords.csv")
+cities <- subset(cities, country == "South Africa")
+
+sa_temp <- ggplot(data = SA) + 
+  coord_map(xlim = c(min(SA$lon)-1.5, 
+                     max(SA$lon)+2.2), 
+            ylim = c(min(SA$lat)-1.5, 
+                     max(SA$lat)+1.5))+
+  geom_tile(data=SA, # Save from matrix to dataframe
+            aes(x=lon, y=lat, fill=mean_Temp)) + # E.g. Adult growth rate
+  geom_polygon(data = mapdata,
+               aes(x = long, y = lat, group=group),
+               col = "black", fill=NA) +
+  scale_fill_viridis(name = expression(paste("Average tree temperature (",degree,"C)")),
+                     option= "inferno",
+                     limits=c(8, 
+                              35),
+                     breaks=c(seq(10, 35, by=5)),
+                     labels=c(seq(10, 35, by=5)))+
+  
+  geom_point(data=cities, aes(x=lon, y=lat),
+             size=1.8, pch=21, stroke=1, fill="white")+
+  theme(panel.background = element_blank(),
+        axis.line = element_blank(), 
+        axis.text = element_blank(), 
+        axis.ticks = element_blank(), 
+        axis.title = element_blank(),
+        legend.text = element_text(size=14),
+        legend.key.size = unit(0.8, 'cm'),
+        legend.title = element_text(size=16),
+        legend.position = "none")
+sa_temp
+
+library(cowplot)
+plot_leg <- ggplot(data = sf_oz) + 
+  geom_tile(data = Aus,
+            aes(x=lon, y=lat, fill=mean_Temp)) +
+  scale_fill_viridis(name = expression(paste("Average tree temperature (",degree,"C)")),
+                     option= "inferno",
+                     limits=c(8, 
+                              35),
+                     breaks=c(seq(10, 35, by=5)),
+                     labels=c(seq(10, 35, by=5)))+
+  geom_sf(fill=NA)+ 
+  scale_x_continuous(limits=c(min(mu0$lon)-0.1,
+                              max(mu0$lon)+0.1))+ # Fit plot to lat & lon range
+  scale_y_continuous(limits=c(min(mu0$lat)-0.1,
+                              max(mu0$lat)+0.1))+
+  geom_point(data=cities, aes(x=lon, y=lat),
+             size=1.8, pch=21, stroke=1, fill="white")+
+  theme(panel.background = element_blank(),
+        axis.line = element_blank(), 
+        axis.text = element_blank(), 
+        axis.ticks = element_blank(), 
+        axis.title = element_blank(),
+        legend.text = element_text(size=12),
+        legend.key.size = unit(0.8, 'cm'),
+        legend.title = element_text(size=14))
+
+legend <- as_ggplot(get_plot_component(plot_leg, 
+                                       'guide-box-right', return_all = TRUE))
+
+temp_plots <- ggarrange(Aus_temp, us_temp, sa_temp, legend,
+             nrow=1)
+temp_plots
+
+################
 #### Map total number of dispersing PA ####
 
 plot_disp <- ggplot(data = sf_oz) + 
-  geom_tile(data = mu0.25, 
+  geom_tile(data = mu0.2, 
             aes(x=lon, y=lat, 
                 fill=tot_mu)) +
   
   scale_fill_viridis(name = "Total dispersers per year",
                      trans = "log10",
-                     limits=c(1, max(mu0.25$tot_mu)))+
+                     limits=c(1, max(mu0.2$tot_mu)))+
   geom_sf(fill=NA)+ 
-  scale_x_continuous(limits=c(min(outAus$lon)-0.1,
-                              max(outAus$lon)+0.1))+ # Fit plot to lat & lon range
-  scale_y_continuous(limits=c(min(outAus$lat)-0.1,
-                              max(outAus$lat)+0.1))+
+  scale_x_continuous(limits=c(min(aus$lon)-0.1,
+                              max(aus$lon)+0.1))+ # Fit plot to lat & lon range
+  scale_y_continuous(limits=c(min(aus$lat)-0.1,
+                              max(aus$lat)+0.1))+
   theme(panel.background = element_blank(),
         axis.line = element_blank(), 
         axis.text = element_blank(), 
@@ -394,9 +560,6 @@ plot_disp <- ggplot(data = sf_oz) +
         legend.title = element_text(size=14))
   
 plot_disp
-
-
-
 
 
 #### Plot final adult population (>1 only) ####
@@ -421,7 +584,6 @@ ggplot(subset(aus, mu==0.2), aes(x=A_growth))+
 
 
 #### DATA BY SEASON ####
-# NEED TO UPDATE SIM TO INCLUDE SEASONAL GROWTH RATES...
 
 # Map grid:
 map.season <- function(season){

@@ -26,6 +26,7 @@ ps$obs <- rpois(nrow(ps), ps$lambda)
 #### Repeat above using Owens dispersal data ####
 library(readr)
 library(dplyr)
+library(ggplot2)
 
 recap <- read_csv("src/owens_recap.csv")
 
@@ -49,7 +50,7 @@ ggplot()+
 
 # Predicted counts at smaller dist increments:
 ps <- data.frame(d = seq(5, 130, by=1))
-ps$lambda <- dfun(ps$d, 1000000, # Run dfun
+ps$lambda <- dfun(ps$d, nr, # Run dfun
                   35.6, 8.2) # with values from summary(draws)
 ps$pred <- rpois(nrow(ps), ps$lambda)
 ggplot()+
@@ -85,3 +86,25 @@ bayesplot::mcmc_trace(draws)
 
 # How close did we come to input parameter values?
 summary(draws)
+
+
+
+
+#####
+
+ps2 <- data.frame(d = seq(5, 130, by=1))
+ps2$lambda <- dfun(ps2$d, 1000000, # Run dfun
+                  35.6, 8.2) # with values from summary(draws)
+ps2$pred <- rpois(nrow(ps2), ps2$lambda)
+
+
+ggplot()+
+  geom_line(data=ps2,
+            aes(x=d, y=pred/1000000), col="red", lwd=1)+
+  geom_col(data=ps,
+           aes(x=d, y=obs/nr), fill="grey40", width=1)+
+  scale_x_continuous(breaks=seq(0,120, by=20),
+                     limits=c(10,130))+
+  theme(axis.text = element_text(size=15),
+        axis.title = element_blank())
+

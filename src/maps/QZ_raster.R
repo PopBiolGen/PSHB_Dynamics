@@ -85,5 +85,5 @@ ggplot(data = sf_oz) +
   scale_x_continuous(limits=c(115,116.5))+
   scale_y_continuous(limits=c(-33, -30.5))
 
-write.csv(df1, 'PSHB/PSHB_Dynamics/src/QZdf4.csv')
+write.csv(df1, 'PSHB/PSHB_Dynamics/src/QZdf.x.csv')
 
