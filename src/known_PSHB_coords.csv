@@ -1,9 +1,10 @@
-city,region,country,lat,lon,A_growth,A_growth_mu0.25
-Perth,WA,Australia,-31.96,115.83,0.053306474,0.0186183
-George,Western Cape,South Africa,-33.95,22.46,,
-Durban,KwaZulu-Natal,South Africa,-29.85,31.01,,
-Johannesburg,Gauteng,South Africa,-26.16,28.06,,
-Cape Town,Western Cape,South Africa,-33.96,18.47,,
-Laguna beach,Orange County,USA,33.54,-117.74,,
-San Marino,Los Angeles County,USA,34.13,-118.11,,
-Santa Paula,Ventura County,USA,34.33,-119.11,,
+city,region,country,lat,lon
+Perth,WA,Australia,-31.96,115.83
+George,Western Cape,South Africa,-33.95,22.46
+Durban,KwaZulu-Natal,South Africa,-29.85,31.01
+Johannesburg,Gauteng,South Africa,-26.16,28.06
+Cape Town,Western Cape,South Africa,-33.96,18.47
+Laguna Beach,Orange County,USA,33.54,-117.74
+San Marino,Los Angeles County,USA,34.13,-118.11
+Santa Paula,Ventura County,USA,34.33,-119.11
+Tel-Aviv,,Israel,32.100382,34.807834
