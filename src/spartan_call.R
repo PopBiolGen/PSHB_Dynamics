@@ -10,14 +10,16 @@ iter_spartan <- as.numeric(args[1]) # iter corresponds to array number (iteratio
 
 mu_est <- 0 # mu value
 # Assign which country you're working in
-#country <- "Australia" 
+country <- "Australia" 
 #country <- "South Africa"
 #country <- "US"
-country <- "Israel"
+#country <- "Israel"
 
 map.res <- 0.1 # resolution of map (degrees) -> 0.05 deg = 5 km
 
+
 model <- "weighted_mean" # Predict tree temp with weighted mean model (greta coeff)
+#model <- "amb_temp"
 # otherwise use 'mod_fit' lm
 
 ### Install/load packages ####
@@ -68,8 +70,8 @@ library(weatherOz)
 #### Other parameters ####
 
 # n.cores.spartan <- 20 # Assign number of Spartan cores to use (when running parallel only)
-# mu_disp_est <- 0.5 # DISPERSAL RATE
-# phi_mu_est <- 0.5 # DISPERSAL SURVIVAL
+ mu_disp_est <- 0 # DISPERSAL RATE (Need to estimate number of dispersing P)
+ phi_mu_est <- 1 # DISPERSAL SURVIVAL
 # mu_est <- mu_disp_est * (1 - phi_mu_est) # MU as function of dispersal RATE * MORTALITY
 # mu_est_iter <- c(0.35, 0, 0.5) # Run diff mu over different iterations
 
