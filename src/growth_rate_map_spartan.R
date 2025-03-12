@@ -65,15 +65,19 @@ grid <- grid[!(grid$land %in% "FALSE"),] # Remove ocean coords
 grid_coords <- as.matrix(grid[,-c(3,4)]) # Subset just lat & lon, convert to matrix
 colnames(grid_coords)<- c("lon","lat")
 
-} else { # If not Australia (for now, alternative is Africa)
+} else { 
   
   if(country == "South Africa") {
-    grid_coords <- as.matrix(read.csv('src/grid_coords_Sth_Africa.csv'))} else { # Upload pre-made grid of Sth Africa
-
-      if(country == "South Africa") {
-      grid_coords <- as.matrix(read.csv('src/grid_coords_Cal.csv'))} else {
+    
+    grid_coords <- as.matrix(read.csv('src/grid_coords_Sth_Africa.csv'))} else { 
+      
+      if(country == "US") {
         
-        grid_coords <- as.matrix(read.csv('src/grid_coords_Israel.csv'))}}}
+        grid_coords <- as.matrix(read.csv('src/grid_coords_Cal.csv'))} else {
+        
+        grid_coords <- as.matrix(read.csv('src/grid_coords_Israel.csv'))}
+  }}
+
 
 outputs_grid <- matrix(0, 
                        nrow=nrow(grid_coords), 
@@ -91,6 +95,9 @@ sim_fun <- function(locLat, locLong){
            mean_Temp, tot_mu)) # Save as vector
 }
 
+
+#############
+library(lubridate)
 #### Create vector of outputs
 # For loop (foreach not running on spartan...)
 for(i in 1:nrow(grid_coords)){ 
