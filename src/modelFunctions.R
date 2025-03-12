@@ -12,7 +12,7 @@
 ## load up the packages we will need 
 ## ---------------------------
 source("src/TPCFunctions.R")
-source("src/greta_valid_inits.R")
+source("src/greta/greta_valid_inits.R")
 
 ## Scalar parameters
 
