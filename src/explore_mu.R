@@ -1,4 +1,4 @@
-################################
+########## Run model for known PSHB locations with different mu values ######################
 
 library(dplyr)
 library(lubridate)
@@ -9,91 +9,31 @@ library(sf)
 ## Load up the functions
 source("src/TPCFunctions.R")
 source("src/modelFunctions.R")
-
-# Load data for temperature function (from temperature-prediction-function.R -- spartan can't load Rdata file)
-merge_temp <- read.csv('src/temperatures/merge_temp.csv')
-mod_fit <- lm(mean_d ~ air_tmax*rh_tmax + ma30*rh_tmax, data = merge_temp)
-tree_temp_model_pars <- coef(mod_fit)
-
+# Need these for model
 sf_oz <- subset(ozmap("country"))
-
 model <- "weighted_mean" # if model == 'weighted_mean' use weighted mean model (with greta coeff) to predicts tree temp
-# otherwise use 'mod_fit' lm
-
-# Assign mu parameter
 mu_disp_est <- 0 # estimated mu parameter (proportion P dispersing)
 phi_mu_est <- 1 # estimated phi_mu (proportion survival during dispersal)
-# mu_est <- mu_disp_est * (1 - phi_mu_est) # new 'mu' estimate is the proportion of P lost through dispersal mortality (assuming net incoming vs outgoing P = 0)
-mu_est <- 0
 
-# Aus cities
-city_coords <- read_csv("src/city_coords.csv")
-# South Africa cities
-George <- c(long = 22.46,
-            lat = -33.95)
-Durban <- c(long = 31.01,
-            lat = -29.85)
-Jo <- c(long = 28.06,
-        lat = -26.16)
+# Dataset of sample locations
+coords <- read_csv("src/known_PSHB_coords.csv")
 
+mu_est_i <- c(seq(0, 0.95, 0.05)) # mu values
+nmu <- length(mu_est_i)*nrow(coords)
 
-mu_est_i <- c(seq(0, 0.95, 0.05))
+explore_mu <- data.frame(city = rep(coords$city, times=nmu),
+                         country = rep(coords$country, times=nmu),
+                         lat = rep(coords$lat, times=nmu),
+                         lon = rep(coords$lon, times=nmu),
+                         mu_est_i = rep(mu_est_i, each=nrow(coords)))
 
-Perth <- data.frame(mu_est_i = mu_est_i,
-                    lat = city_coords$lat[city_coords$city == "Perth"],
-                    lon = city_coords$lon[city_coords$city == "Perth"],
-                    city = "Perth")
-
-George <- data.frame(mu_est_i = mu_est_i,
-                     lat = -33.95,
-                     lon = 22.46,
-                     city = "George")
-
-Durban <- data.frame(mu_est_i = mu_est_i,
-                        lat = -29.85,
-                        lon = 31.01,
-                        city = "Durban")
-                    
-Johannesburg <- data.frame(mu_est_i = mu_est_i,
-                     lat = -26.16,
-                     lon = 28.06,
-                     city = "Johannesburg")
-
-# California
-# https://ucanr.maps.arcgis.com/apps/Viewer/index.html?appid=3446e311c5bd434eabae98937f085c80
-
-Laguna_Beach <- data.frame(mu_est_i = mu_est_i, # Orange County
-                           lat = 33.54,
-                           lon = -117.74,
-                           city = "Laguna Beach")
-
-San_Marino <- data.frame(mu_est_i = mu_est_i, # LA County
-                           lat = 34.13,
-                           lon = -118.11,
-                           city = "San Marino")
-
-Santa_Paula <- data.frame(mu_est_i = mu_est_i, # Ventura County
-                         lat = 34.33,
-                         lon = -119.11,
-                         city = "Santa Paula")
-
-
-
-
-
-explore_mu <- rbind(Perth, 
-                    George, Durban, Johannesburg,
-                    Laguna_Beach, San_Marino, Santa_Paula)
-explore_mu$A_growth_i <- 0
-
-
-  for(i in 1:nrow(explore_mu)){
-  
-    mu_est <- explore_mu$mu_est_i[i]
+# Run model for each location & mu value
+for(i in 1:nrow(explore_mu)){
   
   locLat <- explore_mu$lat[i]
-  
   locLong <- explore_mu$lon[i]
+  country <- explore_mu$country[i]
+  mu_est <- explore_mu$mu_est_i[i]
   
   yearSim_city <- run_year(lat = locLat, long = locLong, 
                            make_plot = FALSE)
@@ -101,11 +41,13 @@ explore_mu$A_growth_i <- 0
   explore_mu$A_growth_i[i] <- yearSim_city$growthRate[3]
   }
 
-  
+#### SAVE DATA ####  
 write.csv(explore_mu, 'out/explore_mu.csv')
 
-#### SAVE DATA ####
+### PLOT ####
+
 library(RColorBrewer)
+library(ggplot2)
 
 explore_mu <- read.csv('out/explore_mu.csv')
 
