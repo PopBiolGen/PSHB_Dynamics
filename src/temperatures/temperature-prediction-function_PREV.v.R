@@ -14,7 +14,7 @@ merge_temp <- na.omit(merge_temp) # There's a gap in sflow data DOY 180 - 220
 treeTemps <- as_data(merge_temp$mean_d) # We DO need to omit NAs for this though
 rh <- as_data(merge_temp$rh_tmax)
 air <- as_data(merge_temp$air_tmax)
-soil <- as_data(merge_temp$soil)
+soil <- as_data(merge_temp$ma30)
 
 # describe predictor function
 # priors
@@ -49,6 +49,40 @@ plot_data <- plot_data[order(plot_data[,"DOY"]),]
 plot(treeTemps~DOY, data = merge_temp)
 lines(plot_data[,"2.5%"]~plot_data[,"DOY"], col = "blue")
 lines(plot_data[,"97.5%"]~plot_data[,"DOY"], col = "blue")
+
+summary(draws)$statistics
+
+### Plot ####
+
+source("src/temperatures/get-calibration-data.R") # Reload merge_temp (all DOY values)
+
+ggplot()+
+  geom_point(data = merge_temp, 
+             aes(x=DOY, y=mean_d), pch=1)+ # real sapflow data
+  geom_line(data = plot_data, 
+            aes(x=DOY, y=pred_temp), col="red", lwd=0.8)+ # greta model
+  geom_line(data = merge_temp, 
+            aes(x=DOY, y=air_tmax), col="darkblue", lwd=0.5)+
+  geom_line(data = merge_temp, 
+            aes(x=DOY, y=meanDaily), col="skyblue", lwd=0.5)+
+  scale_y_continuous(limits=c(9, 35),
+                     name = "Temperature\n")+
+  scale_x_continuous(name = "\nDay of year")+
+  theme(panel.border = element_rect(colour = "black", fill=NA,size=1.5),
+        panel.background = element_rect(fill = "grey95"),
+        panel.grid.minor = element_blank(),
+        axis.text = element_text(size=12), 
+        axis.title = element_text(size=15)) #+
+#geom_line(data = merge_temp, 
+ #         aes(x=DOY, y=ma30), col="brown", lwd=0.5)+
+  
+  
+  
+  geom_point(data = merge_temp, aes(x=DOY, y=mean_u), col='orange')+ # real sapflow data
+  geom_point(data = lm_pred, aes(x=DOY, y=lm_pred), col="red")+ # linear model
+  geom_point(data = plot_data, aes(x=DOY, y=pred_temp), col="blue")+ # greta model
+  geom_point(data=locDat, aes(x=DOY, y=air_tmax), col="green") # Maximum air temperature
+
 
 #### Comparing predictions from lm (that we have been using) against this greta model
 library(ggplot2)
