@@ -120,8 +120,8 @@ $$
 To estimate values for $b$ and $c,$ we fitted this model in a Bayesian framework using Hamiltonian Monte Carlo (HMC) Markov Chain, implemented in the greta package (Golding, 2019). Priors for $b$ and $c$ were set as normal distributions with mean = 0 and standard deviation = 3. The estimates (mean and standard deviation) for the parameters in Supp Eq. 4 were calculated by the HMC function as:
 
 
-  * $c = -0.23\space(1.13)$
-  * $d = -0.54\space(1.03)$
+  * $b = -0.23\space(1.13)$
+  * $c = -0.54\space(1.03)$
 
 
 When running the population model, tree temperatures were calculated each time-step according to Supp. Equations 3 and 4, using the above values of $b$ and $c$, and that day's $T_{tree}$, $T_{soil}$ and $H$ values (from the climate database).
