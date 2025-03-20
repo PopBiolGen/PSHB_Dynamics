@@ -29,6 +29,9 @@ locLat <- -31.96165
 locLong <- 115.8317
 
 country <- "Australia"
+#country <- "South Africa"
+#country <- "US"
+#country <- "Israel"
 
 # Previous LM approach for tree temp
 # Load data for temperature function (from temperature-prediction-function.R -- spartan can't load Rdata file)
