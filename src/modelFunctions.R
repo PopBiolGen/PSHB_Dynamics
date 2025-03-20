@@ -190,7 +190,7 @@ tree_temp_prediction <- function(lat, long, model){ #= "weighted_mean"){ #lat = 
        rh_tmax = locDat$rh_tmax,
        ma30 = locDat$soil)
   # function for prediction using weighted mean model
-  tree_temp <- function(air_tmax, rh_tmax, ma30, int = -0.3277, beta = 0.0304){# int = -0.4884, beta = 0.0349){ # #
+  tree_temp <- function(air_tmax, rh_tmax, ma30, int = -0.4884, beta = 0.0349){ # #
     logit.p <- int + beta*rh_tmax # rh predicts p
     p <- plogis(logit.p)
     mean_temp <- p*air_tmax + (1-p)*ma30
