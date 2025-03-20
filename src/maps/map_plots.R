@@ -174,7 +174,7 @@ Aus_mu0_pos
 
 swwa <- read.csv('out/files/WA/WA.hi.res_0_sim_1.csv')
 
-QZ <- read_csv("src/QZdf.csv")
+QZ <- read_csv("src/maps/QZdf.csv")
 
 #min(swwa$A_growth)
 #max(swwa$A_growth)
