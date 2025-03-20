@@ -12,7 +12,7 @@ options(scipen = 10, digits = 2)
 
 ## PSHB Thermal Performance Curves (TPCs)
 
-Three of our PSHB life-history parameters are temperature-dependent: the daily probabilities of juvenile transition ($\alpha_J$), pre-oviposition transition ($\alpha_P$) and juvenile survival ($\phi_J$). To generate functions for temperature-dependent transition and survival, we fit temperature performance curves (TPCs) to empirical PSHB data. TPCs describe the relationship between temperature, $T$, and performance, $P$ (in this instance, performance is the probability of transition or survival). As described in Phillips *et al.*, (2014), a TPC function is given as a meeting of two Gaussian functions:
+Three of our PSHB life-history parameters are temperature-dependent: the daily probabilities of juvenile transition ($\alpha_J$), pre-oviposition transition ($\alpha_P$) and juvenile survival ($\phi_J$). To generate functions for temperature-dependent transition and survival, we fit temperature performance curves (TPCs) to empirical PSHB data. TPCs describe the relationship between temperature, $T$, and performance, $P$ (in this instance, performance is the probability of transition or survival). Here, we use a TPC function as described in Phillips *et al.*, (2014):
 
 $$
 \begin{gather}
@@ -49,7 +49,7 @@ The daily probability of juvenile PSHB transitioning to the preoviposition stage
 | 32 | 10.9 |  | 7 |  | 0.0206 |
 
 
-A TPC was fit to the empirical data using the maximum likelihood method (Supp. Figure 1). The mean parameter estimates for the TPC and their standard deviations (solving the Hessian matrix and taking the square root) were:
+A TPC was fit to the empirical data using the maximum likelihood method (Supp. Figure 1). The mean parameter estimates for the TPC and their standard errors (solving the Hessian matrix and taking the square root) were:
 
   * $P_{max} = 0.045\space(0.003)$
   * $T_{opt} = 29.7\space(1.25)$
@@ -57,7 +57,7 @@ A TPC was fit to the empirical data using the maximum likelihood method (Supp. F
   * $d = 0.27\space(0.18)$
  
  
-![Supp. Fig. 1. Juvenile transition probabilities at different temperatures, given by Umeda & Paine (triangles) and Walgama & Zalucki (circles), with TPC fitted to the data.](Supps_markdown_files/alpha_J_TPC.jpeg) 
+![Supp. Fig. 1. Juvenile transition probabilities at different temperatures, given by Umeda & Paine (triangles) and Walgama & Zalucki (circles), with the fitted TPC shown.](Supps_markdown_files/alpha_J_TPC.jpeg) 
     
  
     
@@ -92,7 +92,7 @@ where $\lambda$ is the total mortality of the stage, and $\delta$ is the total d
 | 32 | 0.421 |0.041  | 0.951 |  0.994 | 
   
   
-As above, we fitted a TPC to the empirical data (Supp. Fig. 2) and estimated the parameter values for the TPC function. The mean parameter estimates (and standard deviations) were:
+As above, we fitted a TPC to the empirical data (Supp. Fig. 2) and estimated the parameter values for the TPC function. The mean parameter estimates (and standard errors) were:
 
   * $P_{max} = 0.99\space(0.004)$
   * $T_{opt} = 29.5\space(2.36)$
@@ -100,7 +100,7 @@ As above, we fitted a TPC to the empirical data (Supp. Fig. 2) and estimated the
   * $d = 0.15\space(0.19)$
 
 
-![Supp. Fig. 2. Juvenile survival probabilities at different temperatures given by Walgama & Zalucki, with TPC fitted to the data.](Supps_markdown_files/phi_J_TPC.jpeg) 
+![Supp. Fig. 2. Juvenile survival probabilities at different temperatures given by Walgama & Zalucki, with the fitted TPC function shown.](Supps_markdown_files/phi_J_TPC.jpeg) 
 
 
 ## Tree temperature predictions
@@ -117,7 +117,7 @@ $$
 \text{logit}(p_t) = bH+c\tag{Supp. Eq. 4}
 $$
 
-To estimate values for $b$ and $c,$ we fitted this model in a Bayesian framework using Hamiltonian Monte Carlo (HMC) Markov Chain, implemented in the greta package (Golding, 2019). Priors for $b$ and $c$ were set as normal distributions with mean = 0 and standard deviation = 3. The estimates (mean and standard deviation) for the parameters in Supp Eq. 4 were calculated by the HMC function as:
+To estimate values for $b$ and $c,$ we fitted this model in a Bayesian framework using Hamiltonian Monte Carlo (HMC) Markov Chain, implemented in the greta package (Golding, 2019). Priors for $b$ and $c$ were set as normal distributions with mean = 0 and standard deviation = 3. The estimates (mean and standard errors) for the parameters in Supp Eq. 4 were calculated by samples from the posterior as:
 
 
   * $b = 0.35\space(0.02)$
@@ -126,14 +126,14 @@ To estimate values for $b$ and $c,$ we fitted this model in a Bayesian framework
 
 When running the population model, tree temperatures were calculated each time-step according to Supp. Equations 3 and 4, using the above values of $b$ and $c$, and that day's $T_{tree}$, $T_{soil}$ and $H$ values (from the climate database).
 
-![Supp. Fig. 3. Mean daily tree temperatures per day of year, as recorded by sap flow loggers (points), and as predicted by our model (red line), given the mean daily maximum air temperature (dark blue line) and soil temperature (light blue).](Supps_markdown_files/tree_temp_plot.png) 
+![Supp. Fig. 3. Mean daily tree temperatures per day of year, as recorded by sap flow loggers (points), and as predicted by our model (red line), given the mean daily maximum air temperature for each day over the last decade (dark blue line) and mean soil temperature each day over the last decade (light blue).](Supps_markdown_files/tree_temp_plot.png) 
 
 ![Supp. Fig. 4. Average tree temperature predicted for Australia, California and South Africa.](Supps_markdown_files/Supp_temps.jpeg) 
 
 
 ## Estimating diffusion coefficient
 
-To estimate the diffusion coefficient, $D$, we generated a dispersal kernel for PSHB by fitting a 2D Gaussian density function to mark-release-recapture data provided by Owens et al., (2019). The number of individuals dispersing to a single point at distance $d$ from the release point, $n(d)$, was expressed as:
+To estimate the diffusion coefficient, $D$, we generated a dispersal kernel for PSHB by fitting a 2D Gaussian density function to mark-release-recapture data provided by Owens et al., (2019). The number of individuals dispersing to a single point at distance $d$ from the release point, $n(d)$, was expressed (in unsimplified form) as:
 
 $$
 n(d) = \frac{\frac{n_0} {\sqrt{2\pi\sigma^2}}e^{-\frac{d^2}{2\sigma^2}}}{2\pi d}\pi r^2\tag{Supp. Eq. 5}
