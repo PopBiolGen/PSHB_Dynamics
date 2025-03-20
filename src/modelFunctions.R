@@ -198,7 +198,10 @@ tree_temp_prediction <- function(lat, long, model){ #= "weighted_mean"){ #lat = 
   if (model == "weighted_mean"){
     out <- tree_temp(newDat$air_tmax, newDat$rh_tmax, newDat$ma30)
     # Try looking at ambient temp instead of tree temp
-  } else {out <- newDat$meanDaily} # {out <- predict(mod_fit, newdata = newDat)} # Old tree temp function
+  } else {
+    if (model == "lm") {out <- predict(mod_fit, newdata = newDat)} else {
+      out <- newDat$meanDaily}
+    }
   return(out)
 }
 
