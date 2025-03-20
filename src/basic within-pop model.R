@@ -5,10 +5,6 @@
 ## Purpose of script: Run and display numerical realizations of the within-population PSHB model
 ## ---------------------------
 ##
-## Notes:
-##   
-##
-## --------------------------
 ## Load up the required packages
 library(dplyr)
 library(lubridate)

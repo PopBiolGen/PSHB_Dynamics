@@ -1,5 +1,10 @@
-#SPARTAN
-
+## ---------------------------
+##
+## Script name: spartan_call.R
+##
+## Purpose of script: This is the script to be first called by a job submission to HPC (Spartan/Pawsey) 
+## Assign sim details (country, mu value), then call script for generating SDM (growth_rate_map_spartan.R)
+## ---------------------------
 ########
 
 rm(list=ls()) # Clear workspace
