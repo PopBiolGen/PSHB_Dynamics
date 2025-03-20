@@ -18,7 +18,8 @@ source("src/TPCFunctions.R")
 source("src/modelFunctions.R")
 
 model <- "weighted_mean" # if model == 'weighted_mean' use weighted mean model (with greta coeff) to predicts tree temp
-# otherwise use 'mod_fit' lm
+# model <- "lm" # Original 'mod_fit' lm
+# model <- "amb_temp" # NO tree temp function (use ambient temp)
 
 # Pick a location
 locLat <- -31.96165
@@ -31,9 +32,9 @@ country <- "Australia"
 
 # Previous LM approach for tree temp
 # Load data for temperature function (from temperature-prediction-function.R -- spartan can't load Rdata file)
-# merge_temp <- read.csv('src/temperatures/merge_temp.csv')
-# mod_fit <- lm(mean_d ~ air_tmax*rh_tmax + ma30*rh_tmax, data = merge_temp)
-# tree_temp_model_pars <- coef(mod_fit)
+ merge_temp <- read.csv('src/temperatures/merge_temp.csv')
+ mod_fit <- lm(mean_d ~ air_tmax*rh_tmax + ma30*rh_tmax, data = merge_temp)
+ tree_temp_model_pars <- coef(mod_fit)
 
 # Assign mu parameter
 mu_disp_est <- 0 # estimated mu parameter (proportion P dispersing)
