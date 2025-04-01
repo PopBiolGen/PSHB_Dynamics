@@ -10,6 +10,9 @@ knitr::opts_chunk$set(echo=TRUE)
 options(scipen = 10, digits = 2)
 ```
 
+The data used in the following material, and the scripts for reproducing it, can be found in the GitHub repository (https://github.com/PopBiolGen/PSHB_Dynamics), alongside the complete scripts for the PSHB model. 
+
+
 ## PSHB Thermal Performance Curves (TPCs)
 
 Three of our PSHB life-history parameters are temperature-dependent: the daily probabilities of juvenile transition ($\alpha_J$), pre-oviposition transition ($\alpha_P$) and juvenile survival ($\phi_J$). To generate functions for temperature-dependent transition and survival, we fit temperature performance curves (TPCs) to empirical PSHB data. TPCs describe the relationship between temperature, $T$, and performance, $P$ (in this instance, performance is the probability of transition or survival). Here, we use a TPC function as described in Phillips *et al.*, (2014):
