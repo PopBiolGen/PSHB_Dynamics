@@ -1,8 +1,8 @@
 ---
 title: "Supplementary Material"
-output:
-  html_document: default
-  pdf_document: default
+output: html_document
+date: '`r format(Sys.Date(), "%d/%m/%Y")`'
+bibliography: 'SuppsRefs.bib'
 ---
 
 ```{r setup, include=FALSE} 
@@ -15,7 +15,7 @@ The data used in the following material, and the scripts for reproducing it, can
 
 ## PSHB Thermal Performance Curves (TPCs)
 
-Three of our PSHB life-history parameters are temperature-dependent: the daily probabilities of juvenile transition ($\alpha_J$), pre-oviposition transition ($\alpha_P$) and juvenile survival ($\phi_J$). To generate functions for temperature-dependent transition and survival, we fit temperature performance curves (TPCs) to empirical PSHB data. TPCs describe the relationship between temperature, $T$, and performance, $P$ (in this instance, performance is the probability of transition or survival). Here, we use a TPC function as described in Phillips *et al.*, (2014):
+Three of our PSHB life-history parameters are temperature-dependent: the daily probabilities of juvenile transition ($\alpha_J$), pre-oviposition transition ($\alpha_P$) and juvenile survival ($\phi_J$). To generate functions for temperature-dependent transition and survival, we fit temperature performance curves (TPCs) to empirical PSHB data. TPCs describe the relationship between temperature, $T$, and performance, $P$ (in this instance, performance is the probability of transition or survival). Here, we use a TPC function as described in @phillips_evolutionary_2014:
 
 $$
 \begin{gather}
@@ -34,11 +34,11 @@ TPCs for $\alpha_J$, $\alpha_P$ and $\phi_J$ were fit to empirical data, and val
 
 ### $\alpha_J$ TPC
 
-The daily probability of juvenile PSHB transitioning to the preoviposition stage is given by $\alpha_J$. We estimated $\alpha_J$ using data from Umeda and Paine, (2019), who monitored PSHB development (from egg to the pre-oviposition stage) under temperatures ranging 18 – 32 °C. Development rates are summarised in Supplementary Table 1. We also used data from Walgama and Zalucki, (2007), who recorded development times for the tea shot hole borer (TSHB, within the *E. wallacea* species complex) at 15 – 32° C. Development times for eggs, larvae and pupae were obtained from Table 1, Figure 1, and Table 2, respectively (Supp. Table 1). For each temperature, we summed development times to calculate the total duration of the juvenile stage, $\delta$, and converted this to a daily transition rate: $\alpha_{J} = \delta^{-1}$ (Supp. Table 1). Transition rates from the two studies are plotted in Supp. Figure 1.
+The daily probability of juvenile PSHB transitioning to the preoviposition stage is given by $\alpha_J$. We estimated $\alpha_J$ using data from @umeda_temperature_2019, who monitored PSHB development (from egg to the pre-oviposition stage) under temperatures ranging 18 – 32 °C. Development rates are summarised in Supplementary Table 1. We also used data from @walgama_temperaturedependent_2007, who recorded development times for the tea shot hole borer (TSHB, within the *E. wallacea* species complex) at 15 – 32° C. Development times for eggs, larvae and pupae were obtained from Table 1, Figure 1, and Table 2, respectively (Supp. Table 1). For each temperature, we summed development times to calculate the total duration of the juvenile stage, $\delta$, and converted this to a daily transition rate: $\alpha_{J} = \delta^{-1}$ (Supp. Table 1). Transition rates from the two studies are plotted in Supp. Figure 1.
 
 
 #### Supplementary Table 1
-###### The development times of PSHB eggs, larvae and pupae at different temperatures (from Walgama & Zalucki, 2007), used to estimate daily juvenile transition rates; and daily juvenile transition rates at different temperatures given in Umeda & Paine, (2019).   
+###### The development times of PSHB eggs, larvae and pupae at different temperatures, from @walgama_temperaturedependent_2007, used to estimate daily juvenile transition rates; and daily juvenile transition rates at different temperatures, from @umeda_temperature_2019.   
 
 | Temperature (°C)| Egg development time (days) | Larva development time (days) | Pupa development time (days) | Juvenile transition rate (Walgama & Zalucki) | Juvenile transition rate (Umeda & Paine) |
 |:--:|:--:|:--:|:--:|:--:|:--:|
@@ -60,7 +60,7 @@ A TPC was fit to the empirical data using the maximum likelihood method (Supp. F
   * $d = 0.27\space(0.18)$
  
  
-![Supp. Fig. 1. Juvenile transition probabilities at different temperatures, given by Umeda & Paine (triangles) and Walgama & Zalucki (circles), with the fitted TPC shown.](Supps_markdown_files/alpha_J_TPC.jpeg) 
+![Supp. Fig. 1. Juvenile transition probabilities at different temperatures, given by @umeda_temperature_2019 (triangles) and @walgama_temperaturedependent_2007 (circles), with the fitted TPC shown.](Supps_markdown_files/alpha_J_TPC.jpeg) 
     
  
     
@@ -71,7 +71,7 @@ The transition probability for the pre-ovipositing stage is given by $\alpha_P$.
   
 ### $\phi_J$ TPC
 
-The daily survival probability of juveniles, $\phi_J$, is also supposed to be temperature-dependent. Walgama and Zalucki (2007) report the total egg and pupa mortalities at different temperatures. These data (extracted from Figure 2 of that study) are provided in Supp. Table 2. We used these values of total proportion mortality, along with the total duration of eggs and pupae at each temperature (Supp. Table 1), to calculate the daily probability of survival:
+The daily survival probability of juveniles, $\phi_J$, is also supposed to be temperature-dependent. @walgama_temperaturedependent_2007 report the total egg and pupa mortalities at different temperatures. These data (extracted from Figure 2 of that study) are provided in Supp. Table 2. We used these values of total proportion mortality, along with the total duration of eggs and pupae at each temperature (Supp. Table 1), to calculate the daily probability of survival:
 
 $$
 \phi = e^{-(\frac{-log(1-\lambda)}{\delta})}\tag{Supp. Eq. 2}
@@ -81,7 +81,7 @@ where $\lambda$ is the total mortality of the stage, and $\delta$ is the total d
 
   
 #### Supplementary Table 2
-###### Total proportion mortality of eggs and pupae at different temperatures (from Walgama & Zalucki 2007), and the daily survival probabilities estimated from these data. Note that juveniles did not develop at 15 °C, so daily mortality could not be defined in Supp. Eq. 2. 
+###### Total proportion mortality of eggs and pupae at different temperatures (from @walgama_temperaturedependent_2007), and the daily survival probabilities estimated from these data. Note that juveniles did not develop at 15 °C, so daily mortality could not be defined in Supp. Eq. 2. 
 
 | Temperature (°C)|  Total egg mortality | Total pupa mortality | Daily egg survival | Daily pupa survival |
 |:--:|:--:|:--:|:--:|:--:|
@@ -103,7 +103,7 @@ As above, we fitted a TPC to the empirical data (Supp. Fig. 2) and estimated the
   * $d = 0.15\space(0.19)$
 
 
-![Supp. Fig. 2. Juvenile survival probabilities at different temperatures given by Walgama & Zalucki, with the fitted TPC function shown.](Supps_markdown_files/phi_J_TPC.jpeg) 
+![Supp. Fig. 2. Juvenile survival probabilities at different temperatures given by @walgama_temperaturedependent_2007, with the fitted TPC function shown.](Supps_markdown_files/phi_J_TPC.jpeg) 
 
 
 ## Tree temperature predictions
@@ -120,7 +120,7 @@ $$
 \text{logit}(p_t) = bH+c\tag{Supp. Eq. 4}
 $$
 
-To estimate values for $b$ and $c,$ we fitted this model in a Bayesian framework using Hamiltonian Monte Carlo (HMC) Markov Chain, implemented in the greta package (Golding, 2019). Priors for $b$ and $c$ were set as normal distributions with mean = 0 and standard deviation = 3. The estimates (mean and standard errors) for the parameters in Supp Eq. 4 were calculated by samples from the posterior as:
+To estimate values for $b$ and $c,$ we fitted this model in a Bayesian framework using Hamiltonian Monte Carlo (HMC) Markov Chain, implemented in the greta package (@golding_span_2019). Priors for $b$ and $c$ were set as normal distributions with mean = 0 and standard deviation = 3. The estimates (mean and standard errors) for the parameters in Supp Eq. 4 were calculated by samples from the posterior as:
 
 
   * $b = 0.35\space(0.02)$
@@ -136,7 +136,7 @@ When running the population model, tree temperatures were calculated each time-s
 
 ## Estimating diffusion coefficient
 
-To estimate the diffusion coefficient, $D$, we generated a dispersal kernel for PSHB by fitting a 2D Gaussian density function to mark-release-recapture data provided by Owens et al., (2019). The number of individuals dispersing to a single point at distance $d$ from the release point, $n(d)$, was expressed (in unsimplified form) as:
+To estimate the diffusion coefficient, $D$, we generated a dispersal kernel for PSHB by fitting a 2D Gaussian density function to mark-release-recapture data provided by @owens_dispersal_2019. The number of individuals dispersing to a single point at distance $d$ from the release point, $n(d)$, was expressed (in unsimplified form) as:
 
 $$
 n(d) = \frac{\frac{n_0} {\sqrt{2\pi\sigma^2}}e^{-\frac{d^2}{2\sigma^2}}}{2\pi d}\pi r^2\tag{Supp. Eq. 5}
@@ -144,3 +144,5 @@ $$
 where $n_0$ is the total number of dispersing indivudals. The 2D Gaussian function was multiplied by $\pi r^2$ (given in Supp. Eq. 5) because we assumed each trap had a detection radius, $r$: any individual dispersing to within $r$ of the point at $d$ will be counted. 
 
 We used the Bayesian inference greta package to fit the model to the mark-recapture data, and to estimate values for $\sigma$ and $r$. We chose uninformative priors of $\sigma \sim \text{unif}(0, 300)$ and $r \sim \text{unif}(0, 100)$. The total number of dispersing individuals was set $n_0=7007$ (from the mark-recapture data). The mean estimate from Bayesian inference was $\sigma=35.6$, which we used to calculate the diffusion coefficient, as $D=\frac{\sigma^2}{2t}$.
+
+## References
