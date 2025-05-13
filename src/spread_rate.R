@@ -18,3 +18,11 @@ D <- sd^2/(2*t)
 vF <- 2*sqrt(r*D)
 vF # m/day
 vF*365/1000 # km/yr
+
+# Using alternative dispersal function 
+#2D gaussian = 1/2*pi*sigma^2 * e^(-d^2/2sigma^2)
+sd <- 25.7
+D <- sd^2/(2*t)
+vF <- 2*sqrt(r*D)
+vF*365/1000 # km/yr
+# 3.06 km/yr
