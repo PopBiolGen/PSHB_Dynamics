@@ -123,26 +123,27 @@ $$
 To estimate values for $b$ and $c,$ we fitted this model in a Bayesian framework using Hamiltonian Monte Carlo (HMC) Markov Chain, implemented in the greta package (@golding_span_2019). Priors for $b$ and $c$ were set as normal distributions with mean = 0 and standard deviation = 3. The estimates (mean and standard errors) for the parameters in Supp Eq. 4 were calculated by samples from the posterior as:
 
 
-  * $b = 0.35\space(0.02)$
+  * $b = 0.035\space(0.02)$
   * $c = -0.48\space(0.7)$
 
 
 When running the population model, tree temperatures were calculated each time-step according to Supp. Equations 3 and 4, using the above values of $b$ and $c$, and that day's $T_{tree}$, $T_{soil}$ and $H$ values (from the climate database).
 
-![Supp. Fig. 3. Mean daily tree temperatures per day of year, as recorded by sap flow loggers (points), and as predicted by our model (red line), given the mean daily maximum air temperature for each day over the last decade (dark blue line) and mean soil temperature each day over the last decade (light blue).](Supps_markdown_files/tree_temp_plot.png) 
+![Supp. Fig. 3. Mean daily tree temperatures per day of year, as recorded by sap flow loggers (points), and as predicted by our model (red line), given the mean daily maximum air temperature for each day over the last decade (dark blue line) and mean soil temperature each day over the last decade (light blue).](Supps_markdown_files/treetemp_leg.png) 
 
 ![Supp. Fig. 4. Average tree temperature predicted for Australia, California and South Africa.](Supps_markdown_files/Supp_temps.jpeg) 
 
 
 ## Estimating diffusion coefficient
 
-To estimate the diffusion coefficient, $D$, we generated a dispersal kernel for PSHB by fitting a 2D Gaussian density function to mark-release-recapture data provided by @owens_dispersal_2019. The number of individuals dispersing to a single point at distance $d$ from the release point, $n(d)$, was expressed (in unsimplified form) as:
+To estimate the diffusion coefficient, $D$, we generated a dispersal kernel by fitting a 2D Gaussian density function to mark-release-recapture data provided by @owens_dispersal_2019. The Euclidean distance, $d$, between the release point and each capture point was calculated. The number of individuals dispersing to a single point at distance $d$, given as $n(d)$, was expressed (in unsimplified form) as:
 
 $$
-n(d) = \frac{\frac{n_0} {\sqrt{2\pi\sigma^2}}e^{-\frac{d^2}{2\sigma^2}}}{2\pi d}\pi r^2\tag{Supp. Eq. 5}
+n(d) = \frac{n_0} {2\pi\sigma^2}e^{-\frac{d^2}{2\sigma^2}}\pi r^2\tag{Supp. Eq. 5}
 $$
-where $n_0$ is the total number of dispersing indivudals. The 2D Gaussian function was multiplied by $\pi r^2$ (given in Supp. Eq. 5) because we assumed each trap had a detection radius, $r$: any individual dispersing to within $r$ of the point at $d$ will be counted. 
+Supp. Eq. 5 is the function for a 2D Gaussian distribution (@shigesada_biological_1997), multiplied by $\pi r^2$ because we assumed each trap had a detection radius of $r$, whereby any individual dispersing to within $r$ of the point at $d$ will be counted. The parameter $n_0$ is the total number of dispersing individuals, which was set to $n_0=7007$ (from the mark-recapture data).
 
-We used the Bayesian inference greta package to fit the model to the mark-recapture data, and to estimate values for $\sigma$ and $r$. We chose uninformative priors of $\sigma \sim \text{unif}(0, 300)$ and $r \sim \text{unif}(0, 100)$. The total number of dispersing individuals was set $n_0=7007$ (from the mark-recapture data). The mean estimate from Bayesian inference was $\sigma=35.6$, which we used to calculate the diffusion coefficient, as $D=\frac{\sigma^2}{2t}$.
+We used the Bayesian inference greta package to fit the model to the mark-recapture data, and to estimate values for $\sigma$ and $r$. We chose uninformative priors of $\sigma \sim \text{unif}(0, 300)$ and $r \sim \text{unif}(0, 100)$.  The mean estimate from Bayesian inference was $\sigma=25.7$, which we used to calculate the diffusion coefficient, as $D=\frac{\sigma^2}{2t}$ (@shigesada_biological_1997).
+
 
 ## References

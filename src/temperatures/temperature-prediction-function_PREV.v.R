@@ -54,8 +54,8 @@ summary(draws)$statistics
 
 ### Plot ####
 
-source("src/temperatures/get-calibration-data.R") # Reload merge_temp (all DOY values)
-
+#source("src/temperatures/get-calibration-data.R") # Reload merge_temp (all DOY values)
+library(ggplot2)
 ggplot()+
   geom_point(data = merge_temp, 
              aes(x=DOY, y=mean_d), pch=1)+ # real sapflow data
