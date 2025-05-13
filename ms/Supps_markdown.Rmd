@@ -1,8 +1,10 @@
 ---
 title: "Supplementary Material"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 date: '`r format(Sys.Date(), "%d/%m/%Y")`'
-bibliography: 'SuppsRefs.bib'
+bibliography: SuppsRefs.bib
 ---
 
 ```{r setup, include=FALSE} 
@@ -18,13 +20,12 @@ The data used in the following material, and the scripts for reproducing it, can
 Three of our PSHB life-history parameters are temperature-dependent: the daily probabilities of juvenile transition ($\alpha_J$), pre-oviposition transition ($\alpha_P$) and juvenile survival ($\phi_J$). To generate functions for temperature-dependent transition and survival, we fit temperature performance curves (TPCs) to empirical PSHB data. TPCs describe the relationship between temperature, $T$, and performance, $P$ (in this instance, performance is the probability of transition or survival). Here, we use a TPC function as described in @phillips_evolutionary_2014:
 
 $$
-\begin{gather}
   P(T) = 
   \begin{cases}
     \ P_{max}e^{- \frac{-(T-T_{opt})^2} {2c^2} } & \text{ for } T<T_{opt}\\
     P_{max}e^{- \frac{-(T-T_{opt})^2} {2(cd)^2} } & \text{ for } T \ge T_{opt}
   \end{cases}
-\end{gather}\tag{Supp. Eq. 1}
+\tag{Supp. Eq. 1}
 $$ 
 
 where $P_{max}$ is the maximum performance value and $T_{opt}$ is the optimum temperature (*i.e.*, the temperature at $P_{max}$). Performance increases with temperature up to $T_{opt}$, according to $c$. At temperatures above $T_{opt}$, performance decreases, as given by $d$.
@@ -60,9 +61,8 @@ A TPC was fit to the empirical data using the maximum likelihood method (Supp. F
   * $d = 0.27\space(0.18)$
  
  
-![Supp. Fig. 1. Juvenile transition probabilities at different temperatures, given by @umeda_temperature_2019 (triangles) and @walgama_temperaturedependent_2007 (circles), with the fitted TPC shown.](Supps_markdown_files/alpha_J_TPC.jpeg) 
-    
- 
+![Supp. Fig. 1. Juvenile transition probabilities at different temperatures, given by @umeda_temperature_2019 (triangles) and @walgama_temperaturedependent_2007 (circles), with the fitted TPC shown.](Supps_markdown_files/alpha_J_TPC.jpeg)[h] 
+
     
 ### $\alpha_P$ TPC
 
@@ -103,7 +103,7 @@ As above, we fitted a TPC to the empirical data (Supp. Fig. 2) and estimated the
   * $d = 0.15\space(0.19)$
 
 
-![Supp. Fig. 2. Juvenile survival probabilities at different temperatures given by @walgama_temperaturedependent_2007, with the fitted TPC function shown.](Supps_markdown_files/phi_J_TPC.jpeg) 
+![Supp. Fig. 2. Juvenile survival probabilities at different temperatures given by @walgama_temperaturedependent_2007, with the fitted TPC function shown.](Supps_markdown_files/phi_J_TPC.jpeg)[h] 
 
 
 ## Tree temperature predictions
@@ -123,15 +123,15 @@ $$
 To estimate values for $b$ and $c,$ we fitted this model in a Bayesian framework using Hamiltonian Monte Carlo (HMC) Markov Chain, implemented in the greta package (@golding_span_2019). Priors for $b$ and $c$ were set as normal distributions with mean = 0 and standard deviation = 3. The estimates (mean and standard errors) for the parameters in Supp Eq. 4 were calculated by samples from the posterior as:
 
 
-  * $b = 0.035\space(0.02)$
-  * $c = -0.48\space(0.7)$
+  $b = 0.035\space(0.02)$
+  $c = -0.48\space(0.7)$
 
 
 When running the population model, tree temperatures were calculated each time-step according to Supp. Equations 3 and 4, using the above values of $b$ and $c$, and that day's $T_{tree}$, $T_{soil}$ and $H$ values (from the climate database).
 
-![Supp. Fig. 3. Mean daily tree temperatures per day of year, as recorded by sap flow loggers (points), and as predicted by our model (red line), given the mean daily maximum air temperature for each day over the last decade (dark blue line) and mean soil temperature each day over the last decade (light blue).](Supps_markdown_files/treetemp_leg.png) 
+![Supp. Fig. 3. Mean daily tree temperatures per day of year, as recorded by sap flow loggers (points), and as predicted by our model (red line), given the mean daily maximum air temperature for each day over the last decade (dark blue line) and mean soil temperature each day over the last decade (light blue).](Supps_markdown_files/treetemp_leg.png)[h] 
 
-![Supp. Fig. 4. Average tree temperature predicted for Australia, California and South Africa.](Supps_markdown_files/Supp_temps.jpeg) 
+![Supp. Fig. 4. Average tree temperature predicted for Australia, California and South Africa.](Supps_markdown_files/Supp_temps.jpeg)[h] 
 
 
 ## Estimating diffusion coefficient
