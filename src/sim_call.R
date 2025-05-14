@@ -1,9 +1,9 @@
 ## ---------------------------
 ##
-## Script name: spartan_call.R
+## Script name: sim_call.R
 ##
-## Purpose of script: This is the script to be first called by a job submission to HPC (Spartan/Pawsey) 
-## Assign sim details (country, mu value), then call script for generating SDM (growth_rate_map_spartan.R)
+## Purpose of script: This is the script to first be called by a job submission to HPC
+## Assign sim details (country, mu value), then call script for generating SDM (growth_rate_map.R)
 ## ---------------------------
 ########
 
@@ -100,4 +100,4 @@ lon_list <- list(lon1, lon2, lon3, lon4,
 
 
 # Source script
-source("src/growth_rate_map_spartan.R")
+source("src/growth_rate_map.R")
