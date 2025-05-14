@@ -12,7 +12,7 @@
 ## load up the packages we will need 
 ## ---------------------------
 source("src/TPCFunctions.R")
-source("src/greta_valid_inits.R")
+source("src/greta/greta_valid_inits.R")
 
 ## Scalar parameters
 
@@ -68,11 +68,48 @@ get_env_data <- function(lat, long){
  #calculate 1 month moving average temp in lieu of soil temp at 100cm
  wd <- wd %>% dplyr::mutate(DOY = yday(dmy(paste(day, month, year, sep = "-")))) %>%
     mutate(meanDaily = (air_tmax+air_tmin)/2, soil = zoo::rollmean(meanDaily, k = 30, fill = NA, align = "right")) %>%
-    select(DOY, air_tmax, rh_tmax, soil) %>%
+    select(DOY, air_tmax, rh_tmax, soil, meanDaily) %>%
     group_by(DOY) %>%
     summarise(across(everything(), \(x) mean(x, na.rm = TRUE)))
   
  return(wd)
+}
+
+# If running model for a different country - get weather data from Nasapower database
+get_env_os <- function(lat, long){ # OVERSEAS
+  # Data from 'nasapower'
+  wd <- get_power(
+    community = "ag", # Ag sciences community
+    pars = c("T2M", "RH2M"), # Temp & relative humidity
+    temporal_api = "hourly", # Take hourly records to find rh_tmax 
+    lonlat = c(long, lat),
+    dates = c("2013-01-01", "2023-12-31")
+  )
+  wd <- wd %>% 
+    dplyr::mutate(DOY = yday(dmy(paste(DY, MO, YEAR, sep = "-")))) # Calc day of year
+  
+  wd_min <- wd %>% 
+    group_by(DOY, YEAR) %>% 
+    slice(which.min(T2M)) %>% # Min daily temp
+    select(YEAR, DOY, T2M) %>% 
+    rename_with(~'air_tmin', T2M)
+  
+  wd_max <- wd %>% 
+    group_by(DOY, YEAR) %>% 
+    slice(which.max(T2M)) %>% # Max daily temp
+    select(YEAR, DOY, T2M, RH2M) %>% # & relative humidity at max temp
+    rename_with(~c('air_tmax', 'rh_tmax'), c(T2M, RH2M))
+  
+  wd <- merge(wd_max, wd_min, by = c('YEAR', 'DOY'))
+  
+  wd <- wd %>% # Match SILO data format
+    mutate(meanDaily = (air_tmax + air_tmin)/2, 
+           soil = zoo::rollmean(meanDaily, k = 30, fill = NA, align = "right")) %>%
+    select(DOY, air_tmax, rh_tmax, soil) %>%
+    group_by(DOY) %>%
+    summarise(across(everything(), \(x) mean(x, na.rm = TRUE)))
+  
+  return(wd)
 }
 
 # a version that applies the TPC function for a given list of parameters (will be
@@ -92,10 +129,11 @@ step_within_population <- function(n_t,
                                    f = 0.69,
                                    phi_A = 0.97,
                                    phi_P = 0.97,
-                                   mu = 0,
+                                   mu = mu_est,
+                                   dens.dep = FALSE,
                                    survival_threshold) {
   # Calculate the survival probability based on cumulative offspring
-  survival_prob <- ifelse(cumulative_offspring < survival_threshold, 1, 0)
+  if (dens.dep) survival_prob <- ifelse(cumulative_offspring < survival_threshold, 1, 0) else survival_prob <- 1
   
   # calculate temperature dependent vital rates for this time interval
   alpha_J <- alpha_J_temp(temperature)
@@ -121,8 +159,12 @@ step_within_population <- function(n_t,
   # 1 time step for within-population
   n_tplus <- W %*% n_t
   
+  # Number of Pre-adults dispersing away from host
+  n_mu_t <- n_t[2]  * phi_P * (1 - alpha_P) * # Number of surviving and non-transitioning P
+    mu_disp_est * phi_mu_est # mu = Proportion that DO disperse AND survive dispersal (mu here = mu(1-phi_mu))
+  
   # Return both the updated population vector and cumulative offspring
-  return(list(n = n_tplus, cum_n = cumulative_offspring))
+  return(list(n = n_tplus, cum_n = cumulative_offspring, n_mu = n_mu_t))
 }
 
 
@@ -132,13 +174,35 @@ step_within_population <- function(n_t,
 # mean relative humidity of that day
 # uses model parameters generated in src/temperatures/temperature-prediction-function.R
 # gets environmental data from Australia SILO database
-tree_temp_prediction <- function(lat = -32.005892, long = 115.896019){
-  load("out/tree-temp-model-pars.Rdata")
-  locDat <- get_env_data(lat, long)
+tree_temp_prediction <- function(lat, long, model){ #= "weighted_mean"){ #lat = -32.005892, long = 115.896019){
+ # load("out/tree-temp-model-pars.Rdata")
+#  if (map.where(database="world", locLong, locLat) == "Australia") { # map.where isn't good for points close to edge of polygons (i.e. coastline)
+ 
+  loc_coord <- (expand.grid(locLong, locLat)) # Turn coords into grid
+  loc_coord$points <- st_as_sf(loc_coord, coords=1:2, # Convert coords to sf object
+                               crs=st_crs(sf_oz)) # Coordinate reference system (ozmaps)
+     
+  if (!is.na(as.numeric(st_intersects(loc_coord$points, sf_oz))) == TRUE) {  # If coords fall within ozmaps (i.e. in Australia):
+  locDat <- get_env_data(lat, long) } else { # Use SILO data
+  locDat <- get_env_os(lat, long) } # If outside of Australia, use overseas data (nasapower)
   newDat <- list(air_tmax = locDat$air_tmax,
+                 meanDaily = locDat$meanDaily,
        rh_tmax = locDat$rh_tmax,
        ma30 = locDat$soil)
-  predict(mod_fit, newdata = newDat)
+  # function for prediction using weighted mean model
+  tree_temp <- function(air_tmax, rh_tmax, ma30, int = -0.4884, beta = 0.0349){ # #
+    logit.p <- int + beta*rh_tmax # rh predicts p
+    p <- plogis(logit.p)
+    mean_temp <- p*air_tmax + (1-p)*ma30
+  }
+  if (model == "weighted_mean"){
+    out <- tree_temp(newDat$air_tmax, newDat$rh_tmax, newDat$ma30)
+    # Try looking at ambient temp instead of tree temp
+  } else {
+    if (model == "lm") {out <- predict(mod_fit, newdata = newDat)} else {
+      out <- newDat$meanDaily}
+    }
+  return(out)
 }
 
 ## Function to plot daily mean temperatures
@@ -159,7 +223,7 @@ plot_population_dynamics <- function(temps, population_data, legend_size = 0.7, 
     yl <- "log(Population size)"
   }
   matplot(t(population_data), type = "l", bty = "l", main = "Population dynamics over time", xlab = xl, ylab = yl, col = c("red", "green", "darkorange"), lwd = 2)
-  legend('topleft', legend = c('Juveniles', 'Pre-adults', 'Adults'), col = c("red", "green", "darkorange"), lty = 1:3, lwd = 2, cex = legend_size)
+#  legend('topleft', legend = c('Juveniles', 'Pre-adults', 'Adults'), col = c("red", "green", "darkorange"), lty = 1:3, lwd = 2, cex = legend_size)
 }
 
 ## Function to plot growth rates of all life stages over time with smoothing
@@ -184,7 +248,7 @@ plot_growth_rates <- function(population_data, window_size = 5, legend_size = 0.
        xlab = "Day of year", ylab = "Growth rate", col = "red", lwd = 2, bty = "l")
   lines(pre_adult_growth_rate_smoothed, col = "green", lwd = 2)
   lines(ad_growth_rate_smoothed, col = "darkorange", lwd = 2)
-  legend("topright", legend = c("Juveniles", "Pre-adults", "Adults"), col = c("red", "green", "darkorange"), lty = 1, lwd = 2, cex = legend_size)
+#  legend("topright", legend = c("Juveniles", "Pre-adults", "Adults"), col = c("red", "green", "darkorange"), lty = 1, lwd = 2, cex = legend_size)
 }
 
 ## Function to plot population dynamics over time
@@ -429,10 +493,12 @@ random_clamped_normal <- function(mean, sd, min = -Inf, max = Inf, dim = c(1, 1)
   x
 }
 
+# HERE add dispersing P output
+
 # Runs a year of population growth at a given location
-run_year <- function(lat, long, warmup = 10, survival_threshold = 1e11, make_plot = FALSE){
+run_year <- function(lat, long, warmup = 10, survival_threshold = 1e30, make_plot = FALSE){
   # get tree temp
-  temps <- tree_temp_prediction(lat = locLat, long = locLong)
+  temps <- tree_temp_prediction(lat = locLat, long = locLong, model = model)
   temps <- c(rep(mean(temps), warmup), temps) # add mean temperature for warmup iterations
   
   # Initial population 
@@ -444,6 +510,8 @@ run_year <- function(lat, long, warmup = 10, survival_threshold = 1e11, make_plo
   population_data <- matrix(0, nrow = 3, ncol = time_steps)
   population_data[, 1] <- n_initial
   
+  P_mu <- matrix(0, nrow = 1, ncol = time_steps) # Matrix for number of dispersing P
+  
   for (tt in 2:time_steps) {
     step_result <- step_within_population(n_t = population_data[, tt - 1],
                                           cumulative_offspring = cumulative_offspring,
@@ -452,11 +520,13 @@ run_year <- function(lat, long, warmup = 10, survival_threshold = 1e11, make_plo
 
     population_data[, tt] <- step_result$n
     cumulative_offspring <- step_result$cum_n
+    P_mu[, tt] <- step_result$n_mu
   }
   
   # remove warmup
   population_data <- population_data[, -(1:warmup)]
   temps <- temps[-(1:warmup)]
+  P_mu <- P_mu[, -(1:warmup)]
   
   # calculate mean annual growth rate
   agr <- function(population_data){
@@ -471,7 +541,7 @@ run_year <- function(lat, long, warmup = 10, survival_threshold = 1e11, make_plo
     NvTPlot(temps, population_data)
   }
   
-  list(popDat = population_data, temps = temps, growthRate = growthRate)
+  list(popDat = population_data, temps = temps, growthRate = growthRate, P_mu = P_mu)
 }
 
 ## Function to iterate the within host model over n days
@@ -482,6 +552,7 @@ run_year <- function(lat, long, warmup = 10, survival_threshold = 1e11, make_plo
     # iter: number of days to iterate over
     # threshold: host threshold for cumulative population size
     # note global variables used for phi_A phi_P mu f 
+
 sim_within_host <- function(initial_n, temps, iter, threshold = 1e5, stochastic = FALSE){
   #browser()
   if (length(temps) == 1) temps <- rep(temps, iter)
