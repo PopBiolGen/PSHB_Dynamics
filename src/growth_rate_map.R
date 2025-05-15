@@ -1,10 +1,10 @@
 ## ---------------------------
 ##
-## Script name: growth_rate_map_spartan.R
+## Script name: growth_rate_map.R
 ##
 ## Purpose of script: Runs PSHB population model across a grid of geographic coordinates, to generate a SDM
 ## 
-## This script is CALLED BY spartan_call.R, and is designed to be run on a HPC system (Spartan/Pawsey)
+## This script is CALLED BY sim_call.R (where country, mu values, etc are assigned), and is designed to be run on a HPC system
 ## ---------------------------
 ##
 # Need these for weatherOz to run
