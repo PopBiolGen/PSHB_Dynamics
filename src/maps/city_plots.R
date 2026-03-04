@@ -41,7 +41,7 @@ maxgrow <- 0.1
 dev.off()
 par(mfrow = c(3, 4))
               
-for(i in 1:nrow(city_coords)){
+for(i in 13:nrow(city_coords)){
 #  for(i in 5:10){
   locLat <- city_coords$lat[i]
   locLong <- city_coords$lon[i]
@@ -167,11 +167,11 @@ city_plot <- function(locLat, locLong, city_name){
 city_coords <- read_csv("src/city_coords.csv")
 
 # Looking at plots without manual-scaled axes:
-mingrow <- -0.04
-maxgrow <- 0.105
+mingrow <- -0.05
+maxgrow <- 0.12
 
 
-for(i in 1:10){
+for(i in 1:1){
 cit_i <- i # city_i between 1 and 10
 locLat <- city_coords$lat[cit_i]
 locLong <- city_coords$lon[cit_i]
@@ -193,7 +193,7 @@ city_coords <- read_csv("src/known_PSHB_coords.csv")
 mingrow <- -0.021
 maxgrow <- 0.101
 
-for(i in 2:9){
+for(i in 11:15){ # Can specify which cities
 cit_i <- i # city_i between 1 and 10
 locLat <- city_coords$lat[cit_i]
 locLong <- city_coords$lon[cit_i]
