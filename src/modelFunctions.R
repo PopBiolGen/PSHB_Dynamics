@@ -339,27 +339,31 @@ prior_calculator <- function() {
   phi_J_priors <- alpha_P_priors <- alpha_J_priors
   
   # Pmax within (0,1)
-  alpha_J_priors[["Pmax"]] <- c(
+  alpha_J_priors[["Pmax"]] <- c( # P_max bound (0,1) so needs beta distribution
     Distribution = "beta",
-    estBetaParams(alpha_J_prior_ests["Pmax", 1], alpha_J_prior_ests["Pmax", 2]^2)
+    estBetaParams(alpha_J_prior_ests["Pmax", 1], alpha_J_prior_ests["Pmax", 2]^2) # Estimate shape parameters from estimated mean & sd of P_max
   )
   # T_o within (-Inf,Inf)
   alpha_J_priors[["T_o"]] <- list(
     Distribution = "normal",
-    mean = alpha_J_prior_ests["T_o", 1], 
+    mean = alpha_J_prior_ests["T_o", 1], # T_opt normally distributed, using mean & sd of estimate
     sd = alpha_J_prior_ests["T_o", 2]
   )
   # a_plus within (0,Inf)
-  alpha_J_priors[["a_plus"]] <- c(
-    Distribution = "gamma",
+  alpha_J_priors[["a_plus"]] <- c( # a_plus = c (in Supp Mat)
+    Distribution = "gamma", # use gamma (positive values only, long right tail)
     estGammaParams(alpha_J_prior_ests["a_plus", 1], alpha_J_prior_ests["a_plus", 2]^2)
   )
   # a_minus within (0,1)
-  alpha_J_priors[["a_minus"]] <- c(
-    Distribution = "beta",
+  alpha_J_priors[["a_minus"]] <- c( # & a_minus = d (in Supp Mat)
+    Distribution = "beta", # beta (0,1)
     estBetaParams(alpha_J_prior_ests["a_minus", 1], alpha_J_prior_ests["a_minus", 2]^2)
   )
   
+  # alpha_J_prior = list
+  # For each TPC parameter (Pmax, To, a_plus, a_minus),
+  # list the distribution to use AND the values for parameters needed by greta for those distributions (mean & sd for normal, shapes for beta, shape & rate for gamma)
+  # these values based on the best estimates of TPC fit
   
   # alpha_P(T) 
   
@@ -438,7 +442,8 @@ prior_calculator <- function() {
   # phi_P, phi_A 
   phi_P_priors <- vector(mode = "list", length = 1)
   
-  mean_phi <- exp(-1/32)
+  # In pop model phi_P = survival = 0.97
+  mean_phi <- exp(-1/32)  # here want mortality = 0.03 = 1/32 (convert from rate to Prob)
   var_phi <- 0.03^2
   
   phi_P_priors <- list(
@@ -560,12 +565,16 @@ sim_within_host <- function(initial_n, temps, iter, threshold = 1e5, stochastic 
     stop("Temperature data length is less than number of iterations")
   }
   # set up matrix to take results
-  out_matrix <- matrix(c(c(initial_n, 0), rep(0, (length(initial_n)+1)*(iter-1))), nrow = length(initial_n)+1, ncol = iter)
+  out_matrix <- matrix(c(c(initial_n, 0), # initial population sizes (per life stage) in first column
+                         # ADD LAST ROW for CUMULATIVE OFFSPRING
+                         rep(0, (length(initial_n)+1)*(iter-1))), # fill rest with 0s
+                       nrow = length(initial_n)+1, 
+                       ncol = iter)
   
   # iterate over days
   for (tt in 2:iter){
     step_result <- step_within_population(n_t = out_matrix[1:3, tt - 1], 
-                                          cumulative_offspring = out_matrix[4, tt - 1], 
+                                          cumulative_offspring = out_matrix[4, tt - 1], # Cumulative pop at t0 = 0
                                           temperature = temps[tt],
                                           survival_threshold = threshold)
     if (stochastic) step_result$n <- rpois(length(step_result$n), step_result$n)
@@ -581,10 +590,10 @@ sim_single_preadult_temp_data <- function(n_times = 28,
                                           expected_initial_pop = c(0.01, 0.01, 20)) {
   
   # load real temperatures
-  temps <- tree_temp_prediction()
+  temps <- tree_temp_prediction(lat = locLat, long = locLong, model="weighted mean")
   
   # simulate a random temperature timeseries by randomly sampling a start times
-  start_time <- sample.int(length(temps) - n_times, 1)
+  start_time <- sample.int(length(temps) - n_times, 1) # sample a random
   times <- start_time + seq_len(n_times) - 1
   temperature <- temps[times]
   
