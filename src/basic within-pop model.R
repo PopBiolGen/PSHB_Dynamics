@@ -28,6 +28,7 @@ locLong <- 115.8317
 country <- "Australia"
 #country <- "South Africa"
 #country <- "US"
+country<- "South America"
 #country <- "Israel"
 
 # Previous LM approach for tree temp

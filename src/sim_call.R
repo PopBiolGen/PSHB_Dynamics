@@ -13,12 +13,13 @@ iter_spartan <- as.numeric(args[1]) # iter corresponds to array number (iteratio
 
 #### Set parameters for this sim: ####
 
-mu_est <- 0 # mu value
+mu_est <- 0.4 # mu value
 # Assign which country you're working in
-country <- "Australia" 
+#country <- "Australia" 
 #country <- "South Africa"
-#country <- "US"
+country <- "US"
 #country <- "Israel"
+#country <- "South America"
 
 map.res <- 0.1 # resolution of map (degrees) -> 0.05 deg = 5 km
 

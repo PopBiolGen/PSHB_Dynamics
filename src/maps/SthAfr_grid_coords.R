@@ -1,6 +1,8 @@
 library(ggplot2)
 library(maps)
 library(mapdata)
+library(readr)
+library(viridis)
 # South Africa coords grid
 
 latsa <- c(seq(-35.5, -21.5, by=map.res))
@@ -43,15 +45,24 @@ cities <- read_csv("src/known_PSHB_coords.csv")
 cities <- subset(cities, country == "South Africa")
 
 map.plot.sa <- ggplot(data = mapdata) + 
-  coord_map(xlim = c(min(outputs_grid$lon)-1.5, 
+ coord_map(xlim = c(min(outputs_grid$lon)-1.5, 
                      max(outputs_grid$lon)+2.2), 
             ylim = c(min(outputs_grid$lat)-1.5, 
                      max(outputs_grid$lat)+1.5))+
   geom_tile(data=outputs_grid, # Save from matrix to dataframe
-            aes(x=lon, y=lat, fill=A_growth)) + # E.g. Adult growth rate
+              aes(x=lon, y=lat, fill=A_growth)) + # E.g. Adult growth rate
+  
+  # geom_raster only works coord_cartesian
+#  coord_cartesian(xlim = c(min(outputs_grid$lon)-1.5, 
+#                     max(outputs_grid$lon)+2.2), 
+#            ylim = c(min(outputs_grid$lat)-1.5, 
+#                     max(outputs_grid$lat)+1.5))+
+#  geom_raster(data=outputs_grid, # Save from matrix to dataframe
+#            aes(x=lon, y=lat, fill=A_growth),
+#            interpolate=T) + # E.g. Adult growth rate
   geom_polygon(data = mapdata,
                aes(x = long, y = lat, group=group),
-               col = "black", fill=NA) +
+               col = "black", fill=NA, lwd=1) +
   scale_fill_viridis(name = "Mean daily adult growth rate",
                      option= "inferno",
                      limits=c(round(min.growth, digits=3),
@@ -80,11 +91,88 @@ ggsave(map.plot.sa,
        #   width = 10, height = 20, dpi = 1000, units = "in", 
        device='png')
 
-#
-ggplot(SA, aes(x=A_growth))+
-  geom_histogram()
+#######################################
+#### Overlay obs from FABI dataset ####
+obs <- read_csv("src/maps/FABI_data.csv")
+# Ignore India & US points
+obs <- subset(obs, lat< -20)
 
-##
+sa_obs <- map.plot.sa +
+  geom_point(data=obs, aes(x=lon, y=lat),
+             pch=21, stroke=1, fill="white", size=1.6)
+ggsave(sa_obs,
+       file = "out/map_Sth_Africa_FABI_obs.png", 
+       #   width = 10, height = 20, dpi = 1000, units = "in", 
+       device='png')
+
+
+##########################################
+
+####### mu = 0.4 ###################
+
+# Plot output
+outputs_grid <- read_csv("out/files/pawsey_South Africa_0.4_sim_NA.csv")
+options(bitmapType='cairo') # To save png correctly
+
+dev.off()
+
+library(mapdata)
+mapdata <- map_data(map='world', region="South Africa")
+
+outputs_grid <- as.data.frame(outputs_grid)
+min.growth <- min(outputs_grid$A_growth)
+max.growth <- max(outputs_grid$A_growth)
+
+cities <- read_csv("src/known_PSHB_coords.csv")
+cities <- subset(cities, country == "South Africa")
+
+map.plot.sa.mu <- ggplot(data = mapdata) + 
+  coord_map(xlim = c(min(outputs_grid$lon)-1.5, 
+                     max(outputs_grid$lon)+2.2), 
+            ylim = c(min(outputs_grid$lat)-1.5, 
+                     max(outputs_grid$lat)+1.5))+
+  
+  geom_polygon(data = mapdata,
+               aes(x = long, y = lat, group=group),
+               col = "black", fill='grey80', lwd=1) +
+  
+  geom_tile(data=subset(outputs_grid,
+                        A_growth>0), # Save from matrix to dataframe
+            aes(x=lon, y=lat, fill=A_growth)) + # E.g. Adult growth rate
+  
+  geom_polygon(data = mapdata,
+               aes(x = long, y = lat, group=group),
+               col = "black", fill=NA, lwd=1) +
+  
+  scale_fill_viridis(name = "Mean daily adult growth rate",
+                     option= "inferno",
+                     limits=c(0,
+                              max.growth))+
+  
+  geom_point(data=cities, aes(x=lon, y=lat),
+             size=2.2, pch=21, stroke=1, fill="white")+
+ 
+  theme(panel.background = element_blank(),
+        axis.line = element_blank(), 
+        axis.text = element_blank(), 
+        axis.ticks = element_blank(), 
+        axis.title = element_blank(),
+        legend.text = element_text(size=14),
+        legend.key.size = unit(0.8, 'cm'),
+        legend.title = element_text(size=16))
+
+map.plot.sa.mu.4 <- map.plot.sa.mu + geom_point(data=obs, aes(x=lon, y=lat),
+                            pch=21, stroke=1, fill="white", size=1.6)
+ggsave(map.plot.sa.mu.4,
+       file = "out/map_Sth_Africa_mu0.4_obs.png", 
+       #   width = 10, height = 20, dpi = 1000, units = "in", 
+       device='png')
+
+
+##########################################
+
+
+################
 
 map.plot.sa2 <- map.plot.sa +
   theme(#legend.justification = "top",

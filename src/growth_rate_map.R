@@ -84,8 +84,12 @@ colnames(grid_coords)<- c("lon","lat")
         
         grid_coords <- as.matrix(read.csv('src/grid_coords_Cal.csv'))} else {
         
-        grid_coords <- as.matrix(read.csv('src/grid_coords_Israel.csv'))}
-  }}
+          if(country == "Israel") {
+            
+            grid_coords <- as.matrix(read.csv('src/grid_coords_Israel.csv'))} else {
+              
+              grid_coords <- as.matrix(read.csv('src/grid_coords_Sth_America.csv'))}
+  }}}
 
 
 outputs_grid <- matrix(0, 
